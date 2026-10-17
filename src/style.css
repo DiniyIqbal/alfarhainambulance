@@ -59,8 +59,16 @@
 }
 
 /* ================== Reset & Base ================== */
-*, *::before, *::after {
+html {
   box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
   margin: 0;
   padding: 0;
 }
@@ -71,12 +79,20 @@ body {
   color: var(--text-main);
   line-height: 1.5;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
   overflow-x: hidden;
+  position: relative;
   background-image: 
     radial-gradient(circle at 15% 15%, rgba(14, 165, 233, 0.12) 0%, transparent 40%),
     radial-gradient(circle at 85% 75%, rgba(239, 68, 68, 0.08) 0%, transparent 45%),
     radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 60%);
   background-attachment: fixed;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+button, a, select, input {
+  touch-action: manipulation;
 }
 
 /* Top App Header */
@@ -1565,6 +1581,447 @@ body {
   color: #15803D;
   font-family: var(--font-heading);
   font-weight: 800;
+}
+
+/* =====================================================================
+   MOBILE & RESPONSIVE DESIGN (Tablets & Smartphones)
+   ===================================================================== */
+
+@media (max-width: 1024px) {
+  .app-container {
+    padding: 1.2rem;
+  }
+  .summary-panel {
+    position: static;
+    top: auto;
+    width: 100%;
+    margin-top: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Header */
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.75rem 0.85rem;
+    gap: 0.65rem;
+  }
+
+  .brand-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .brand-logo-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1.3rem;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+  }
+
+  .brand-titles {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .brand-titles h1 {
+    font-size: 0.95rem;
+    line-height: 1.25;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .brand-badge {
+    font-size: 0.6rem;
+    padding: 0.1rem 0.45rem;
+    white-space: nowrap;
+  }
+
+  .brand-subtitle {
+    font-size: 0.68rem;
+    margin-top: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .branch-pill {
+    flex: 1;
+    min-width: 0;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+    overflow: hidden;
+  }
+
+  .branch-pill select {
+    width: 100%;
+    max-width: 100%;
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  /* Hide QR modal button on mobile devices because user is already on mobile */
+  #openMobileModalBtn {
+    display: none !important;
+  }
+
+  #supabaseConnectBtn {
+    flex-shrink: 0;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+  }
+
+  .sos-button {
+    flex-shrink: 0;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    gap: 0.3rem;
+  }
+
+  /* Navigation Bar - Horizontal Swipe Tab Bar */
+  .app-navigation {
+    padding: 0.35rem 0.5rem;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .app-navigation::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-tabs {
+    display: flex;
+    gap: 0.35rem;
+    width: max-content;
+    padding: 0.15rem 0.25rem;
+  }
+
+  .tab-btn {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Container */
+  .app-container {
+    padding: 0.75rem 0.65rem 3rem 0.65rem;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+  }
+
+  .calculator-grid {
+    gap: 1rem;
+  }
+
+  /* Glass Cards */
+  .glass-card {
+    padding: 1.1rem 0.9rem;
+    border-radius: var(--radius-md);
+  }
+
+  .card-header {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.65rem;
+  }
+
+  .card-header h2 {
+    font-size: 0.98rem;
+    line-height: 1.3;
+  }
+
+  .card-header .header-badge {
+    font-size: 0.65rem;
+  }
+
+  /* Inputs & Selects */
+  .location-label {
+    flex-wrap: wrap;
+    gap: 0.2rem;
+    font-size: 0.78rem;
+  }
+
+  .custom-select, .custom-input {
+    font-size: 0.84rem;
+    padding: 0.65rem 0.85rem 0.65rem 2.4rem;
+  }
+
+  .input-with-icon .input-icon {
+    left: 0.75rem;
+    font-size: 1rem;
+  }
+
+  /* Route Distance Stats Bar */
+  .route-meta-bar {
+    gap: 0.35rem;
+    padding: 0.65rem 0.4rem;
+  }
+
+  .meta-item {
+    min-width: 0;
+  }
+
+  .meta-title {
+    font-size: 0.62rem;
+    line-height: 1.15;
+    letter-spacing: 0;
+    word-break: break-word;
+    text-align: center;
+  }
+
+  .meta-val {
+    font-size: 1.05rem;
+  }
+
+  /* Map Container & Overlays */
+  .interactive-map-container {
+    height: 270px;
+  }
+
+  .interactive-map-container.expanded {
+    height: 420px;
+  }
+
+  .map-coords-overlay {
+    top: 8px;
+    left: 8px;
+    max-width: 58%;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.7rem;
+    gap: 0.25rem;
+  }
+
+  #mapCoordsBadge {
+    display: inline-block;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+  }
+
+  .map-coords-overlay .drag-hint {
+    display: none;
+  }
+
+  .map-layers-overlay {
+    top: 8px;
+    right: 8px;
+    padding: 2px;
+  }
+
+  .map-layer-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.68rem;
+  }
+
+  .map-tools-overlay {
+    bottom: 8px;
+    right: 8px;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    max-width: calc(100% - 16px);
+    justify-content: flex-end;
+  }
+
+  .map-btn {
+    padding: 0.3rem 0.55rem;
+    font-size: 0.68rem;
+    gap: 0.25rem;
+  }
+
+  .map-instruction-bar {
+    font-size: 0.72rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .manual-distance-box {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.65rem 0.85rem;
+  }
+
+  .manual-distance-box > span {
+    width: 100%;
+    font-size: 0.75rem;
+  }
+
+  /* Selection Grids */
+  .trip-types-grid,
+  .assistance-grid,
+  .equipment-grid {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .trip-type-card,
+  .assistance-card {
+    padding: 0.85rem;
+  }
+
+  .equipment-item-card {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .equip-name {
+    font-size: 0.82rem;
+  }
+
+  .qty-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Summary Panel */
+  .bill-breakdown-card {
+    padding: 1.1rem 0.85rem;
+  }
+
+  .formula-card {
+    font-size: 0.72rem;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .bill-line {
+    font-size: 0.8rem;
+  }
+
+  .grand-total-box {
+    padding: 0.85rem 1rem;
+  }
+
+  .grand-total-number {
+    font-size: 1.75rem;
+  }
+
+  .primary-btn {
+    padding: 0.85rem 1rem;
+    font-size: 0.92rem;
+    min-height: 48px;
+    width: 100%;
+  }
+
+  .secondary-btn {
+    padding: 0.75rem 1rem;
+    font-size: 0.82rem;
+    min-height: 44px;
+    width: 100%;
+  }
+
+  /* Driver Cockpit View */
+  .cockpit-hud-card {
+    padding: 1rem 0.85rem;
+  }
+
+  .driver-profile-header {
+    gap: 0.75rem;
+  }
+
+  .driver-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+  }
+
+  /* Analytics View */
+  .analytics-metrics-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+
+  .metric-card {
+    padding: 0.85rem;
+  }
+
+  .metric-card .metric-value {
+    font-size: 1.4rem;
+  }
+
+  /* FAQ View */
+  .chat-box-card {
+    height: 440px;
+  }
+
+  /* Modal Windows & Official Invoices */
+  .modal-backdrop {
+    padding: 0.5rem;
+  }
+
+  .modal-window {
+    padding: 1.25rem 0.9rem;
+    width: 96%;
+    max-height: 88vh;
+    border-radius: var(--radius-lg);
+  }
+
+  .invoice-print-area {
+    padding: 1rem 0.75rem;
+    font-size: 0.78rem;
+  }
+
+  .invoice-header-official {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .invoice-meta-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .invoice-table-official th,
+  .invoice-table-official td {
+    padding: 0.45rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-header {
+    padding: 0.6rem 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .brand-titles h1 {
+    font-size: 0.85rem;
+  }
+
+  .brand-logo-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 1.1rem;
+  }
+
+  .sos-button {
+    padding: 0.35rem 0.55rem;
+    font-size: 0.7rem;
+  }
+
+  .analytics-metrics-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* @media print for paper/PDF export */
