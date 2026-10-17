@@ -846,14 +846,12 @@ function initNavigationTabs() {
 
       // Show/hide section navigation elements based on whether calculator-view is active
       const sideDock = document.getElementById('sideQuickDock');
-      const mobileNav = document.getElementById('mobileQuickNav');
       const miniBar = document.getElementById('persistentMiniBar');
       const subnavStrip = document.getElementById('calcSubnavStrip');
       const isCalc = targetId === 'calculator-view';
 
       if (subnavStrip) subnavStrip.style.display = isCalc ? 'block' : 'none';
       if (sideDock) sideDock.style.display = isCalc ? '' : 'none';
-      if (mobileNav) mobileNav.style.display = isCalc ? '' : 'none';
       if (miniBar) {
         miniBar.style.display = isCalc ? '' : 'none';
         if (isCalc) {
@@ -910,26 +908,14 @@ function switchCalcStep(stepNum, shouldScroll = true) {
     item.classList.toggle('active', s === stepNum);
   });
 
-  // 5. Update Mobile Drawer Cards
-  document.querySelectorAll('.drawer-card').forEach(card => {
-    const s = parseInt(card.getAttribute('data-step'), 10);
-    card.classList.toggle('active', s === stepNum);
-  });
-
-  // 6. Update Mobile FAB text
-  const fabSectionText = document.getElementById('fabSectionText');
-  if (fabSectionText) {
-    fabSectionText.textContent = stepInfo.label;
-  }
-
-  // 7. Toggle Persistent Bottom Mini Bar
+  // 5. Toggle Persistent Bottom Mini Bar
   // Visible on Steps 1 to 4, hidden on Step 5 (because Step 5 is the full invoice summary!)
   const miniBar = document.getElementById('persistentMiniBar');
   if (miniBar) {
     miniBar.classList.toggle('hidden', stepNum === 5);
   }
 
-  // 8. If Step 1, invalidate Leaflet Map size so it renders crisp and full width
+  // 6. If Step 1, invalidate Leaflet Map size so it renders crisp and full width
   if (stepNum === 1 && map) {
     setTimeout(() => {
       map.invalidateSize();
@@ -939,7 +925,7 @@ function switchCalcStep(stepNum, shouldScroll = true) {
     }, 120);
   }
 
-  // 9. Scroll to top of the step smoothly
+  // 7. Scroll to top of the step smoothly
   if (shouldScroll) {
     const calcView = document.getElementById('calculator-view');
     if (calcView) {
@@ -948,20 +934,6 @@ function switchCalcStep(stepNum, shouldScroll = true) {
       window.scrollTo({ top: Math.max(0, elPos), behavior: 'smooth' });
     }
   }
-
-  // Close mobile drawer if open
-  closeQuickNavDrawer();
-}
-
-function openQuickNavDrawer() {
-  playClickSound();
-  const drawerBackdrop = document.getElementById('quickNavDrawerBackdrop');
-  if (drawerBackdrop) drawerBackdrop.classList.add('active');
-}
-
-function closeQuickNavDrawer() {
-  const drawerBackdrop = document.getElementById('quickNavDrawerBackdrop');
-  if (drawerBackdrop) drawerBackdrop.classList.remove('active');
 }
 
 function initMultiStepCalculator() {
@@ -1033,40 +1005,7 @@ function initMultiStepCalculator() {
     });
   }
 
-  // 8. Mobile FAB Button & Drawer Controls
-  const mobileFabBtn = document.getElementById('mobileFabBtn');
-  const drawerBackdrop = document.getElementById('quickNavDrawerBackdrop');
-  const drawerCloseBtn = document.getElementById('drawerCloseBtn');
-  const drawerTopBtn = document.getElementById('drawerTopBtn');
-
-  if (mobileFabBtn) {
-    mobileFabBtn.addEventListener('click', openQuickNavDrawer);
-  }
-
-  if (drawerCloseBtn) {
-    drawerCloseBtn.addEventListener('click', () => {
-      playClickSound();
-      closeQuickNavDrawer();
-    });
-  }
-
-  if (drawerBackdrop) {
-    drawerBackdrop.addEventListener('click', (e) => {
-      if (e.target === drawerBackdrop) {
-        closeQuickNavDrawer();
-      }
-    });
-  }
-
-  if (drawerTopBtn) {
-    drawerTopBtn.addEventListener('click', () => {
-      playClickSound();
-      closeQuickNavDrawer();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  }
-
-  // 9. Global Back to Top Button
+  // 8. Global Back to Top Button
   const backToTopBtn = document.getElementById('backToTopBtn');
   if (backToTopBtn) {
     backToTopBtn.addEventListener('click', () => {
