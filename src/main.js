@@ -99,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDistanceControls();
   initLeafletMap();
   initNavigationTabs();
+  initSectionQuickNav();
   initModals();
   initDriverHUD();
   initAdminDashboard();
@@ -829,8 +830,196 @@ function initNavigationTabs() {
       if (targetId === 'calculator-view' && map) {
         setTimeout(() => map.invalidateSize(), 200);
       }
+
+      // Show/hide section navigation elements based on whether calculator-view is active
+      const sideDock = document.getElementById('sideQuickDock');
+      const mobileNav = document.getElementById('mobileQuickNav');
+      const isCalc = targetId === 'calculator-view';
+
+      if (sideDock) sideDock.style.display = isCalc ? '' : 'none';
+      if (mobileNav) mobileNav.style.display = isCalc ? '' : 'none';
     });
   });
+}
+
+/* =========================================================================
+   Section Quick Navigation & Scrollspy System
+   ========================================================================= */
+function initSectionQuickNav() {
+  const sectionIds = [
+    { id: 'section-location', label: '1/5 Lokasi' },
+    { id: 'section-category', label: '2/5 Kategori' },
+    { id: 'section-assistance', label: '3/5 Staf' },
+    { id: 'section-equipment', label: '4/5 Alatan' },
+    { id: 'section-summary', label: '5/5 Bayaran' }
+  ];
+
+  // Helper to scroll smoothly with header offset
+  function scrollToSection(targetId) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    playClickSound();
+
+    // Calculate header height offset for fixed app headers
+    const headerOffset = window.innerWidth <= 768 ? 140 : 100;
+    const elementPosition = el.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+    });
+
+    // Trigger glowing highlight pulse
+    el.classList.remove('section-highlight-pulse');
+    void el.offsetWidth; // Force reflow
+    el.classList.add('section-highlight-pulse');
+    setTimeout(() => el.classList.remove('section-highlight-pulse'), 1500);
+
+    // Close mobile drawer if open
+    closeQuickNavDrawer();
+  }
+
+  // 1. Desktop Side Dock Clicks
+  const dockItems = document.querySelectorAll('.dock-item');
+  dockItems.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-target');
+      scrollToSection(targetId);
+    });
+  });
+
+  // 2. Sticky Quick Bar Clicks
+  const quickBtns = document.querySelectorAll('.section-quick-btn');
+  quickBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-target');
+      scrollToSection(targetId);
+    });
+  });
+
+  // 3. Mobile Drawer Cards Clicks
+  const drawerCards = document.querySelectorAll('.drawer-card');
+  drawerCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const targetId = card.getAttribute('data-target');
+      scrollToSection(targetId);
+    });
+  });
+
+  // 4. Mobile FAB Button & Drawer Toggle
+  const mobileFabBtn = document.getElementById('mobileFabBtn');
+  const drawerBackdrop = document.getElementById('quickNavDrawerBackdrop');
+  const drawerCloseBtn = document.getElementById('drawerCloseBtn');
+  const drawerTopBtn = document.getElementById('drawerTopBtn');
+
+  function openQuickNavDrawer() {
+    playClickSound();
+    if (drawerBackdrop) drawerBackdrop.classList.add('active');
+  }
+
+  function closeQuickNavDrawer() {
+    if (drawerBackdrop) drawerBackdrop.classList.remove('active');
+  }
+
+  if (mobileFabBtn) {
+    mobileFabBtn.addEventListener('click', openQuickNavDrawer);
+  }
+
+  if (drawerCloseBtn) {
+    drawerCloseBtn.addEventListener('click', () => {
+      playClickSound();
+      closeQuickNavDrawer();
+    });
+  }
+
+  if (drawerBackdrop) {
+    drawerBackdrop.addEventListener('click', (e) => {
+      if (e.target === drawerBackdrop) {
+        closeQuickNavDrawer();
+      }
+    });
+  }
+
+  if (drawerTopBtn) {
+    drawerTopBtn.addEventListener('click', () => {
+      playClickSound();
+      closeQuickNavDrawer();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  // 5. Global Back to Top Button
+  const backToTopBtn = document.getElementById('backToTopBtn');
+  if (backToTopBtn) {
+    backToTopBtn.addEventListener('click', () => {
+      playClickSound();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 300) {
+        backToTopBtn.classList.add('visible');
+      } else {
+        backToTopBtn.classList.remove('visible');
+      }
+    }, { passive: true });
+  }
+
+  // 6. Scrollspy via IntersectionObserver
+  function setActiveSection(activeId) {
+    // Update Dock
+    dockItems.forEach(item => {
+      if (item.getAttribute('data-target') === activeId) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+
+    // Update Quick Bar
+    quickBtns.forEach(btn => {
+      if (btn.getAttribute('data-target') === activeId) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    // Update Drawer Cards
+    drawerCards.forEach(card => {
+      if (card.getAttribute('data-target') === activeId) {
+        card.classList.add('active');
+      } else {
+        card.classList.remove('active');
+      }
+    });
+
+    // Update Mobile FAB text
+    const matched = sectionIds.find(s => s.id === activeId);
+    const fabSectionText = document.getElementById('fabSectionText');
+    if (fabSectionText && matched) {
+      fabSectionText.textContent = matched.label;
+    }
+  }
+
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    }, {
+      rootMargin: '-100px 0px -40% 0px',
+      threshold: 0.1
+    });
+
+    sectionIds.forEach(item => {
+      const el = document.getElementById(item.id);
+      if (el) observer.observe(el);
+    });
+  }
 }
 
 /* =========================================================================

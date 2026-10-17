@@ -93,13 +93,33 @@
 
     <!-- ==================== VIEW 1: TRIP CALCULATOR (CORE FEATURE) ==================== -->
     <section id="calculator-view" class="view-section active">
+
+      <!-- Section Quick Jump Sub-Navigation Strip (Quick Access for Short & Long Scrolling) -->
+      <nav class="section-quick-bar" id="sectionQuickBar" aria-label="Navigasi Pantas Seksyen">
+        <button class="section-quick-btn active" data-target="section-location">
+          <span>📍</span> <span>1. Lokasi &amp; Peta</span>
+        </button>
+        <button class="section-quick-btn" data-target="section-category">
+          <span>🚨</span> <span>2. Kategori</span>
+        </button>
+        <button class="section-quick-btn" data-target="section-assistance">
+          <span>👨‍⚕️</span> <span>3. Staf</span>
+        </button>
+        <button class="section-quick-btn" data-target="section-equipment">
+          <span>🩺</span> <span>4. Alatan</span>
+        </button>
+        <button class="section-quick-btn" data-target="section-summary">
+          <span>💰</span> <span>5. Tambang &amp; Invois</span>
+        </button>
+      </nav>
+
       <div class="calculator-grid">
 
         <!-- Left Form Panel -->
         <div class="calc-panel">
 
           <!-- 1. Location & Route Picker -->
-          <div class="glass-card">
+          <div class="glass-card" id="section-location">
             <div class="card-header">
               <h2><span>📍</span> 1. Lokasi & Kiraan Jarak Perjalanan (KM)</h2>
               <span class="header-badge" id="routeStatusBadge">Laluan Dipilih</span>
@@ -236,9 +256,9 @@
           </div>
 
           <!-- 2. Trip Type Selection -->
-          <div class="glass-card">
+          <div class="glass-card" id="section-category">
             <div class="card-header">
-              <h2><span>🚨</span> 2. Kategori Perkhidmatan & Kecemasan</h2>
+              <h2><span>🚨</span> 2. Kategori Perkhidmatan &amp; Kecemasan</h2>
               <span class="header-badge">Pilih Satu Kategori</span>
             </div>
             <div class="trip-types-grid" id="tripTypesContainer">
@@ -247,9 +267,9 @@
           </div>
 
           <!-- 3. Medical Assistance Packages -->
-          <div class="glass-card">
+          <div class="glass-card" id="section-assistance">
             <div class="card-header">
-              <h2><span>👨‍⚕️</span> 3. Bantuan Paramedik & Pegawai Perubatan</h2>
+              <h2><span>👨‍⚕️</span> 3. Bantuan Paramedik &amp; Pegawai Perubatan</h2>
               <span class="header-badge">Pakej Mengiringi</span>
             </div>
             <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 1rem;">
@@ -261,9 +281,9 @@
           </div>
 
           <!-- 4. Additional Equipments & Medicines -->
-          <div class="glass-card">
+          <div class="glass-card" id="section-equipment">
             <div class="card-header">
-              <h2><span>🩺</span> 4. Peralatan & Bekalan Ubatan Tambahan</h2>
+              <h2><span>🩺</span> 4. Peralatan &amp; Bekalan Ubatan Tambahan</h2>
               <span class="header-badge">Pilihan Keperluan Transit</span>
             </div>
             <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 1rem;">
@@ -277,7 +297,7 @@
         </div>
 
         <!-- Right Summary & Quotation Panel (Sticky) -->
-        <div class="summary-panel">
+        <div class="summary-panel" id="section-summary">
           <div class="bill-breakdown-card">
             <div class="bill-header">
               <div>
@@ -803,6 +823,117 @@
       </div>
     </div>
   </div>
+
+  <!-- ==================== SIDE QUICK-NAVIGATION RAIL (DESKTOP DOCK) ==================== -->
+  <aside class="side-quick-dock" id="sideQuickDock" aria-label="Navigasi Tepi Seksyen">
+    <div class="dock-header">
+      <span class="dock-badge">SEKSYEN</span>
+    </div>
+    <div class="dock-items">
+      <button class="dock-item active" data-target="section-location" title="1. Lokasi & Peta">
+        <span class="dock-icon">📍</span>
+        <span class="dock-tooltip">1. Lokasi &amp; Peta</span>
+      </button>
+      <button class="dock-item" data-target="section-category" title="2. Kategori Trip">
+        <span class="dock-icon">🚨</span>
+        <span class="dock-tooltip">2. Kategori Trip</span>
+      </button>
+      <button class="dock-item" data-target="section-assistance" title="3. Bantuan Staf">
+        <span class="dock-icon">👨‍⚕️</span>
+        <span class="dock-tooltip">3. Bantuan Staf</span>
+      </button>
+      <button class="dock-item" data-target="section-equipment" title="4. Peralatan & Oksigen">
+        <span class="dock-icon">🩺</span>
+        <span class="dock-tooltip">4. Alatan &amp; Oksigen</span>
+      </button>
+      <button class="dock-item" data-target="section-summary" title="5. Kiraan Tambang & Invois">
+        <span class="dock-icon">💰</span>
+        <span class="dock-tooltip">5. Tambang &amp; Invois</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MOBILE FLOATING QUICK-ACTION BUTTON (FAB) ==================== -->
+  <div class="mobile-quick-nav" id="mobileQuickNav">
+    <button class="mobile-fab-btn" id="mobileFabBtn" title="Buka Navigasi Seksyen Pantas" aria-label="Buka Navigasi Seksyen">
+      <span class="fab-icon">⚡</span>
+      <span class="fab-text" id="fabSectionText">1/5 Lokasi</span>
+    </button>
+  </div>
+
+  <!-- ==================== MOBILE QUICK JUMP DRAWER ==================== -->
+  <div class="quick-nav-drawer-backdrop" id="quickNavDrawerBackdrop">
+    <div class="quick-nav-drawer" id="quickNavDrawer">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <span style="font-size: 1.25rem;">⚡</span>
+          <div>
+            <h4>Lompat Ke Seksyen Pantas</h4>
+            <span style="font-size: 0.72rem; color: var(--text-dim);">Pilih bahagian untuk mengelakkan skrol panjang</span>
+          </div>
+        </div>
+        <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Tutup">&times;</button>
+      </div>
+
+      <div class="drawer-grid">
+        <button class="drawer-card active" data-target="section-location">
+          <div class="drawer-card-icon">📍</div>
+          <div class="drawer-card-text">
+            <strong>1. Lokasi &amp; Peta Interaktif</strong>
+            <span>Pusat rawatan, destinasi, GPS &amp; kiraan KM</span>
+          </div>
+          <span class="drawer-arrow">➔</span>
+        </button>
+
+        <button class="drawer-card" data-target="section-category">
+          <div class="drawer-card-icon">🚨</div>
+          <div class="drawer-card-text">
+            <strong>2. Kategori Perkhidmatan</strong>
+            <span>Kecemasan, discaj hospital &amp; temujanji</span>
+          </div>
+          <span class="drawer-arrow">➔</span>
+        </button>
+
+        <button class="drawer-card" data-target="section-assistance">
+          <div class="drawer-card-icon">👨‍⚕️</div>
+          <div class="drawer-card-text">
+            <strong>3. Bantuan Paramedik &amp; Doktor</strong>
+            <span>Pakej M.A (PPP), C.A, Jururawat &amp; Dr</span>
+          </div>
+          <span class="drawer-arrow">➔</span>
+        </button>
+
+        <button class="drawer-card" data-target="section-equipment">
+          <div class="drawer-card-icon">🩺</div>
+          <div class="drawer-card-text">
+            <strong>4. Peralatan &amp; Ubatan Tambahan</strong>
+            <span>Oksigen, ventilator, suction &amp; pek IV</span>
+          </div>
+          <span class="drawer-arrow">➔</span>
+        </button>
+
+        <button class="drawer-card" data-target="section-summary">
+          <div class="drawer-card-icon">💰</div>
+          <div class="drawer-card-text">
+            <strong>5. Semakan Kos &amp; Jana Invois</strong>
+            <span>Pecahan tambang, disel &amp; pengesahan tempahan</span>
+          </div>
+          <span class="drawer-arrow">➔</span>
+        </button>
+      </div>
+
+      <div class="drawer-footer">
+        <button class="drawer-top-btn" id="drawerTopBtn">
+          <span>⬆️</span> Kembali Ke Atas Sekali
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== GLOBAL FLOATING BACK-TO-TOP BUTTON ==================== -->
+  <button class="back-to-top-btn" id="backToTopBtn" title="Kembali ke atas" aria-label="Kembali ke atas">
+    <span>⬆️</span>
+  </button>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
