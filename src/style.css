@@ -2123,61 +2123,356 @@ button, a, select, input {
    SECTION QUICK-NAVIGATION & LONG SCROLLING PREVENTION
    ========================================================================= */
 
-.section-quick-bar {
+/* =========================================================================
+   CALCULATOR STEP SUB-NAVIGATION (BETWEEN TOP NAV & CONTENT)
+   ========================================================================= */
+
+.calc-subnav-strip {
+  background: rgba(11, 18, 32, 0.96);
+  border-bottom: 1px solid rgba(14, 165, 233, 0.25);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.75rem 0.45rem 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  position: relative;
+  z-index: 700;
+}
+
+.subnav-inner {
+  max-width: 920px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+/* Step Chips Row */
+.step-chips-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: rgba(11, 18, 32, 0.88);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--bg-glass-border);
-  border-radius: var(--radius-full);
-  padding: 0.35rem 0.6rem;
-  margin-bottom: 1.25rem;
+  gap: 0.45rem;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  position: sticky;
-  top: 4.8rem;
-  z-index: 800;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-  width: 100%;
-  box-sizing: border-box;
+  padding: 0.15rem 0.1rem;
 }
 
-.section-quick-bar::-webkit-scrollbar {
+.step-chips-row::-webkit-scrollbar {
   display: none;
 }
 
-.section-quick-btn {
-  background: transparent;
-  border: 1px solid transparent;
+.step-chip-btn {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-sub);
   font-family: var(--font-main);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  padding: 0.4rem 0.85rem;
+  padding: 0.42rem 0.85rem;
   border-radius: var(--radius-full);
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   cursor: pointer;
   white-space: nowrap;
   transition: var(--transition);
   flex-shrink: 0;
+  user-select: none;
 }
 
-.section-quick-btn:hover {
+.step-chip-btn:hover {
   color: var(--text-white);
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(14, 165, 233, 0.3);
 }
 
-.section-quick-btn.active {
+.step-chip-btn.active {
   color: #FFFFFF;
   background: rgba(14, 165, 233, 0.2);
   border-color: var(--amc-cyan);
-  box-shadow: var(--glow-cyan);
+  box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+}
+
+.step-chip-btn .chip-icon {
+  font-size: 0.95rem;
+}
+
+/* Micro Progress Row */
+.subnav-progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0.2rem;
+}
+
+.subnav-step-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  color: var(--text-sub);
+  font-weight: 600;
+}
+
+.pulse-dot-sm {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--amc-cyan);
+  box-shadow: 0 0 8px var(--amc-cyan);
+  animation: pulse-dot 2s infinite ease-in-out;
+}
+
+.subnav-step-pct {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--amc-cyan);
+}
+
+.subnav-progress-bar {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.subnav-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0EA5E9 0%, #10B981 100%);
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 8px rgba(14, 165, 233, 0.7);
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Stage Container & Separate Step Pages */
+.calculator-stage-container {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.calc-step-page {
+  display: none;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.calc-step-page.active {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: stepFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes stepFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Make Step 5 Summary Panel take full container width instead of 2-column sidebar */
+.calc-step-page .summary-panel {
+  position: static;
+  width: 100%;
+  max-width: 100%;
+  top: auto;
+}
+
+.calc-step-page .bill-breakdown-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Step Navigation Footer Controls */
+.step-nav-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 0.75rem;
+  margin-bottom: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.step-btn-prev, .step-btn-next, .step-btn-restart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.85rem 1.4rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-heading);
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: var(--transition);
+  min-height: 48px;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.step-btn-prev {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--bg-glass-border);
+  color: var(--text-main);
+}
+
+.step-btn-prev:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+  transform: translateX(-3px);
+}
+
+.step-btn-next {
+  background: var(--grad-primary);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.45);
+  margin-left: auto;
+}
+
+.step-btn-next:hover {
+  transform: translateX(3px);
+  box-shadow: 0 8px 26px rgba(14, 165, 233, 0.65);
+  filter: brightness(1.1);
+}
+
+.step-btn-restart {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #FCA5A5;
+  margin-left: auto;
+}
+
+.step-btn-restart:hover {
+  background: rgba(239, 68, 68, 0.28);
+  border-color: #EF4444;
+  color: #FFFFFF;
+}
+
+/* ==================== PERSISTENT FLOATING BOTTOM MINI SUMMARY BAR ==================== */
+.persistent-mini-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(7, 11, 20, 0.95);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(14, 165, 233, 0.4);
+  padding: 0.65rem 1.25rem calc(0.65rem + env(safe-area-inset-bottom, 0px)) 1.25rem;
+  z-index: 1100;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.75), 0 0 15px rgba(14, 165, 233, 0.2);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease-out;
+}
+
+.persistent-mini-bar.hidden {
+  transform: translateY(115%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mini-bar-content {
+  max-width: 920px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.mini-bar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.mini-bar-route {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-route-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.mini-bar-fare {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.mini-fare-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.mini-fare-amount {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--amc-cyan);
+  text-shadow: 0 0 14px rgba(14, 165, 233, 0.45);
+}
+
+.mini-bar-jump-btn {
+  background: var(--grad-primary);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+  padding: 0.65rem 1.15rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.5);
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.mini-bar-jump-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 6px 22px rgba(14, 165, 233, 0.7);
+  filter: brightness(1.1);
+}
+
+.mini-bar-jump-btn .mini-arrow {
+  transition: transform 0.2s ease;
+}
+
+.mini-bar-jump-btn:hover .mini-arrow {
+  transform: translateX(4px);
 }
 
 /* ==================== DESKTOP SIDE QUICK-NAV DOCK ==================== */
@@ -2562,16 +2857,132 @@ button, a, select, input {
 }
 
 @media (max-width: 768px) {
-  .section-quick-bar {
-    top: 7.2rem;
-    padding: 0.3rem 0.5rem;
-    gap: 0.35rem;
-    margin-bottom: 0.9rem;
+  .step-chip-btn {
+    padding: 0.38rem 0.72rem;
+    font-size: 0.76rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-container {
+    padding: 0.65rem 0.5rem calc(6.5rem + env(safe-area-inset-bottom, 0px)) 0.5rem;
   }
 
-  .section-quick-btn {
-    padding: 0.35rem 0.65rem;
+  .glass-card {
+    padding: 1rem 0.85rem;
+  }
+
+  .calc-subnav-strip {
+    padding: 0.45rem 0.5rem 0.35rem 0.5rem;
+  }
+
+  .step-chip-btn {
+    padding: 0.35rem 0.68rem;
     font-size: 0.74rem;
+    gap: 0.35rem;
+  }
+
+  .step-chip-btn .chip-icon {
+    font-size: 0.88rem;
+  }
+
+  .subnav-step-label {
+    font-size: 0.68rem;
+  }
+
+  .subnav-step-pct {
+    font-size: 0.72rem;
+  }
+
+  .step-nav-footer {
+    flex-direction: column;
+    gap: 0.65rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .step-btn-prev, .step-btn-next, .step-btn-restart {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.88rem;
+    padding: 0.75rem 1rem;
+    min-height: 46px;
+  }
+
+  .persistent-mini-bar {
+    padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom, 0px)) 0.75rem;
+  }
+
+  .mini-bar-content {
+    gap: 0.5rem;
+  }
+
+  .mini-fare-amount {
+    font-size: 1.15rem;
+  }
+
+  .mini-bar-jump-btn {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.76rem;
+  }
+
+  .trip-types-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .assistance-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .equipment-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .interactive-map-container {
+    height: 290px;
+  }
+
+  .map-coords-overlay {
+    max-width: 60%;
+    font-size: 0.68rem;
+    padding: 0.25rem 0.55rem;
+  }
+
+  .map-layer-btn {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.68rem;
+  }
+
+  .map-tools-overlay .map-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .brand-titles h1 {
+    font-size: 0.82rem;
+  }
+
+  .step-badge-step {
+    font-size: 0.62rem;
+  }
+
+  .step-badge-title {
+    font-size: 0.82rem;
+  }
+
+  .mini-bar-route {
+    font-size: 0.7rem;
+    max-width: 140px;
+  }
+
+  .mini-fare-amount {
+    font-size: 1.05rem;
+  }
+
+  .mini-bar-jump-btn {
+    padding: 0.45rem 0.65rem;
+    font-size: 0.72rem;
   }
 }
 

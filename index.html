@@ -88,40 +88,64 @@
     </div>
   </nav>
 
+  <!-- ==================== CALCULATOR STEP SUB-NAVIGATION (BETWEEN TOP NAV & CONTENT) ==================== -->
+  <div class="calc-subnav-strip" id="calcSubnavStrip" aria-label="Navigasi Langkah Pengiraan">
+    <div class="subnav-inner">
+      <!-- Step Chips / Tabs -->
+      <div class="step-chips-row">
+        <button class="step-chip-btn active" data-step="1" title="Langkah 1: Lokasi & Peta">
+          <span class="chip-icon">📍</span>
+          <span class="chip-title">1. Lokasi &amp; Peta</span>
+        </button>
+        <button class="step-chip-btn" data-step="2" title="Langkah 2: Kategori Perkhidmatan">
+          <span class="chip-icon">🚨</span>
+          <span class="chip-title">2. Kategori</span>
+        </button>
+        <button class="step-chip-btn" data-step="3" title="Langkah 3: Bantuan Paramedik & Staf">
+          <span class="chip-icon">👨‍⚕️</span>
+          <span class="chip-title">3. Staf</span>
+        </button>
+        <button class="step-chip-btn" data-step="4" title="Langkah 4: Peralatan & Ubatan">
+          <span class="chip-icon">🩺</span>
+          <span class="chip-title">4. Alatan</span>
+        </button>
+        <button class="step-chip-btn" data-step="5" title="Langkah 5: Semakan Kos & Invois">
+          <span class="chip-icon">💰</span>
+          <span class="chip-title">5. Tambang &amp; Invois</span>
+        </button>
+      </div>
+
+      <!-- Micro Progress & Status Row -->
+      <div class="subnav-progress-row">
+        <div class="subnav-step-label">
+          <span class="pulse-dot-sm"></span>
+          <span id="subnavStepText">Langkah 1 dari 5: Lokasi &amp; Kiraan Jarak (KM)</span>
+        </div>
+        <span class="subnav-step-pct" id="subnavStepPct">20%</span>
+      </div>
+
+      <!-- Slim Glowing Progress Bar -->
+      <div class="subnav-progress-bar">
+        <div class="subnav-progress-fill" id="subnavProgressFill" style="width: 20%;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Container -->
   <main class="app-container">
 
     <!-- ==================== VIEW 1: TRIP CALCULATOR (CORE FEATURE) ==================== -->
     <section id="calculator-view" class="view-section active">
 
-      <!-- Section Quick Jump Sub-Navigation Strip (Quick Access for Short & Long Scrolling) -->
-      <nav class="section-quick-bar" id="sectionQuickBar" aria-label="Navigasi Pantas Seksyen">
-        <button class="section-quick-btn active" data-target="section-location">
-          <span>📍</span> <span>1. Lokasi &amp; Peta</span>
-        </button>
-        <button class="section-quick-btn" data-target="section-category">
-          <span>🚨</span> <span>2. Kategori</span>
-        </button>
-        <button class="section-quick-btn" data-target="section-assistance">
-          <span>👨‍⚕️</span> <span>3. Staf</span>
-        </button>
-        <button class="section-quick-btn" data-target="section-equipment">
-          <span>🩺</span> <span>4. Alatan</span>
-        </button>
-        <button class="section-quick-btn" data-target="section-summary">
-          <span>💰</span> <span>5. Tambang &amp; Invois</span>
-        </button>
-      </nav>
+      <!-- Stage Container for Dedicated Step Pages -->
+      <div class="calculator-stage-container">
 
-      <div class="calculator-grid">
-
-        <!-- Left Form Panel -->
-        <div class="calc-panel">
-
+        <!-- ==================== STEP PAGE 1: LOKASI & PETA ==================== -->
+        <div class="calc-step-page active" id="step-page-1" data-step="1">
           <!-- 1. Location & Route Picker -->
           <div class="glass-card" id="section-location">
             <div class="card-header">
-              <h2><span>📍</span> 1. Lokasi & Kiraan Jarak Perjalanan (KM)</h2>
+              <h2><span>📍</span> 1. Lokasi &amp; Kiraan Jarak Perjalanan (KM)</h2>
               <span class="header-badge" id="routeStatusBadge">Laluan Dipilih</span>
             </div>
 
@@ -192,7 +216,7 @@
               <div class="map-search-wrapper" style="position: relative;">
                 <div class="input-with-icon">
                   <span class="input-icon">🔍</span>
-                  <input type="text" id="mapSearchInput" class="custom-input" placeholder="Cari nama hospital, klinik, jalan, atau kampung di Kelantan & Malaysia..." autocomplete="off">
+                  <input type="text" id="mapSearchInput" class="custom-input" placeholder="Cari nama hospital, klinik, jalan, atau kampung di Kelantan &amp; Malaysia..." autocomplete="off">
                   <button id="clearSearchBtn" class="clear-search-btn" title="Kosongkan carian">&times;</button>
                 </div>
                 <!-- Autocomplete Dropdown -->
@@ -255,6 +279,17 @@
             </div>
           </div>
 
+          <!-- Step 1 Footer -->
+          <div class="step-nav-footer">
+            <div></div>
+            <button class="step-btn-next" data-next="2">
+              <span>Seterusnya: Kategori Trip (2/5)</span> <span>➔</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ==================== STEP PAGE 2: KATEGORI PERKHIDMATAN ==================== -->
+        <div class="calc-step-page" id="step-page-2" data-step="2">
           <!-- 2. Trip Type Selection -->
           <div class="glass-card" id="section-category">
             <div class="card-header">
@@ -266,6 +301,19 @@
             </div>
           </div>
 
+          <!-- Step 2 Footer -->
+          <div class="step-nav-footer">
+            <button class="step-btn-prev" data-prev="1">
+              <span>⬅</span> <span>Kembali: Lokasi &amp; Peta</span>
+            </button>
+            <button class="step-btn-next" data-next="3">
+              <span>Seterusnya: Bantuan Staf (3/5)</span> <span>➔</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ==================== STEP PAGE 3: BANTUAN STAF ==================== -->
+        <div class="calc-step-page" id="step-page-3" data-step="3">
           <!-- 3. Medical Assistance Packages -->
           <div class="glass-card" id="section-assistance">
             <div class="card-header">
@@ -280,6 +328,19 @@
             </div>
           </div>
 
+          <!-- Step 3 Footer -->
+          <div class="step-nav-footer">
+            <button class="step-btn-prev" data-prev="2">
+              <span>⬅</span> <span>Kembali: Kategori Trip</span>
+            </button>
+            <button class="step-btn-next" data-next="4">
+              <span>Seterusnya: Peralatan &amp; Ubatan (4/5)</span> <span>➔</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ==================== STEP PAGE 4: PERALATAN & UBATAN ==================== -->
+        <div class="calc-step-page" id="step-page-4" data-step="4">
           <!-- 4. Additional Equipments & Medicines -->
           <div class="glass-card" id="section-equipment">
             <div class="card-header">
@@ -294,103 +355,145 @@
             </div>
           </div>
 
-        </div>
-
-        <!-- Right Summary & Quotation Panel (Sticky) -->
-        <div class="summary-panel" id="section-summary">
-          <div class="bill-breakdown-card">
-            <div class="bill-header">
-              <div>
-                <h3 class="bill-header-title">SEMAKAN KOS ANGGARAN</h3>
-                <span style="font-size: 0.72rem; color: var(--text-dim);">AMC Ambulance Fare Calculator</span>
-              </div>
-              <span class="live-badge">
-                <span class="status-dot"></span> KIRAAN KETAT
-              </span>
-            </div>
-
-            <!-- Formula Reference Card -->
-            <div class="formula-card">
-              <span class="formula-tag">FORMULA EXCEL AMC:</span><br>
-              • Basis (&le; 25 KM) = <strong>RM 250.00</strong><br>
-              • Melebihi 25 KM = (Jarak - 25) &times; <strong>RM <span id="ratePerKmLabel">3.00</span></strong>/KM
-            </div>
-
-            <!-- Diesel Surge Toggle -->
-            <div class="diesel-toggle-bar">
-              <label>
-                <input type="checkbox" id="dieselSurgeToggle">
-                <span>Mod Kenaikan Diesel (RM 4.50 / KM)</span>
-              </label>
-              <span style="font-size: 0.7rem; font-weight: 700; color: #F59E0B;">+50%</span>
-            </div>
-
-            <!-- Bill Breakdown Lines -->
-            <div class="bill-lines">
-              <div class="bill-line highlight">
-                <span>Kategori Trip (<span id="summaryTripName">Kecemasan</span>):</span>
-                <span class="bill-line-val" id="summaryTripBase">RM 250.00</span>
-              </div>
-
-              <div class="bill-line">
-                <span>Jarak Asas (&le; 25 KM):</span>
-                <span class="bill-line-val" id="summaryBaseKmFare">RM 250.00</span>
-              </div>
-
-              <div class="bill-line">
-                <span>Caj Lebihan Jarak (<span id="summaryExtraKmCount">2.2</span> KM &times; RM <span id="summaryKmRate">3.00</span>):</span>
-                <span class="bill-line-val" id="summaryExtraKmFare">RM 6.60</span>
-              </div>
-
-              <div class="bill-line highlight">
-                <span>Pakej Bantuan Staf (<span id="summaryAssistanceRole">Tiada</span>):</span>
-                <span class="bill-line-val" id="summaryAssistanceFare">RM 0.00</span>
-              </div>
-
-              <div class="bill-line">
-                <span>Peralatan &amp; Ubatan Tambahan (<span id="summaryEquipCount">0</span> item):</span>
-                <span class="bill-line-val" id="summaryEquipFare">RM 0.00</span>
-              </div>
-
-              <div class="bill-line">
-                <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
-                  <input type="checkbox" id="includeMiscFee" checked>
-                  <span>Lain-lain Caj / Caj Sokongan:</span>
-                </label>
-                <span class="bill-line-val" id="summaryMiscFare">RM 50.00</span>
-              </div>
-            </div>
-
-            <!-- Grand Total Showcase -->
-            <div class="grand-total-box">
-              <div>
-                <span class="grand-total-label">JUMLAH KESELURUHAN</span>
-                <div style="font-size: 0.72rem; color: rgba(255,255,255,0.7);">Kadar Anggaran Rasmi AMC</div>
-              </div>
-              <div class="grand-total-number">
-                <span class="currency">RM</span>
-                <span id="grandTotalDisplay">306.60</span>
-              </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="summary-actions">
-              <button class="primary-btn" id="generateInvoiceBtn">
-                <span>📄</span> JANA INVOIS &amp; SAHKAN TRIP
-              </button>
-
-              <button class="secondary-btn" id="directCallDriverBtn">
-                <span>📞</span> Hubungi Pemandu (013-914 7606)
-              </button>
-
-              <button class="secondary-btn" id="shareWhatsAppBtn">
-                <span>💬</span> Kongsi Butiran Ke WhatsApp
-              </button>
-            </div>
-
+          <!-- Step 4 Footer -->
+          <div class="step-nav-footer">
+            <button class="step-btn-prev" data-prev="3">
+              <span>⬅</span> <span>Kembali: Bantuan Staf</span>
+            </button>
+            <button class="step-btn-next" data-next="5">
+              <span>Seterusnya: Semakan Tambang &amp; Invois (5/5)</span> <span>➔</span>
+            </button>
           </div>
         </div>
 
+        <!-- ==================== STEP PAGE 5: SEMAKAN KOS & INVOIS ==================== -->
+        <div class="calc-step-page" id="step-page-5" data-step="5">
+          <!-- Right Summary & Quotation Panel -->
+          <div class="summary-panel" id="section-summary">
+            <div class="bill-breakdown-card">
+              <div class="bill-header">
+                <div>
+                  <h3 class="bill-header-title">SEMAKAN KOS ANGGARAN</h3>
+                  <span style="font-size: 0.72rem; color: var(--text-dim);">AMC Ambulance Fare Calculator</span>
+                </div>
+                <span class="live-badge">
+                  <span class="status-dot"></span> KIRAAN KETAT
+                </span>
+              </div>
+
+              <!-- Formula Reference Card -->
+              <div class="formula-card">
+                <span class="formula-tag">FORMULA EXCEL AMC:</span><br>
+                • Basis (&le; 25 KM) = <strong>RM 250.00</strong><br>
+                • Melebihi 25 KM = (Jarak - 25) &times; <strong>RM <span id="ratePerKmLabel">3.00</span></strong>/KM
+              </div>
+
+              <!-- Diesel Surge Toggle -->
+              <div class="diesel-toggle-bar">
+                <label>
+                  <input type="checkbox" id="dieselSurgeToggle">
+                  <span>Mod Kenaikan Diesel (RM 4.50 / KM)</span>
+                </label>
+                <span style="font-size: 0.7rem; font-weight: 700; color: #F59E0B;">+50%</span>
+              </div>
+
+              <!-- Bill Breakdown Lines -->
+              <div class="bill-lines">
+                <div class="bill-line highlight">
+                  <span>Kategori Trip (<span id="summaryTripName">Kecemasan</span>):</span>
+                  <span class="bill-line-val" id="summaryTripBase">RM 250.00</span>
+                </div>
+
+                <div class="bill-line">
+                  <span>Jarak Asas (&le; 25 KM):</span>
+                  <span class="bill-line-val" id="summaryBaseKmFare">RM 250.00</span>
+                </div>
+
+                <div class="bill-line">
+                  <span>Caj Lebihan Jarak (<span id="summaryExtraKmCount">2.2</span> KM &times; RM <span id="summaryKmRate">3.00</span>):</span>
+                  <span class="bill-line-val" id="summaryExtraKmFare">RM 6.60</span>
+                </div>
+
+                <div class="bill-line highlight">
+                  <span>Pakej Bantuan Staf (<span id="summaryAssistanceRole">Tiada</span>):</span>
+                  <span class="bill-line-val" id="summaryAssistanceFare">RM 0.00</span>
+                </div>
+
+                <div class="bill-line">
+                  <span>Peralatan &amp; Ubatan Tambahan (<span id="summaryEquipCount">0</span> item):</span>
+                  <span class="bill-line-val" id="summaryEquipFare">RM 0.00</span>
+                </div>
+
+                <div class="bill-line">
+                  <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                    <input type="checkbox" id="includeMiscFee" checked>
+                    <span>Lain-lain Caj / Caj Sokongan:</span>
+                  </label>
+                  <span class="bill-line-val" id="summaryMiscFare">RM 50.00</span>
+                </div>
+              </div>
+
+              <!-- Grand Total Showcase -->
+              <div class="grand-total-box">
+                <div>
+                  <span class="grand-total-label">JUMLAH KESELURUHAN</span>
+                  <div style="font-size: 0.72rem; color: rgba(255,255,255,0.7);">Kadar Anggaran Rasmi AMC</div>
+                </div>
+                <div class="grand-total-number">
+                  <span class="currency">RM</span>
+                  <span id="grandTotalDisplay">306.60</span>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="summary-actions">
+                <button class="primary-btn" id="generateInvoiceBtn">
+                  <span>📄</span> JANA INVOIS &amp; SAHKAN TRIP
+                </button>
+
+                <button class="secondary-btn" id="directCallDriverBtn">
+                  <span>📞</span> Hubungi Pemandu (013-914 7606)
+                </button>
+
+                <button class="secondary-btn" id="shareWhatsAppBtn">
+                  <span>💬</span> Kongsi Butiran Ke WhatsApp
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Step 5 Footer -->
+          <div class="step-nav-footer">
+            <button class="step-btn-prev" data-prev="4">
+              <span>⬅</span> <span>Kembali: Ubah Peralatan</span>
+            </button>
+            <button class="step-btn-restart" id="stepRestartBtn">
+              <span>🔄</span> <span>Kira Semula / Tempahan Baru</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Persistent Floating Bottom Mini Summary Bar (Visible on Steps 1 to 4) -->
+      <div class="persistent-mini-bar" id="persistentMiniBar">
+        <div class="mini-bar-content">
+          <div class="mini-bar-info">
+            <div class="mini-bar-route">
+              <span class="mini-route-icon">🚑</span>
+              <span id="miniRouteText">HQ Kok Lanas ➔ HRPZ II (27.2 KM)</span>
+            </div>
+            <div class="mini-bar-fare">
+              <span class="mini-fare-label">Anggaran Tambang:</span>
+              <span class="mini-fare-amount">RM <span id="miniGrandTotalDisplay">306.60</span></span>
+            </div>
+          </div>
+          <button class="mini-bar-jump-btn" id="miniBarJumpToSummaryBtn">
+            <span>Semak Invois (5/5)</span>
+            <span class="mini-arrow">➔</span>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -825,28 +928,28 @@
   </div>
 
   <!-- ==================== SIDE QUICK-NAVIGATION RAIL (DESKTOP DOCK) ==================== -->
-  <aside class="side-quick-dock" id="sideQuickDock" aria-label="Navigasi Tepi Seksyen">
+  <aside class="side-quick-dock" id="sideQuickDock" aria-label="Navigasi Halaman Pantas">
     <div class="dock-header">
-      <span class="dock-badge">SEKSYEN</span>
+      <span class="dock-badge">HALAMAN</span>
     </div>
     <div class="dock-items">
-      <button class="dock-item active" data-target="section-location" title="1. Lokasi & Peta">
+      <button class="dock-item active" data-step="1" title="Langkah 1: Lokasi & Peta">
         <span class="dock-icon">📍</span>
         <span class="dock-tooltip">1. Lokasi &amp; Peta</span>
       </button>
-      <button class="dock-item" data-target="section-category" title="2. Kategori Trip">
+      <button class="dock-item" data-step="2" title="Langkah 2: Kategori Trip">
         <span class="dock-icon">🚨</span>
         <span class="dock-tooltip">2. Kategori Trip</span>
       </button>
-      <button class="dock-item" data-target="section-assistance" title="3. Bantuan Staf">
+      <button class="dock-item" data-step="3" title="Langkah 3: Bantuan Staf">
         <span class="dock-icon">👨‍⚕️</span>
         <span class="dock-tooltip">3. Bantuan Staf</span>
       </button>
-      <button class="dock-item" data-target="section-equipment" title="4. Peralatan & Oksigen">
+      <button class="dock-item" data-step="4" title="Langkah 4: Peralatan & Oksigen">
         <span class="dock-icon">🩺</span>
         <span class="dock-tooltip">4. Alatan &amp; Oksigen</span>
       </button>
-      <button class="dock-item" data-target="section-summary" title="5. Kiraan Tambang & Invois">
+      <button class="dock-item" data-step="5" title="Langkah 5: Kiraan Tambang & Invois">
         <span class="dock-icon">💰</span>
         <span class="dock-tooltip">5. Tambang &amp; Invois</span>
       </button>
@@ -855,7 +958,7 @@
 
   <!-- ==================== MOBILE FLOATING QUICK-ACTION BUTTON (FAB) ==================== -->
   <div class="mobile-quick-nav" id="mobileQuickNav">
-    <button class="mobile-fab-btn" id="mobileFabBtn" title="Buka Navigasi Seksyen Pantas" aria-label="Buka Navigasi Seksyen">
+    <button class="mobile-fab-btn" id="mobileFabBtn" title="Buka Menu Halaman Pantas" aria-label="Buka Menu Halaman">
       <span class="fab-icon">⚡</span>
       <span class="fab-text" id="fabSectionText">1/5 Lokasi</span>
     </button>
@@ -868,15 +971,15 @@
         <div class="drawer-title">
           <span style="font-size: 1.25rem;">⚡</span>
           <div>
-            <h4>Lompat Ke Seksyen Pantas</h4>
-            <span style="font-size: 0.72rem; color: var(--text-dim);">Pilih bahagian untuk mengelakkan skrol panjang</span>
+            <h4>Pilih Halaman Kalkulator</h4>
+            <span style="font-size: 0.72rem; color: var(--text-dim);">Lompat terus ke mana-mana langkah pengiraan</span>
           </div>
         </div>
         <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Tutup">&times;</button>
       </div>
 
       <div class="drawer-grid">
-        <button class="drawer-card active" data-target="section-location">
+        <button class="drawer-card active" data-step="1">
           <div class="drawer-card-icon">📍</div>
           <div class="drawer-card-text">
             <strong>1. Lokasi &amp; Peta Interaktif</strong>
@@ -885,7 +988,7 @@
           <span class="drawer-arrow">➔</span>
         </button>
 
-        <button class="drawer-card" data-target="section-category">
+        <button class="drawer-card" data-step="2">
           <div class="drawer-card-icon">🚨</div>
           <div class="drawer-card-text">
             <strong>2. Kategori Perkhidmatan</strong>
@@ -894,7 +997,7 @@
           <span class="drawer-arrow">➔</span>
         </button>
 
-        <button class="drawer-card" data-target="section-assistance">
+        <button class="drawer-card" data-step="3">
           <div class="drawer-card-icon">👨‍⚕️</div>
           <div class="drawer-card-text">
             <strong>3. Bantuan Paramedik &amp; Doktor</strong>
@@ -903,7 +1006,7 @@
           <span class="drawer-arrow">➔</span>
         </button>
 
-        <button class="drawer-card" data-target="section-equipment">
+        <button class="drawer-card" data-step="4">
           <div class="drawer-card-icon">🩺</div>
           <div class="drawer-card-text">
             <strong>4. Peralatan &amp; Ubatan Tambahan</strong>
@@ -912,7 +1015,7 @@
           <span class="drawer-arrow">➔</span>
         </button>
 
-        <button class="drawer-card" data-target="section-summary">
+        <button class="drawer-card" data-step="5">
           <div class="drawer-card-icon">💰</div>
           <div class="drawer-card-text">
             <strong>5. Semakan Kos &amp; Jana Invois</strong>
@@ -924,7 +1027,7 @@
 
       <div class="drawer-footer">
         <button class="drawer-top-btn" id="drawerTopBtn">
-          <span>⬆️</span> Kembali Ke Atas Sekali
+          <span>⬆️</span> Kembali Ke Atas Halaman
         </button>
       </div>
     </div>

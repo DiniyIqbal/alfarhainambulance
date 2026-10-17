@@ -38,6 +38,7 @@ const state = {
   destinationName: PRESET_DESTINATIONS[0].name,
   selectedDestId: PRESET_DESTINATIONS[0].id,
   distanceKm: 27.2, // Default HQ Kok Lanas to HRPZ II Kota Bharu
+  calcStep: 1, // Current active step in multi-step calculator (1 to 5)
   selectedTripType: TRIP_TYPES[0],
   selectedAssistance: ASSISTANCE_PACKAGES[0],
   equipmentQuantities: {},
@@ -99,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDistanceControls();
   initLeafletMap();
   initNavigationTabs();
-  initSectionQuickNav();
+  initMultiStepCalculator();
   initModals();
   initDriverHUD();
   initAdminDashboard();
@@ -473,6 +474,18 @@ function calculateAll() {
 
   document.getElementById('grandTotalDisplay').textContent = grandTotal.toFixed(2);
 
+  // Sync Persistent Floating Mini Bar
+  const miniGrandTotalDisplay = document.getElementById('miniGrandTotalDisplay');
+  if (miniGrandTotalDisplay) {
+    miniGrandTotalDisplay.textContent = grandTotal.toFixed(2);
+  }
+
+  const miniRouteText = document.getElementById('miniRouteText');
+  if (miniRouteText) {
+    const cleanDest = state.destinationName.split(',')[0].replace(/\s*\(\d+.*KM\)/i, '').trim();
+    miniRouteText.textContent = `${state.currentHub.shortName} ➔ ${cleanDest} (${distance.toFixed(1)} KM)`;
+  }
+
   // Play subtle feedback chime
   playCalculateChime();
 }
@@ -834,67 +847,141 @@ function initNavigationTabs() {
       // Show/hide section navigation elements based on whether calculator-view is active
       const sideDock = document.getElementById('sideQuickDock');
       const mobileNav = document.getElementById('mobileQuickNav');
+      const miniBar = document.getElementById('persistentMiniBar');
+      const subnavStrip = document.getElementById('calcSubnavStrip');
       const isCalc = targetId === 'calculator-view';
 
+      if (subnavStrip) subnavStrip.style.display = isCalc ? 'block' : 'none';
       if (sideDock) sideDock.style.display = isCalc ? '' : 'none';
       if (mobileNav) mobileNav.style.display = isCalc ? '' : 'none';
+      if (miniBar) {
+        miniBar.style.display = isCalc ? '' : 'none';
+        if (isCalc) {
+          miniBar.classList.toggle('hidden', state.calcStep === 5);
+        }
+      }
     });
   });
 }
 
 /* =========================================================================
-   Section Quick Navigation & Scrollspy System
+   Multi-Step Calculator Controller & Page Switcher
    ========================================================================= */
-function initSectionQuickNav() {
-  const sectionIds = [
-    { id: 'section-location', label: '1/5 Lokasi' },
-    { id: 'section-category', label: '2/5 Kategori' },
-    { id: 'section-assistance', label: '3/5 Staf' },
-    { id: 'section-equipment', label: '4/5 Alatan' },
-    { id: 'section-summary', label: '5/5 Bayaran' }
-  ];
+const CALC_STEPS = [
+  { step: 1, icon: '📍', title: 'Lokasi & Kiraan Jarak (KM)', label: '1/5 Lokasi' },
+  { step: 2, icon: '🚨', title: 'Kategori Perkhidmatan & Kecemasan', label: '2/5 Kategori' },
+  { step: 3, icon: '👨‍⚕️', title: 'Bantuan Paramedik & Pegawai Perubatan', label: '3/5 Staf' },
+  { step: 4, icon: '🩺', title: 'Peralatan & Bekalan Ubatan Tambahan', label: '4/5 Alatan' },
+  { step: 5, icon: '💰', title: 'Semakan Kos & Jana Invois Rasmi', label: '5/5 Invois' }
+];
 
-  // Helper to scroll smoothly with header offset
-  function scrollToSection(targetId) {
-    const el = document.getElementById(targetId);
-    if (!el) return;
-    playClickSound();
+function switchCalcStep(stepNum, shouldScroll = true) {
+  stepNum = Math.max(1, Math.min(5, parseInt(stepNum, 10) || 1));
+  state.calcStep = stepNum;
 
-    // Calculate header height offset for fixed app headers
-    const headerOffset = window.innerWidth <= 768 ? 140 : 100;
-    const elementPosition = el.getBoundingClientRect().top;
-    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+  // 1. Toggle Step Page containers
+  const pages = document.querySelectorAll('.calc-step-page');
+  pages.forEach(page => {
+    const s = parseInt(page.getAttribute('data-step'), 10);
+    page.classList.toggle('active', s === stepNum);
+  });
 
-    window.scrollTo({
-      top: offsetPosition,
-      behavior: 'smooth'
-    });
+  // 2. Update Header, Subnav Strip & Progress Fill
+  const stepInfo = CALC_STEPS[stepNum - 1];
+  const percent = stepNum * 20;
 
-    // Trigger glowing highlight pulse
-    el.classList.remove('section-highlight-pulse');
-    void el.offsetWidth; // Force reflow
-    el.classList.add('section-highlight-pulse');
-    setTimeout(() => el.classList.remove('section-highlight-pulse'), 1500);
+  const subnavStepText = document.getElementById('subnavStepText');
+  const subnavStepPct = document.getElementById('subnavStepPct');
+  const subnavProgressFill = document.getElementById('subnavProgressFill');
 
-    // Close mobile drawer if open
-    closeQuickNavDrawer();
+  if (subnavStepText) subnavStepText.textContent = `Langkah ${stepNum} dari 5: ${stepInfo.title}`;
+  if (subnavStepPct) subnavStepPct.textContent = `${percent}%`;
+  if (subnavProgressFill) subnavProgressFill.style.width = `${percent}%`;
+
+  // 3. Update Subnav Step Chip Buttons
+  document.querySelectorAll('.step-chip-btn').forEach(btn => {
+    const s = parseInt(btn.getAttribute('data-step'), 10);
+    btn.classList.toggle('active', s === stepNum);
+  });
+
+  // 4. Update Desktop Side Dock items
+  document.querySelectorAll('.dock-item').forEach(item => {
+    const s = parseInt(item.getAttribute('data-step'), 10);
+    item.classList.toggle('active', s === stepNum);
+  });
+
+  // 5. Update Mobile Drawer Cards
+  document.querySelectorAll('.drawer-card').forEach(card => {
+    const s = parseInt(card.getAttribute('data-step'), 10);
+    card.classList.toggle('active', s === stepNum);
+  });
+
+  // 6. Update Mobile FAB text
+  const fabSectionText = document.getElementById('fabSectionText');
+  if (fabSectionText) {
+    fabSectionText.textContent = stepInfo.label;
   }
 
+  // 7. Toggle Persistent Bottom Mini Bar
+  // Visible on Steps 1 to 4, hidden on Step 5 (because Step 5 is the full invoice summary!)
+  const miniBar = document.getElementById('persistentMiniBar');
+  if (miniBar) {
+    miniBar.classList.toggle('hidden', stepNum === 5);
+  }
+
+  // 8. If Step 1, invalidate Leaflet Map size so it renders crisp and full width
+  if (stepNum === 1 && map) {
+    setTimeout(() => {
+      map.invalidateSize();
+      if (routePolyline) {
+        map.fitBounds(routePolyline.getBounds(), { padding: [30, 30] });
+      }
+    }, 120);
+  }
+
+  // 9. Scroll to top of the step smoothly
+  if (shouldScroll) {
+    const calcView = document.getElementById('calculator-view');
+    if (calcView) {
+      const headerOffset = window.innerWidth <= 768 ? 120 : 80;
+      const elPos = calcView.getBoundingClientRect().top + window.pageYOffset - headerOffset;
+      window.scrollTo({ top: Math.max(0, elPos), behavior: 'smooth' });
+    }
+  }
+
+  // Close mobile drawer if open
+  closeQuickNavDrawer();
+}
+
+function openQuickNavDrawer() {
+  playClickSound();
+  const drawerBackdrop = document.getElementById('quickNavDrawerBackdrop');
+  if (drawerBackdrop) drawerBackdrop.classList.add('active');
+}
+
+function closeQuickNavDrawer() {
+  const drawerBackdrop = document.getElementById('quickNavDrawerBackdrop');
+  if (drawerBackdrop) drawerBackdrop.classList.remove('active');
+}
+
+function initMultiStepCalculator() {
   // 1. Desktop Side Dock Clicks
   const dockItems = document.querySelectorAll('.dock-item');
   dockItems.forEach(btn => {
     btn.addEventListener('click', () => {
-      const targetId = btn.getAttribute('data-target');
-      scrollToSection(targetId);
+      playClickSound();
+      const step = btn.getAttribute('data-step');
+      if (step) switchCalcStep(step);
     });
   });
 
-  // 2. Sticky Quick Bar Clicks
-  const quickBtns = document.querySelectorAll('.section-quick-btn');
-  quickBtns.forEach(btn => {
+  // 2. Subnav Step Chip Clicks (Between Top Nav & Content)
+  const stepChips = document.querySelectorAll('.step-chip-btn');
+  stepChips.forEach(btn => {
     btn.addEventListener('click', () => {
-      const targetId = btn.getAttribute('data-target');
-      scrollToSection(targetId);
+      playClickSound();
+      const step = btn.getAttribute('data-step');
+      if (step) switchCalcStep(step);
     });
   });
 
@@ -902,25 +989,55 @@ function initSectionQuickNav() {
   const drawerCards = document.querySelectorAll('.drawer-card');
   drawerCards.forEach(card => {
     card.addEventListener('click', () => {
-      const targetId = card.getAttribute('data-target');
-      scrollToSection(targetId);
+      playClickSound();
+      const step = card.getAttribute('data-step');
+      if (step) switchCalcStep(step);
     });
   });
 
-  // 4. Mobile FAB Button & Drawer Toggle
+  // 4. Next Step Buttons
+  const nextBtns = document.querySelectorAll('.step-btn-next');
+  nextBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      playClickSound();
+      const nextStep = btn.getAttribute('data-next');
+      if (nextStep) switchCalcStep(nextStep);
+    });
+  });
+
+  // 5. Previous Step Buttons
+  const prevBtns = document.querySelectorAll('.step-btn-prev');
+  prevBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      playClickSound();
+      const prevStep = btn.getAttribute('data-prev');
+      if (prevStep) switchCalcStep(prevStep);
+    });
+  });
+
+  // 6. Restart / Recalculate Button on Step 5
+  const stepRestartBtn = document.getElementById('stepRestartBtn');
+  if (stepRestartBtn) {
+    stepRestartBtn.addEventListener('click', () => {
+      playClickSound();
+      switchCalcStep(1);
+    });
+  }
+
+  // 7. Persistent Mini Bar Jump Button -> Jumps straight to Step 5 (Invoice & Summary)!
+  const miniBarJumpBtn = document.getElementById('miniBarJumpToSummaryBtn');
+  if (miniBarJumpBtn) {
+    miniBarJumpBtn.addEventListener('click', () => {
+      playClickSound();
+      switchCalcStep(5);
+    });
+  }
+
+  // 8. Mobile FAB Button & Drawer Controls
   const mobileFabBtn = document.getElementById('mobileFabBtn');
   const drawerBackdrop = document.getElementById('quickNavDrawerBackdrop');
   const drawerCloseBtn = document.getElementById('drawerCloseBtn');
   const drawerTopBtn = document.getElementById('drawerTopBtn');
-
-  function openQuickNavDrawer() {
-    playClickSound();
-    if (drawerBackdrop) drawerBackdrop.classList.add('active');
-  }
-
-  function closeQuickNavDrawer() {
-    if (drawerBackdrop) drawerBackdrop.classList.remove('active');
-  }
 
   if (mobileFabBtn) {
     mobileFabBtn.addEventListener('click', openQuickNavDrawer);
@@ -949,7 +1066,7 @@ function initSectionQuickNav() {
     });
   }
 
-  // 5. Global Back to Top Button
+  // 9. Global Back to Top Button
   const backToTopBtn = document.getElementById('backToTopBtn');
   if (backToTopBtn) {
     backToTopBtn.addEventListener('click', () => {
@@ -966,60 +1083,8 @@ function initSectionQuickNav() {
     }, { passive: true });
   }
 
-  // 6. Scrollspy via IntersectionObserver
-  function setActiveSection(activeId) {
-    // Update Dock
-    dockItems.forEach(item => {
-      if (item.getAttribute('data-target') === activeId) {
-        item.classList.add('active');
-      } else {
-        item.classList.remove('active');
-      }
-    });
-
-    // Update Quick Bar
-    quickBtns.forEach(btn => {
-      if (btn.getAttribute('data-target') === activeId) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
-    });
-
-    // Update Drawer Cards
-    drawerCards.forEach(card => {
-      if (card.getAttribute('data-target') === activeId) {
-        card.classList.add('active');
-      } else {
-        card.classList.remove('active');
-      }
-    });
-
-    // Update Mobile FAB text
-    const matched = sectionIds.find(s => s.id === activeId);
-    const fabSectionText = document.getElementById('fabSectionText');
-    if (fabSectionText && matched) {
-      fabSectionText.textContent = matched.label;
-    }
-  }
-
-  if ('IntersectionObserver' in window) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setActiveSection(entry.target.id);
-        }
-      });
-    }, {
-      rootMargin: '-100px 0px -40% 0px',
-      threshold: 0.1
-    });
-
-    sectionIds.forEach(item => {
-      const el = document.getElementById(item.id);
-      if (el) observer.observe(el);
-    });
-  }
+  // Initial step setup (Step 1 without scrolling)
+  switchCalcStep(1, false);
 }
 
 /* =========================================================================
