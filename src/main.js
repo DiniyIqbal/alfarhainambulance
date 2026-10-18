@@ -4,6 +4,7 @@
 import {
   HUBS,
   OTHER_BRANCHES,
+  PRESET_PICKUP_LOCATIONS,
   PRESET_DESTINATIONS,
   TRIP_TYPES,
   ASSISTANCE_PACKAGES,
@@ -34,10 +35,22 @@ import {
 const state = {
   currentHub: HUBS.KOK_LANAS,
   originCoords: HUBS.KOK_LANAS.coords,
-  destinationCoords: PRESET_DESTINATIONS[0].coords,
-  destinationName: PRESET_DESTINATIONS[0].name,
-  selectedDestId: PRESET_DESTINATIONS[0].id,
-  distanceKm: 27.2, // Default HQ Kok Lanas to HRPZ II Kota Bharu
+
+  // Point 2: Customer Pickup Point (Home / Residence)
+  pickupPresetId: 'kediaman_kb',
+  pickupAddress: 'Bandar Kota Bharu, 15000 Kota Bharu, Kelantan',
+  pickupCoords: [6.1248, 102.2544],
+
+  // Point 3: Destination Point (Hospital / Drop-off)
+  selectedDestId: 'hrpz',
+  destinationName: 'Hospital Raja Perempuan Zainab II (HRPZ II), Kota Bharu',
+  destinationCoords: [6.1256, 102.2482],
+
+  // Multi-Leg Distances (Leg 1: Hub -> Pickup, Leg 2: Pickup -> Dest, Total: Leg 1 + 2)
+  leg1Km: 24.5,
+  leg2Km: 4.5,
+  distanceKm: 29.0, // Operational distance
+
   calcStep: 1, // Current active step in multi-step calculator (1 to 5)
   selectedTripType: TRIP_TYPES[0],
   selectedAssistance: ASSISTANCE_PACKAGES[0],
@@ -49,18 +62,18 @@ const state = {
     {
       id: 'INV-AMC-1042',
       date: '15/10/2026 11:20 AM',
-      route: 'HQ Kok Lanas ➔ HRPZ II Kota Bharu',
-      distanceKm: 27.2,
+      route: 'HQ Kok Lanas ➔ Kediaman Kota Bharu ➔ HRPZ II',
+      distanceKm: 29.0,
       assistance: 'Pakej M.A (PPP)',
       equipment: 'Tangki Oksigen (1)',
-      total: 556.60,
+      total: 562.00,
       status: 'Selesai'
     },
     {
       id: 'INV-AMC-1041',
       date: '15/10/2026 09:45 AM',
-      route: 'HQ Kok Lanas ➔ Hospital Machang',
-      distanceKm: 18.0,
+      route: 'HQ Kok Lanas ➔ Kediaman Machang ➔ Hospital Machang',
+      distanceKm: 18.5,
       assistance: 'Krew EMT Standard',
       equipment: 'Tiada',
       total: 300.00,
@@ -69,7 +82,7 @@ const state = {
     {
       id: 'INV-AMC-1040',
       date: '14/10/2026 08:15 PM',
-      route: 'Cawangan Raub ➔ Hospital Kuala Lipis',
+      route: 'Cawangan Raub ➔ Bandar Raub ➔ Hospital Kuala Lipis',
       distanceKm: 42.5,
       assistance: 'Pakej C.A',
       equipment: 'Pek IV Drip (2)',
@@ -87,6 +100,7 @@ ADDITIONAL_EQUIPMENTS.forEach(eq => {
 // Map Reference
 let map = null;
 let originMarker = null;
+let pickupMarker = null;
 let destMarker = null;
 let routePolyline = null;
 
@@ -94,6 +108,7 @@ let routePolyline = null;
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initHubSelector();
+  initPickupPoint();
   initDestinations();
   initTripTypes();
   initAssistancePackages();
@@ -158,21 +173,41 @@ function setTheme(theme) {
 }
 
 /* =========================================================================
-   1. Hub & Branch Selector Logic
+   1. Hub & Starting Base Selector (Kok Lanas HQ vs Raub Branch)
    ========================================================================= */
 function initHubSelector() {
   const hubSelector = document.getElementById('hubSelector');
+  const startingHubSelect = document.getElementById('startingHubSelect');
   const activeHubBadge = document.getElementById('activeHubBadge');
-  const pickupSelect = document.getElementById('pickupSelect');
 
   function updateHubUI(hubKey) {
-    state.currentHub = HUBS[hubKey.toUpperCase()] || HUBS.KOK_LANAS;
+    const hubId = (hubKey || 'kok_lanas').toLowerCase();
+    state.currentHub = (hubId === 'raub') ? HUBS.RAUB : HUBS.KOK_LANAS;
     state.originCoords = state.currentHub.coords;
 
-    activeHubBadge.textContent = state.currentHub.shortName.toUpperCase();
-    document.getElementById('originTag').textContent = state.currentHub.name;
-    document.getElementById('hudDriverName').textContent = state.currentHub.primaryDriver;
-    document.getElementById('hudPlateNumber').innerHTML = `No. Plat: <strong>${state.currentHub.ambulancePlate}</strong> (${state.currentHub.shortName})`;
+    if (activeHubBadge) {
+      activeHubBadge.textContent = state.currentHub.shortName.toUpperCase();
+    }
+    const originTag = document.getElementById('originTag');
+    if (originTag) originTag.textContent = state.currentHub.name;
+    const hudDriverName = document.getElementById('hudDriverName');
+    if (hudDriverName) hudDriverName.textContent = state.currentHub.primaryDriver;
+    const hudPlateNumber = document.getElementById('hudPlateNumber');
+    if (hudPlateNumber) {
+      hudPlateNumber.innerHTML = `No. Plat: <strong>${state.currentHub.ambulancePlate}</strong> (${state.currentHub.shortName})`;
+    }
+
+    // Keep both selects synced
+    if (hubSelector && hubSelector.value !== hubId) {
+      hubSelector.value = hubId;
+    }
+    if (startingHubSelect && startingHubSelect.value !== hubId) {
+      startingHubSelect.value = hubId;
+    }
+
+    // Refresh pickup presets & destination presets for this hub
+    populatePickupPresets(hubId);
+    populateDestinationPresets(hubId);
 
     // Re-center map & update route
     if (map) {
@@ -181,79 +216,182 @@ function initHubSelector() {
     calculateAll();
   }
 
-  hubSelector.addEventListener('change', (e) => {
-    playClickSound();
-    const val = e.target.value;
-    updateHubUI(val);
-    pickupSelect.value = val;
-  });
+  if (hubSelector) {
+    hubSelector.addEventListener('change', (e) => {
+      playClickSound();
+      updateHubUI(e.target.value);
+    });
+  }
 
-  pickupSelect.addEventListener('change', (e) => {
-    playClickSound();
-    const val = e.target.value;
-    if (val === 'kok_lanas' || val === 'raub') {
-      hubSelector.value = val;
-      updateHubUI(val);
-    } else {
-      const found = OTHER_BRANCHES.find(b => b.id === val);
-      if (found) {
-        state.originCoords = found.coords;
-        document.getElementById('originTag').textContent = found.name;
-        updateMapMarkersAndRoute();
-        calculateAll();
-      }
-    }
-  });
+  if (startingHubSelect) {
+    startingHubSelect.addEventListener('change', (e) => {
+      playClickSound();
+      updateHubUI(e.target.value);
+    });
+  }
 }
 
 /* =========================================================================
-   2. Destination Setup
+   2. Customer Pickup Point Setup (Home / Residence / Custom Location)
+   ========================================================================= */
+function initPickupPoint() {
+  const pickupPresetSelect = document.getElementById('pickupPresetSelect');
+  const pickupAddressInput = document.getElementById('pickupAddressInput');
+
+  populatePickupPresets(state.currentHub.id);
+
+  if (pickupPresetSelect) {
+    pickupPresetSelect.addEventListener('change', (e) => {
+      playClickSound();
+      const val = e.target.value;
+      state.pickupPresetId = val;
+
+      const hubPresets = PRESET_PICKUP_LOCATIONS[state.currentHub.id] || PRESET_PICKUP_LOCATIONS.kok_lanas;
+      const found = hubPresets.find(p => p.id === val);
+
+      if (found) {
+        if (found.id === 'custom_pickup') {
+          if (pickupAddressInput) {
+            state.pickupAddress = pickupAddressInput.value || 'Kediaman Pesakit';
+            pickupAddressInput.focus();
+          }
+        } else {
+          state.pickupAddress = found.address || found.name;
+          if (found.coords) {
+            state.pickupCoords = found.coords;
+          }
+          if (pickupAddressInput) {
+            pickupAddressInput.value = state.pickupAddress;
+          }
+        }
+      }
+
+      updateMapMarkersAndRoute();
+      calculateAll();
+    });
+  }
+
+  if (pickupAddressInput) {
+    pickupAddressInput.addEventListener('input', (e) => {
+      state.pickupAddress = e.target.value || 'Kediaman Pesakit';
+      calculateAll();
+    });
+  }
+}
+
+function populatePickupPresets(hubId) {
+  const pickupPresetSelect = document.getElementById('pickupPresetSelect');
+  const pickupAddressInput = document.getElementById('pickupAddressInput');
+  if (!pickupPresetSelect) return;
+
+  const presets = PRESET_PICKUP_LOCATIONS[hubId] || PRESET_PICKUP_LOCATIONS.kok_lanas;
+  pickupPresetSelect.innerHTML = '';
+
+  presets.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name;
+    pickupPresetSelect.appendChild(opt);
+  });
+
+  // Select default preset
+  const defaultPreset = presets[0];
+  state.pickupPresetId = defaultPreset.id;
+  state.pickupAddress = defaultPreset.address || defaultPreset.name;
+  if (defaultPreset.coords) {
+    state.pickupCoords = defaultPreset.coords;
+  }
+  if (pickupAddressInput) {
+    pickupAddressInput.value = state.pickupAddress;
+  }
+}
+
+/* =========================================================================
+   3. Destination / Drop-off Setup (Hospital / Clinic / Custom)
    ========================================================================= */
 function initDestinations() {
   const destSelect = document.getElementById('destinationSelect');
-  const customDestGroup = document.getElementById('customDestGroup');
-  const customDestInput = document.getElementById('customDestInput');
+  const destAddressInput = document.getElementById('destAddressInput');
+
+  populateDestinationPresets(state.currentHub.id);
+
+  if (destSelect) {
+    destSelect.addEventListener('change', (e) => {
+      playClickSound();
+      const val = e.target.value;
+      state.selectedDestId = val;
+
+      if (val === 'custom_dest') {
+        if (destAddressInput) {
+          state.destinationName = destAddressInput.value || 'Hospital Destinasi Khas';
+          destAddressInput.focus();
+        }
+      } else {
+        const found = PRESET_DESTINATIONS.find(d => d.id === val);
+        if (found) {
+          state.destinationName = found.name;
+          state.destinationCoords = found.coords;
+          if (destAddressInput) {
+            destAddressInput.value = found.name;
+          }
+        }
+      }
+      updateMapMarkersAndRoute();
+      calculateAll();
+    });
+  }
+
+  if (destAddressInput) {
+    destAddressInput.addEventListener('input', (e) => {
+      state.destinationName = e.target.value || 'Hospital Destinasi';
+      calculateAll();
+    });
+  }
+}
+
+function populateDestinationPresets(hubId) {
+  const destSelect = document.getElementById('destinationSelect');
+  const destAddressInput = document.getElementById('destAddressInput');
+  if (!destSelect) return;
 
   destSelect.innerHTML = '';
-  PRESET_DESTINATIONS.forEach(dest => {
+
+  const affinityList = PRESET_DESTINATIONS.filter(d => d.hubAffinity === hubId);
+  const otherList = PRESET_DESTINATIONS.filter(d => d.hubAffinity !== hubId);
+
+  const groupPrimary = document.createElement('optgroup');
+  groupPrimary.label = hubId === 'raub' ? '🏥 Hospital Sekitar Pahang & Wilayah' : '🏥 Hospital Sekitar Kelantan';
+  affinityList.forEach(dest => {
     const opt = document.createElement('option');
     opt.value = dest.id;
-    opt.textContent = `${dest.shortName} (${dest.distanceFromKokLanas} KM) - ${dest.category}`;
-    destSelect.appendChild(opt);
+    opt.textContent = `${dest.shortName} - ${dest.category}`;
+    groupPrimary.appendChild(opt);
   });
+  destSelect.appendChild(groupPrimary);
 
-  // Add custom destination option
+  const groupSecondary = document.createElement('optgroup');
+  groupSecondary.label = '🏥 Hospital Wilayah Lain';
+  otherList.forEach(dest => {
+    const opt = document.createElement('option');
+    opt.value = dest.id;
+    opt.textContent = `${dest.shortName} (${dest.state}) - ${dest.category}`;
+    groupSecondary.appendChild(opt);
+  });
+  destSelect.appendChild(groupSecondary);
+
+  // Custom Option
   const customOpt = document.createElement('option');
-  customOpt.value = 'custom';
-  customOpt.textContent = '📍 Destinasi Tersuai / Pilih Atas Peta (Custom KM)';
+  customOpt.value = 'custom_dest';
+  customOpt.textContent = '📍 Destinasi Tersuai / Hospital Lain (Taip Sendiri)';
   destSelect.appendChild(customOpt);
 
-  destSelect.addEventListener('change', (e) => {
-    playClickSound();
-    const val = e.target.value;
-    state.selectedDestId = val;
-
-    if (val === 'custom') {
-      customDestGroup.style.display = 'block';
-      state.destinationName = customDestInput.value || 'Destinasi Khas';
-    } else {
-      customDestGroup.style.display = 'none';
-      const found = PRESET_DESTINATIONS.find(d => d.id === val);
-      if (found) {
-        state.destinationName = found.name;
-        state.destinationCoords = found.coords;
-        state.distanceKm = found.distanceFromKokLanas;
-        updateDistanceInputs(state.distanceKm);
-      }
-    }
-    updateMapMarkersAndRoute();
-    calculateAll();
-  });
-
-  customDestInput.addEventListener('input', (e) => {
-    state.destinationName = e.target.value;
-    calculateAll();
-  });
+  const defaultDest = affinityList[0] || PRESET_DESTINATIONS[0];
+  state.selectedDestId = defaultDest.id;
+  state.destinationName = defaultDest.name;
+  state.destinationCoords = defaultDest.coords;
+  if (destAddressInput) {
+    destAddressInput.value = defaultDest.name;
+  }
 }
 
 /* =========================================================================
@@ -277,16 +415,17 @@ function initDistanceControls() {
     calculateAll();
   });
 
-  // Open Google Maps Direct Button
+  // Open Google Maps Direct Button (Hub -> Pickup -> Destination)
   document.getElementById('openGoogleMapsBtn').addEventListener('click', () => {
     playClickSound();
     const orig = `${state.originCoords[0]},${state.originCoords[1]}`;
+    const pickup = `${state.pickupCoords[0]},${state.pickupCoords[1]}`;
     const dest = `${state.destinationCoords[0]},${state.destinationCoords[1]}`;
-    const url = `https://www.google.com/maps/dir/?api=1&origin=${orig}&destination=${dest}`;
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${orig}&destination=${dest}&waypoints=${pickup}`;
     window.open(url, '_blank');
   });
 
-  // Geolocation Button
+  // Geolocation Button (Detects patient current GPS location for home pickup)
   document.getElementById('locateMeBtn').addEventListener('click', () => {
     playClickSound();
     if (navigator.geolocation) {
@@ -294,21 +433,10 @@ function initDistanceControls() {
         (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          state.destinationCoords = [lat, lng];
-          state.destinationName = 'Lokasi GPS Semasa Saya';
-          document.getElementById('destinationSelect').value = 'custom';
-          document.getElementById('customDestGroup').style.display = 'block';
-          document.getElementById('customDestInput').value = 'Lokasi GPS Semasa Saya';
-          
-          // Compute approx distance in KM from origin
-          const km = computeHaversineDistance(state.originCoords, [lat, lng]);
-          state.distanceKm = Math.round(km * 1.25 * 10) / 10; // 1.25 road winding factor
-          updateDistanceInputs(state.distanceKm);
-          updateMapMarkersAndRoute();
-          calculateAll();
+          setExactPickup(lat, lng, true);
         },
         () => {
-          alert('Tidak dapat mengesan lokasi GPS. Sila pilih hospital atau masukkan jarak manual.');
+          alert('Tidak dapat mengesan lokasi GPS. Sila pilih kawasan pengambilan pesakit atau masukkan alamat manual.');
         }
       );
     }
@@ -473,6 +601,9 @@ function initEquipments() {
 /* =========================================================================
    7. CORE CALCULATION ENGINE (Exact Excel Formula)
    ========================================================================= */
+/* =========================================================================
+   7. CORE CALCULATION ENGINE (Exact Excel Formula + Step 1 Live Estimate)
+   ========================================================================= */
 function calculateAll() {
   const distance = Math.max(1, state.distanceKm);
   const baseKm = BASE_SETTINGS.standardBaseKm; // 25.0 KM
@@ -480,11 +611,14 @@ function calculateAll() {
 
   // Rate per extra KM
   const dieselToggle = document.getElementById('dieselSurgeToggle');
-  state.isDieselSurge = dieselToggle.checked;
+  state.isDieselSurge = dieselToggle ? dieselToggle.checked : false;
   const ratePerKm = state.isDieselSurge ? BASE_SETTINGS.extraKmRateDiesel : BASE_SETTINGS.extraKmRateNormal;
 
   // Extra KM cost
   const extraKmCost = extraKm * ratePerKm;
+
+  // Step 1 Base Fare Estimate (Distance based only)
+  const step1EstimateFare = 250.00 + extraKmCost;
 
   // Trip category base fare
   const tripBaseFare = state.selectedTripType.baseFare;
@@ -505,33 +639,92 @@ function calculateAll() {
 
   // Misc charges (Lain-lain caj)
   const miscFeeCheckbox = document.getElementById('includeMiscFee');
-  state.includeMiscFee = miscFeeCheckbox.checked;
+  state.includeMiscFee = miscFeeCheckbox ? miscFeeCheckbox.checked : true;
   const miscFee = state.includeMiscFee ? BASE_SETTINGS.defaultLainLainCaj : 0.00;
 
-  // Grand Total
+  // Grand Total for Invoice / Step 5
   const grandTotal = tripBaseFare + extraKmCost + assistanceFare + equipTotal + miscFee;
 
-  // Update UI Elements
-  document.getElementById('displayDistanceKm').textContent = `${distance.toFixed(1)} KM`;
-  document.getElementById('displayExtraKm').textContent = extraKm > 0 ? `+${extraKm.toFixed(1)} KM` : '0 KM';
-  document.getElementById('ratePerKmLabel').textContent = ratePerKm.toFixed(2);
+  // Update Step 1 Multi-Leg Breakdown Badges
+  const leg1KmBadge = document.getElementById('leg1KmBadge');
+  if (leg1KmBadge) leg1KmBadge.textContent = `${state.leg1Km.toFixed(1)} KM`;
+  const leg2KmBadge = document.getElementById('leg2KmBadge');
+  if (leg2KmBadge) leg2KmBadge.textContent = `${state.leg2Km.toFixed(1)} KM`;
 
-  document.getElementById('summaryTripName').textContent = state.selectedTripType.name.split(' (')[0];
-  document.getElementById('summaryTripBase').textContent = `RM ${tripBaseFare.toFixed(2)}`;
-  document.getElementById('summaryBaseKmFare').textContent = `RM ${tripBaseFare.toFixed(2)}`;
+  const leg1Text = document.getElementById('leg1Text');
+  if (leg1Text) {
+    const shortPickup = (state.pickupAddress || 'Rumah Pesakit').split(',')[0].trim();
+    leg1Text.textContent = `${state.currentHub.shortName} ➔ ${shortPickup}`;
+  }
 
-  document.getElementById('summaryExtraKmCount').textContent = extraKm.toFixed(1);
-  document.getElementById('summaryKmRate').textContent = ratePerKm.toFixed(2);
-  document.getElementById('summaryExtraKmFare').textContent = `RM ${extraKmCost.toFixed(2)}`;
+  const leg2Text = document.getElementById('leg2Text');
+  if (leg2Text) {
+    const shortPickup = (state.pickupAddress || 'Rumah Pesakit').split(',')[0].trim();
+    const shortDest = (state.destinationName || 'Hospital').split(',')[0].replace(/\s*\(.*KM\)/i, '').trim();
+    leg2Text.textContent = `${shortPickup} ➔ ${shortDest}`;
+  }
 
-  document.getElementById('summaryAssistanceRole').textContent = state.selectedAssistance.name.split(' (')[0];
-  document.getElementById('summaryAssistanceFare').textContent = `RM ${assistanceFare.toFixed(2)}`;
+  // Update Step 1 Route Distance Meta Bar
+  const displayDistanceKm = document.getElementById('displayDistanceKm');
+  if (displayDistanceKm) displayDistanceKm.textContent = `${distance.toFixed(1)} KM`;
+  const displayExtraKm = document.getElementById('displayExtraKm');
+  if (displayExtraKm) displayExtraKm.textContent = extraKm > 0 ? `+${extraKm.toFixed(1)} KM` : '0 KM';
 
-  document.getElementById('summaryEquipCount').textContent = totalEquipItems;
-  document.getElementById('summaryEquipFare').textContent = `RM ${equipTotal.toFixed(2)}`;
-  document.getElementById('summaryMiscFare').textContent = `RM ${miscFee.toFixed(2)}`;
+  // Update Step 1 Live Estimate Fare Card
+  const step1EstimateFareEl = document.getElementById('step1EstimateFare');
+  if (step1EstimateFareEl) {
+    step1EstimateFareEl.textContent = step1EstimateFare.toFixed(2);
+  }
 
-  document.getElementById('grandTotalDisplay').textContent = grandTotal.toFixed(2);
+  const estimateRouteCaption = document.getElementById('estimateRouteCaption');
+  if (estimateRouteCaption) {
+    const shortPickup = (state.pickupAddress || 'Rumah').split(',')[0].trim();
+    const shortDest = (state.destinationName || 'Hospital').split(',')[0].replace(/\s*\(.*KM\)/i, '').trim();
+    estimateRouteCaption.textContent = `${state.currentHub.shortName} ➔ ${shortPickup} ➔ ${shortDest}`;
+  }
+
+  const step1ExtraBreakdownText = document.getElementById('step1ExtraBreakdownText');
+  if (step1ExtraBreakdownText) {
+    if (extraKm > 0) {
+      step1ExtraBreakdownText.innerHTML = `Lebihan ${extraKm.toFixed(1)} KM (&times;RM ${ratePerKm.toFixed(2)}): <strong>+RM ${extraKmCost.toFixed(2)}</strong>`;
+    } else {
+      step1ExtraBreakdownText.innerHTML = `Dalam Had 25 KM Standard: <strong>+RM 0.00</strong>`;
+    }
+  }
+
+  // Rate per KM Label
+  const ratePerKmLabel = document.getElementById('ratePerKmLabel');
+  if (ratePerKmLabel) ratePerKmLabel.textContent = ratePerKm.toFixed(2);
+
+  // Summary (Step 5)
+  const summaryTripName = document.getElementById('summaryTripName');
+  if (summaryTripName) summaryTripName.textContent = state.selectedTripType.name.split(' (')[0];
+  const summaryTripBase = document.getElementById('summaryTripBase');
+  if (summaryTripBase) summaryTripBase.textContent = `RM ${tripBaseFare.toFixed(2)}`;
+  const summaryBaseKmFare = document.getElementById('summaryBaseKmFare');
+  if (summaryBaseKmFare) summaryBaseKmFare.textContent = `RM ${tripBaseFare.toFixed(2)}`;
+
+  const summaryExtraKmCount = document.getElementById('summaryExtraKmCount');
+  if (summaryExtraKmCount) summaryExtraKmCount.textContent = extraKm.toFixed(1);
+  const summaryKmRate = document.getElementById('summaryKmRate');
+  if (summaryKmRate) summaryKmRate.textContent = ratePerKm.toFixed(2);
+  const summaryExtraKmFare = document.getElementById('summaryExtraKmFare');
+  if (summaryExtraKmFare) summaryExtraKmFare.textContent = `RM ${extraKmCost.toFixed(2)}`;
+
+  const summaryAssistanceRole = document.getElementById('summaryAssistanceRole');
+  if (summaryAssistanceRole) summaryAssistanceRole.textContent = state.selectedAssistance.name.split(' (')[0];
+  const summaryAssistanceFare = document.getElementById('summaryAssistanceFare');
+  if (summaryAssistanceFare) summaryAssistanceFare.textContent = `RM ${assistanceFare.toFixed(2)}`;
+
+  const summaryEquipCount = document.getElementById('summaryEquipCount');
+  if (summaryEquipCount) summaryEquipCount.textContent = totalEquipItems;
+  const summaryEquipFare = document.getElementById('summaryEquipFare');
+  if (summaryEquipFare) summaryEquipFare.textContent = `RM ${equipTotal.toFixed(2)}`;
+  const summaryMiscFare = document.getElementById('summaryMiscFare');
+  if (summaryMiscFare) summaryMiscFare.textContent = `RM ${miscFee.toFixed(2)}`;
+
+  const grandTotalDisplay = document.getElementById('grandTotalDisplay');
+  if (grandTotalDisplay) grandTotalDisplay.textContent = grandTotal.toFixed(2);
 
   // Sync Persistent Floating Mini Bar
   const miniGrandTotalDisplay = document.getElementById('miniGrandTotalDisplay');
@@ -541,8 +734,9 @@ function calculateAll() {
 
   const miniRouteText = document.getElementById('miniRouteText');
   if (miniRouteText) {
-    const cleanDest = state.destinationName.split(',')[0].replace(/\s*\(\d+.*KM\)/i, '').trim();
-    miniRouteText.textContent = `${state.currentHub.shortName} ➔ ${cleanDest} (${distance.toFixed(1)} KM)`;
+    const cleanPickup = (state.pickupAddress || 'Rumah').split(',')[0].trim();
+    const cleanDest = (state.destinationName || 'Hospital').split(',')[0].replace(/\s*\(\d+.*KM\)/i, '').trim();
+    miniRouteText.textContent = `${state.currentHub.shortName} ➔ ${cleanPickup} ➔ ${cleanDest} (${distance.toFixed(1)} KM)`;
   }
 
   // Play subtle feedback chime
@@ -550,19 +744,25 @@ function calculateAll() {
 }
 
 // Diesel Toggle Listener
-document.getElementById('dieselSurgeToggle').addEventListener('change', () => {
-  playClickSound();
-  calculateAll();
-});
+const dieselSurgeToggle = document.getElementById('dieselSurgeToggle');
+if (dieselSurgeToggle) {
+  dieselSurgeToggle.addEventListener('change', () => {
+    playClickSound();
+    calculateAll();
+  });
+}
 
 // Misc Fee Checkbox Listener
-document.getElementById('includeMiscFee').addEventListener('change', () => {
-  playClickSound();
-  calculateAll();
-});
+const includeMiscFeeEl = document.getElementById('includeMiscFee');
+if (includeMiscFeeEl) {
+  includeMiscFeeEl.addEventListener('change', () => {
+    playClickSound();
+    calculateAll();
+  });
+}
 
 /* =========================================================================
-   8. Real Interactive Map Engine (Google Maps, Satellite, OSRM Road Routing)
+   8. Real Interactive Map Engine (3-Point Multi-Leg Road Routing)
    ========================================================================= */
 let currentTileLayer = null;
 const mapTileLayers = {
@@ -574,82 +774,134 @@ const mapTileLayers = {
 function initLeafletMap() {
   if (typeof L === 'undefined') return;
 
-  const defaultCenter = state.currentHub.coords;
+  const defaultCenter = state.originCoords;
   map = L.map('leafletMap', {
     zoomControl: true,
     attributionControl: false
-  }).setView(defaultCenter, 11);
+  }).setView(defaultCenter, 10);
 
-  // Set default real street tiles (Google Maps Streets, 100% free of watermark)
+  // Default road tiles
   currentTileLayer = L.tileLayer(mapTileLayers.google_streets, {
     maxZoom: 20,
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
   }).addTo(map);
 
-  // Custom Animated Ambulance Marker Icon (Pickup)
+  // 1. Ambulance Base Icon (🏢 Starting Hub)
   const ambulanceIcon = L.divIcon({
     className: 'custom-map-marker',
-    html: `<div style="background:#0284C7; border:2.5px solid #FFFFFF; border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; font-size:20px; box-shadow:0 0 18px rgba(2,132,199,0.8);">🚑</div>`,
+    html: `<div style="background:#0284C7; border:2.5px solid #FFFFFF; border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; font-size:20px; box-shadow:0 0 18px rgba(2,132,199,0.85);">🚑</div>`,
     iconSize: [38, 38],
     iconAnchor: [19, 19]
   });
 
-  // Custom Animated Destination Pin (Draggable)
+  // 2. Customer Pickup Icon (🏠 Home / Patient)
+  const pickupIcon = L.divIcon({
+    className: 'custom-map-marker',
+    html: `<div class="marker-pin-pulse">
+             <div style="background:#10B981; border:2.5px solid #FFFFFF; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 0 20px rgba(16,185,129,0.9); cursor:grab;">🏠</div>
+           </div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
+  });
+
+  // 3. Destination Pin (🏥 Hospital / Facility)
   const destinationIcon = L.divIcon({
     className: 'custom-map-marker',
     html: `<div class="marker-pin-pulse">
-             <div style="background:#EF4444; border:2.5px solid #FFFFFF; border-radius:50%; width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 0 20px rgba(239,68,68,0.9); cursor:grab;">🎯</div>
+             <div style="background:#EF4444; border:2.5px solid #FFFFFF; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 0 20px rgba(239,68,68,0.9); cursor:grab;">🏥</div>
            </div>`,
-    iconSize: [38, 38],
-    iconAnchor: [19, 19]
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
   });
 
+  // Add 3 markers to map
   originMarker = L.marker(state.originCoords, { icon: ambulanceIcon, draggable: false }).addTo(map)
-    .bindPopup(`<b>${state.currentHub.name}</b><br>Pusat Operasi Ambulans AMC`);
+    .bindPopup(`<b>Pangkalan Ambulans:</b><br>${state.currentHub.name}<br>No. Plat: ${state.currentHub.ambulancePlate}`);
 
-  // Destination Marker with DRAG capability!
+  pickupMarker = L.marker(state.pickupCoords, { icon: pickupIcon, draggable: true }).addTo(map)
+    .bindPopup(`<b>Lokasi Pengambilan Pesakit:</b><br>${state.pickupAddress}<br><i>Tarik pin hijau ini ke lokasi rumah pesakit</i>`);
+
   destMarker = L.marker(state.destinationCoords, { icon: destinationIcon, draggable: true }).addTo(map)
-    .bindPopup(`<b>${state.destinationName}</b><br>Tarik pin ini untuk tandakan lokasi tepat pesakit.`);
+    .bindPopup(`<b>Hospital / Destinasi Tujuan:</b><br>${state.destinationName}<br><i>Tarik pin merah ini ke hospital tujuan</i>`);
 
-  // Drag listener: when user releases pin, recalculate exact location & road distance!
+  // Drag listeners
+  pickupMarker.on('dragend', (e) => {
+    playClickSound();
+    const pos = e.target.getLatLng();
+    setExactPickup(pos.lat, pos.lng, true);
+  });
+
   destMarker.on('dragend', (e) => {
     playClickSound();
     const pos = e.target.getLatLng();
     setExactDestination(pos.lat, pos.lng, true);
   });
 
-  // Polyline for real driving road route
-  routePolyline = L.polyline([state.originCoords, state.destinationCoords], {
+  // Polyline for real driving road route connecting Hub -> Pickup -> Destination
+  routePolyline = L.polyline([state.originCoords, state.pickupCoords, state.destinationCoords], {
     color: '#0EA5E9',
     weight: 5,
     opacity: 0.9,
     lineJoin: 'round'
   }).addTo(map);
 
-  // Click on map to place/move the exact destination pin!
+  // Click on map to place/move the customer pickup pin by default
   map.on('click', (e) => {
     playClickSound();
     const lat = e.latlng.lat;
     const lng = e.latlng.lng;
-    setExactDestination(lat, lng, true);
+    setExactPickup(lat, lng, true);
   });
 
-  // Initialize Map Controls (Layer Switcher, Search, Fullscreen)
+  // Initialize Map Controls
   initMapControls();
 
-  // Fetch initial real road driving route
-  fetchRealDrivingRoute(state.originCoords, state.destinationCoords);
+  // Fetch initial real multi-waypoint road route
+  fetchRealDrivingRoute(state.originCoords, state.pickupCoords, state.destinationCoords);
+}
+
+// Function to set exact pickup coordinates, reverse-geocode & compute driving distance
+async function setExactPickup(lat, lng, reverseGeocode = false) {
+  state.pickupCoords = [lat, lng];
+  if (pickupMarker) pickupMarker.setLatLng([lat, lng]);
+
+  await fetchRealDrivingRoute(state.originCoords, [lat, lng], state.destinationCoords);
+
+  if (reverseGeocode) {
+    try {
+      const res = await fetch(`https://photon.komoot.io/reverse?lon=${lng}&lat=${lat}`);
+      const data = await res.json();
+      if (data && data.features && data.features.length > 0) {
+        const prop = data.features[0].properties;
+        const placeName = [prop.name, prop.street, prop.district, prop.city || prop.county, prop.state]
+          .filter(Boolean)
+          .join(', ');
+
+        if (placeName) {
+          state.pickupAddress = placeName;
+          const pickupAddressInput = document.getElementById('pickupAddressInput');
+          if (pickupAddressInput) pickupAddressInput.value = placeName;
+          const pickupPresetSelect = document.getElementById('pickupPresetSelect');
+          if (pickupPresetSelect) pickupPresetSelect.value = 'custom_pickup';
+          if (pickupMarker) {
+            pickupMarker.setPopupContent(`<b>Lokasi Pengambilan Pesakit:</b><br>${placeName}`);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Reverse geocoding error:', err);
+    }
+  }
+
+  calculateAll();
 }
 
 // Function to set exact destination coordinates, reverse-geocode & compute driving distance
 async function setExactDestination(lat, lng, reverseGeocode = false) {
   state.destinationCoords = [lat, lng];
-  destMarker.setLatLng([lat, lng]);
+  if (destMarker) destMarker.setLatLng([lat, lng]);
 
-  document.getElementById('mapCoordsBadge').textContent = `${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E`;
-
-  // Fetch real road route via OSRM Driving Engine
-  await fetchRealDrivingRoute(state.originCoords, [lat, lng]);
+  await fetchRealDrivingRoute(state.originCoords, state.pickupCoords, [lat, lng]);
 
   if (reverseGeocode) {
     try {
@@ -663,11 +915,13 @@ async function setExactDestination(lat, lng, reverseGeocode = false) {
 
         if (placeName) {
           state.destinationName = placeName;
-          document.getElementById('mapCoordsBadge').textContent = `${placeName.substring(0, 32)}...`;
-          document.getElementById('destinationSelect').value = 'custom';
-          document.getElementById('customDestGroup').style.display = 'block';
-          document.getElementById('customDestInput').value = placeName;
-          destMarker.setPopupContent(`<b>${placeName}</b><br>Jarak Sebenar: ${state.distanceKm} KM`);
+          const destAddressInput = document.getElementById('destAddressInput');
+          if (destAddressInput) destAddressInput.value = placeName;
+          const destinationSelect = document.getElementById('destinationSelect');
+          if (destinationSelect) destinationSelect.value = 'custom_dest';
+          if (destMarker) {
+            destMarker.setPopupContent(`<b>Hospital / Destinasi Tujuan:</b><br>${placeName}`);
+          }
         }
       }
     } catch (err) {
@@ -678,62 +932,110 @@ async function setExactDestination(lat, lng, reverseGeocode = false) {
   calculateAll();
 }
 
-// Fetch turn-by-turn REAL driving road route from OSRM
-async function fetchRealDrivingRoute(orig, dest) {
-  const url = `https://router.project-osrm.org/route/v1/driving/${orig[1]},${orig[0]};${dest[1]},${dest[0]}?overview=full&geometries=geojson`;
+// Fetch turn-by-turn REAL multi-waypoint road route from OSRM: Hub -> Pickup -> Destination
+async function fetchRealDrivingRoute(orig, pickup, dest) {
+  if (!orig || !pickup || !dest) return;
+
+  const sameOrigPickup = Math.abs(orig[0] - pickup[0]) < 0.0001 && Math.abs(orig[1] - pickup[1]) < 0.0001;
+
+  let leg1 = 0;
+  let leg2 = 0;
+  let totalRoadKm = 0;
+  let latlngs = [];
+  let durationSec = 0;
 
   try {
+    let url;
+    if (sameOrigPickup) {
+      url = `https://router.project-osrm.org/route/v1/driving/${pickup[1]},${pickup[0]};${dest[1]},${dest[0]}?overview=full&geometries=geojson`;
+    } else {
+      url = `https://router.project-osrm.org/route/v1/driving/${orig[1]},${orig[0]};${pickup[1]},${pickup[0]};${dest[1]},${dest[0]}?overview=full&geometries=geojson`;
+    }
+
     const res = await fetch(url);
     const data = await res.json();
 
     if (data && data.routes && data.routes.length > 0) {
       const route = data.routes[0];
-      // Real road distance in KM
-      const roadKm = Math.round((route.distance / 1000) * 10) / 10;
-      state.distanceKm = roadKm;
-      updateDistanceInputs(roadKm);
+      if (sameOrigPickup) {
+        leg1 = 1.0;
+        leg2 = Math.round((route.distance / 1000) * 10) / 10;
+        totalRoadKm = Math.round((leg1 + leg2) * 10) / 10;
+      } else {
+        leg1 = route.legs && route.legs[0] ? Math.round((route.legs[0].distance / 1000) * 10) / 10 : 0;
+        leg2 = route.legs && route.legs[1] ? Math.round((route.legs[1].distance / 1000) * 10) / 10 : 0;
+        totalRoadKm = Math.round((leg1 + leg2) * 10) / 10;
+      }
 
-      // Convert GeoJSON coordinates [lng, lat] to Leaflet [lat, lng]
-      const latlngs = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
-      routePolyline.setLatLngs(latlngs);
-
-      // Update ETA
-      const estMinutes = Math.round(route.duration / 60);
-      const hudEta = document.getElementById('hudEtaMinutes');
-      const hudKm = document.getElementById('hudRemainingKm');
-      if (hudEta) hudEta.textContent = `${estMinutes} Minit`;
-      if (hudKm) hudKm.textContent = `${roadKm} KM`;
-
-      // Fit map bounds to show full route
-      map.fitBounds(routePolyline.getBounds(), { padding: [40, 40] });
-      return;
+      durationSec = route.duration || 0;
+      if (route.geometry && route.geometry.coordinates) {
+        latlngs = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+      }
     }
   } catch (e) {
-    console.warn('OSRM routing failed, using geodesic fallback:', e);
+    console.warn('OSRM multi-waypoint routing failed, using geodesic fallback:', e);
   }
 
-  // Fallback: geodesic distance with road winding multiplier
-  const fallbackKm = Math.round(computeHaversineDistance(orig, dest) * 1.25 * 10) / 10;
-  state.distanceKm = fallbackKm;
-  updateDistanceInputs(fallbackKm);
-  routePolyline.setLatLngs([orig, dest]);
-  map.fitBounds([orig, dest], { padding: [40, 40] });
+  // Geodesic fallback if OSRM failed or 0
+  if (totalRoadKm <= 0) {
+    const d1 = computeHaversineDistance(orig, pickup) * 1.25;
+    const d2 = computeHaversineDistance(pickup, dest) * 1.25;
+    leg1 = Math.max(1.0, Math.round(d1 * 10) / 10);
+    leg2 = Math.max(1.0, Math.round(d2 * 10) / 10);
+    totalRoadKm = Math.round((leg1 + leg2) * 10) / 10;
+    latlngs = [orig, pickup, dest];
+  }
+
+  state.leg1Km = leg1;
+  state.leg2Km = leg2;
+  state.distanceKm = totalRoadKm;
+
+  updateDistanceInputs(totalRoadKm);
+
+  if (routePolyline && latlngs.length > 0) {
+    routePolyline.setLatLngs(latlngs);
+    if (map) {
+      try {
+        map.fitBounds(routePolyline.getBounds(), { padding: [40, 40] });
+      } catch (err) {}
+    }
+  }
+
+  const estMinutes = Math.round(durationSec > 0 ? durationSec / 60 : totalRoadKm * 1.3);
+  const hudEta = document.getElementById('hudEtaMinutes');
+  const hudKm = document.getElementById('hudRemainingKm');
+  if (hudEta) hudEta.textContent = `${estMinutes} Minit`;
+  if (hudKm) hudKm.textContent = `${totalRoadKm} KM`;
+
+  const mapCoordsBadge = document.getElementById('mapCoordsBadge');
+  if (mapCoordsBadge) {
+    mapCoordsBadge.textContent = `${state.currentHub.shortName} ➔ ${(state.pickupAddress || 'Rumah').substring(0, 14)}... ➔ ${(state.destinationName || 'Hospital').substring(0, 14)}... (${totalRoadKm} KM)`;
+  }
+
+  calculateAll();
 }
 
 function updateMapMarkersAndRoute() {
-  if (!map || !originMarker || !destMarker || !routePolyline) return;
+  if (!map) return;
 
-  originMarker.setLatLng(state.originCoords);
-  destMarker.setLatLng(state.destinationCoords);
+  if (originMarker) {
+    originMarker.setLatLng(state.originCoords);
+    originMarker.setPopupContent(`<b>${state.currentHub.name}</b><br>Pusat Operasi AMC (${state.currentHub.ambulancePlate})`);
+  }
 
-  originMarker.setPopupContent(`<b>${state.currentHub.name}</b><br>Pusat Operasi AMC (${state.currentHub.ambulancePlate})`);
-  destMarker.setPopupContent(`<b>${state.destinationName}</b><br>Jarak Pemanduan: ${state.distanceKm} KM`);
+  if (pickupMarker) {
+    pickupMarker.setLatLng(state.pickupCoords);
+    pickupMarker.setPopupContent(`<b>Lokasi Pengambilan Pesakit:</b><br>${state.pickupAddress}<br><i>Tarik pin hijau ini ke lokasi rumah pesakit</i>`);
+  }
 
-  document.getElementById('mapCoordsBadge').textContent = `${state.destinationName.substring(0, 32)} (${state.distanceKm} KM)`;
+  if (destMarker) {
+    destMarker.setLatLng(state.destinationCoords);
+    destMarker.setPopupContent(`<b>Hospital / Destinasi Tujuan:</b><br>${state.destinationName}`);
+  }
 
-  // Fetch real road route
-  fetchRealDrivingRoute(state.originCoords, state.destinationCoords);
+  fetchRealDrivingRoute(state.originCoords, state.pickupCoords, state.destinationCoords);
 }
+
 
 // Map Controls: Layer Switcher, Autocomplete Search, Fullscreen Expand
 function initMapControls() {
@@ -1238,14 +1540,16 @@ function initModals() {
   document.getElementById('shareWhatsAppBtn').addEventListener('click', () => {
     playClickSound();
     const total = document.getElementById('grandTotalDisplay').textContent;
-    const msg = `*AL-FARHAIN AMC AMBULANS - ANGGARAN TRIP*%0A` +
-      `Laluan: ${state.currentHub.name} ➔ ${state.destinationName}%0A` +
-      `Jarak: ${state.distanceKm} KM%0A` +
-      `Kategori: ${state.selectedTripType.name}%0A` +
-      `Pakej Staf: ${state.selectedAssistance.name}%0A` +
-      `Peralatan: ${getSelectedEquipSummary()}%0A` +
-      `*JUMLAH KOS ANGGARAN: RM ${total}*%0A` +
-      `Hubungi Hotline 24 Jam: 013-9147606`;
+    const msg = `*AL-FARHAIN AMC AMBULANS - TEMPAHAN TRIP*%0A` +
+      `🏢 Pangkalan: ${state.currentHub.name} (${state.currentHub.ambulancePlate})%0A` +
+      `🏠 Ambil Pesakit: ${state.pickupAddress}%0A` +
+      `🏥 Hospital Destinasi: ${state.destinationName}%0A` +
+      `🛣️ Jarak: ${state.distanceKm.toFixed(1)} KM (Pangkalan ➔ Rumah: ${state.leg1Km.toFixed(1)} KM | Rumah ➔ Hospital: ${state.leg2Km.toFixed(1)} KM)%0A` +
+      `🚨 Kategori: ${state.selectedTripType.name}%0A` +
+      `👨‍⚕️ Pakej Staf: ${state.selectedAssistance.name}%0A` +
+      `🧪 Peralatan: ${getSelectedEquipSummary()}%0A` +
+      `*💰 JUMLAH KOS ANGGARAN: RM ${total}*%0A` +
+      `📞 Hotline 24 Jam: 013-9147606`;
     window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank');
   });
 
@@ -1293,9 +1597,9 @@ function populateInvoice() {
   document.getElementById('invPlateNumber').textContent = state.currentHub.ambulancePlate;
   document.getElementById('invDriverName').textContent = state.currentHub.primaryDriver;
   document.getElementById('invBranchName').textContent = state.currentHub.name;
-  document.getElementById('invOrigin').textContent = state.currentHub.name;
-  document.getElementById('invDestination').textContent = state.destinationName;
-  document.getElementById('invDistanceKm').textContent = `${state.distanceKm} KM`;
+  document.getElementById('invOrigin').textContent = `${state.currentHub.name} (Pangkalan)`;
+  document.getElementById('invDestination').textContent = `${state.pickupAddress} ➔ ${state.destinationName}`;
+  document.getElementById('invDistanceKm').textContent = `${state.distanceKm.toFixed(1)} KM (Pangkalan ➔ Rumah: ${state.leg1Km.toFixed(1)} KM, Rumah ➔ Hospital: ${state.leg2Km.toFixed(1)} KM)`;
 
   const tbody = document.getElementById('invTableBody');
   tbody.innerHTML = '';

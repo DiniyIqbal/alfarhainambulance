@@ -977,6 +977,272 @@ button, a, select, input {
   color: var(--amc-amber);
 }
 
+.mt-xs {
+  margin-top: 0.35rem;
+}
+
+.pill-badge-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.12rem 0.45rem;
+  border-radius: var(--radius-full);
+  background: var(--amc-blue-light);
+  color: var(--amc-blue);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  margin-left: auto;
+  letter-spacing: 0.02em;
+}
+
+/* Multi-Leg Route Breakdown Card */
+.route-legs-card {
+  background: var(--pill-input-bg);
+  border: 1px solid var(--pill-input-border);
+  border-radius: 14px;
+  padding: 0.65rem 0.85rem;
+  margin-top: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  box-sizing: border-box;
+}
+
+.leg-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.leg-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.leg-badge.leg-1 {
+  background: var(--amc-blue-light);
+  color: var(--amc-blue);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.leg-badge.leg-2 {
+  background: var(--amc-emerald-light);
+  color: var(--amc-emerald);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.leg-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.leg-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.leg-path {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 0.1rem;
+}
+
+.leg-km {
+  font-family: var(--font-heading);
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--text-heading);
+  flex-shrink: 0;
+  padding-left: 0.4rem;
+}
+
+.leg-connector-line {
+  height: 1px;
+  background: var(--border-subtle);
+  margin-left: 1.8rem;
+}
+
+/* Prominent Live Estimated Fare Card in Step 1 */
+.step1-estimate-card {
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.08) 0%, rgba(56, 189, 248, 0.05) 100%);
+  border: 1.5px solid rgba(16, 185, 129, 0.28);
+  border-radius: 16px;
+  padding: 0.85rem 0.95rem;
+  margin-top: 0.35rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .step1-estimate-card {
+  background: linear-gradient(145deg, #F0FDF4 0%, #F0F9FF 100%);
+  border-color: #86EFAC;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.12);
+}
+
+.estimate-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.estimate-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.estimate-pill-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--amc-emerald);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pill-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amc-emerald);
+  box-shadow: 0 0 8px var(--amc-emerald);
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+.estimate-route-caption {
+  font-size: 0.72rem;
+  color: var(--text-sub);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.estimate-price-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  background: var(--bg-surface-elevated);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 0.35rem 0.75rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .estimate-price-badge {
+  background: #FFFFFF;
+  border-color: #86EFAC;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.15);
+}
+
+.price-curr {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--amc-emerald);
+}
+
+.price-amount {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--text-heading);
+  line-height: 1;
+}
+
+[data-theme="light"] .price-amount {
+  color: #065F46;
+}
+
+.estimate-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.estimate-chip {
+  background: var(--pill-input-bg);
+  border: 1px solid var(--pill-input-border);
+  border-radius: var(--radius-full);
+  padding: 0.25rem 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--text-sub);
+  font-weight: 500;
+}
+
+.estimate-chip strong {
+  color: var(--text-heading);
+}
+
+.chip-circle-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+
+.chip-circle-icon.bg-emerald {
+  background: var(--amc-emerald);
+  color: #FFFFFF;
+}
+
+.chip-circle-icon.bg-amber {
+  background: var(--amc-amber);
+  color: #FFFFFF;
+}
+
+.estimate-footer-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  font-size: 0.69rem;
+  color: var(--text-sub);
+  line-height: 1.3;
+  padding-top: 0.35rem;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.estimate-footer-note .note-icon {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+}
+
 /* Capsule Primary CTA Button matching the mockup */
 .step-1-cta-row {
   margin-top: 0.35rem;

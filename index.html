@@ -133,60 +133,91 @@
             </div>
 
             <div class="step-card-content">
-              <!-- CALCULATOR MODE VIEW (Default: Clean Form Inputs matching mockup) -->
+              <!-- CALCULATOR MODE VIEW (3-Point Ambulance Routing & Estimate Price) -->
               <div id="calculatorModeContent">
-                <!-- Location 1: Pickup Location -->
+                
+                <!-- 1. Starting Point: Pangkalan Ambulans (Kok Lanas HQ vs Raub Branch) -->
                 <div class="pill-input-group">
                   <div class="pill-input-label">
-                    <span class="pill-icon">📍</span>
-                    <span>Pickup Location</span>
+                    <span class="pill-icon">🏢</span>
+                    <span>1. Pangkalan Ambulans (Starting Point)</span>
+                    <span class="pill-badge-tag">Pilih 1 daripada 2</span>
                   </div>
                   <div class="pill-input-box">
-                    <span class="box-icon">📍</span>
-                    <select id="pickupSelect" class="pill-select-element">
+                    <span class="box-icon">🚑</span>
+                    <select id="startingHubSelect" class="pill-select-element" aria-label="Pangkalan Ambulans Bertolak">
                       <option value="kok_lanas" selected>HQ Pusat Rawatan Al-Farhain Kok Lanas (Kelantan) - Plat: VPQ 7606</option>
                       <option value="raub">Al-Farhain Medical Center Cawangan Raub (Pahang) - Plat: DFG 7606</option>
-                      <option value="jeli">Al-Farhain Medical Center (Cawangan Jeli)</option>
-                      <option value="machang">Al-Farhain Medical Center (Cawangan Machang)</option>
-                      <option value="tumpat">Al-Farhain Medical Center (Cawangan Tumpat)</option>
-                      <option value="tunjung">Al-Farhain Medical Center (Cawangan Tunjung)</option>
-                      <option value="kuala_krai">Al-Farhain Medical Center (Cawangan Kuala Krai)</option>
-                      <option value="cameron">Al-Farhain Medical Center (Cawangan Cameron Highlands)</option>
                     </select>
                   </div>
                 </div>
 
-                <!-- Location 2: Destination / Drop-off -->
+                <!-- 2. Customer Pickup Point: Lokasi Rumah Pesakit -->
                 <div class="pill-input-group">
                   <div class="pill-input-label">
-                    <span class="pill-icon">📍</span>
-                    <span>Destination / Drop-off</span>
+                    <span class="pill-icon">🏠</span>
+                    <span>2. Lokasi Pengambilan Pesakit (Pickup Point)</span>
                   </div>
+                  <!-- Quick Preset Dropdown for Pickup Area -->
                   <div class="pill-input-box">
                     <span class="box-icon">📍</span>
-                    <select id="destinationSelect" class="pill-select-element">
+                    <select id="pickupPresetSelect" class="pill-select-element" aria-label="Kawasan Pengambilan Pesakit">
+                      <!-- Populated dynamically based on Kok Lanas vs Raub -->
+                    </select>
+                  </div>
+                  <!-- Customizable Home Address Input -->
+                  <div class="pill-input-box mt-xs">
+                    <span class="box-icon">✍️</span>
+                    <input type="text" id="pickupAddressInput" class="pill-text-element" placeholder="Alamat lengkap rumah pesakit..." value="Kediaman Pesakit, Kota Bharu" aria-label="Alamat Rumah Pesakit">
+                  </div>
+                </div>
+
+                <!-- 3. Destination: Destinasi / Hospital Tujuan -->
+                <div class="pill-input-group">
+                  <div class="pill-input-label">
+                    <span class="pill-icon">🏥</span>
+                    <span>3. Destinasi / Drop-off (Hospital Tujuan)</span>
+                  </div>
+                  <!-- Preset Hospital Dropdown -->
+                  <div class="pill-input-box">
+                    <span class="box-icon">🏥</span>
+                    <select id="destinationSelect" class="pill-select-element" aria-label="Hospital Destinasi Tujuan">
                       <!-- Populated dynamically via JS -->
                     </select>
                   </div>
+                  <!-- Customizable Destination Address Input -->
+                  <div class="pill-input-box mt-xs">
+                    <span class="box-icon">📝</span>
+                    <input type="text" id="destAddressInput" class="pill-text-element" placeholder="Alamat hospital / lokasi drop-off pesakit..." value="Hospital Raja Perempuan Zainab II (HRPZ II), Kota Bharu" aria-label="Alamat Hospital Destinasi">
+                  </div>
                 </div>
 
-                <!-- Manual / Custom Destination Input (Shown if custom) -->
-                <div class="pill-input-group" id="customDestGroup" style="display: none;">
-                  <div class="pill-input-label">
-                    <span class="pill-icon">📝</span>
-                    <span>Alamat Pesakit / Destinasi Khas</span>
+                <!-- Multi-Leg Route Breakdown Card -->
+                <div class="route-legs-card" id="routeLegsCard">
+                  <div class="leg-item">
+                    <div class="leg-badge leg-1">①</div>
+                    <div class="leg-details">
+                      <span class="leg-title">Pangkalan ➔ Rumah Pesakit</span>
+                      <span class="leg-path" id="leg1Text">HQ Kok Lanas ➔ Kediaman Pesakit</span>
+                    </div>
+                    <span class="leg-km" id="leg1KmBadge">24.5 KM</span>
                   </div>
-                  <div class="pill-input-box">
-                    <span class="box-icon">📝</span>
-                    <input type="text" id="customDestInput" class="pill-text-element" placeholder="Masukkan alamat atau nama hospital..." value="Kediaman Pesakit, Kota Bharu">
+                  <div class="leg-connector-line"></div>
+                  <div class="leg-item">
+                    <div class="leg-badge leg-2">②</div>
+                    <div class="leg-details">
+                      <span class="leg-title">Rumah Pesakit ➔ Hospital</span>
+                      <span class="leg-path" id="leg2Text">Kediaman Pesakit ➔ HRPZ II</span>
+                    </div>
+                    <span class="leg-km" id="leg2KmBadge">4.5 KM</span>
                   </div>
                 </div>
 
                 <!-- Route Distance Meta Bar -->
                 <div class="route-meta-bar">
                   <div class="meta-item">
-                    <span class="meta-title">Jarak Keseluruhan</span>
-                    <span class="meta-val" id="displayDistanceKm">27.2 KM</span>
+                    <span class="meta-title">Jumlah Jarak (1+2)</span>
+                    <span class="meta-val" id="displayDistanceKm">29.0 KM</span>
                   </div>
                   <div class="meta-item">
                     <span class="meta-title">Basis (Standard)</span>
@@ -194,9 +225,45 @@
                   </div>
                   <div class="meta-item">
                     <span class="meta-title">Jarak Tambahan</span>
-                    <span class="meta-val text-amber" id="displayExtraKm">+2.2 KM</span>
+                    <span class="meta-val text-amber" id="displayExtraKm">+4.0 KM</span>
                   </div>
                 </div>
+
+                <!-- Live Estimated Fare Card in Step 1 -->
+                <div class="step1-estimate-card" id="step1EstimateCard">
+                  <div class="estimate-top-row">
+                    <div class="estimate-info-col">
+                      <div class="estimate-pill-title">
+                        <span class="pill-pulse-dot"></span>
+                        <span>Anggaran Tambang Asas</span>
+                      </div>
+                      <div class="estimate-route-caption" id="estimateRouteCaption">
+                        Kiraan dari Pangkalan ➔ Rumah ➔ Destinasi
+                      </div>
+                    </div>
+                    <div class="estimate-price-badge">
+                      <span class="price-curr">RM</span>
+                      <span class="price-amount" id="step1EstimateFare">262.00</span>
+                    </div>
+                  </div>
+
+                  <div class="estimate-chips-row">
+                    <div class="estimate-chip">
+                      <span class="chip-circle-icon bg-emerald">✓</span>
+                      <span>Basis (&le;25 KM): <strong>RM 250.00</strong></span>
+                    </div>
+                    <div class="estimate-chip" id="step1ExtraChip">
+                      <span class="chip-circle-icon bg-amber">+</span>
+                      <span id="step1ExtraBreakdownText">Lebihan 4.0 KM (&times;RM 3.00): <strong>+RM 12.00</strong></span>
+                    </div>
+                  </div>
+
+                  <div class="estimate-footer-note">
+                    <span class="note-icon">💡</span>
+                    <span>Termasuk pemandu terlatih &amp; pembantu EMT asas percuma. Pakej staf tambahan &amp; peralatan boleh ditambah di Langkah 2-4.</span>
+                  </div>
+                </div>
+
               </div>
 
               <!-- MAP VIEW MODE CONTENT (Shown when user toggles [ Map View ]) -->
