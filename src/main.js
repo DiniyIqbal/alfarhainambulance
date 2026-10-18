@@ -92,6 +92,7 @@ let routePolyline = null;
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
   initHubSelector();
   initDestinations();
   initTripTypes();
@@ -100,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDistanceControls();
   initLeafletMap();
   initNavigationTabs();
+  initSegmentedModeSwitch();
   initMultiStepCalculator();
   initModals();
   initDriverHUD();
@@ -111,6 +113,49 @@ document.addEventListener('DOMContentLoaded', () => {
   // Run initial calculation
   calculateAll();
 });
+
+/* =========================================================================
+   Theme Management (User-Friendly Light vs Eye-Care Dark)
+   ========================================================================= */
+function initTheme() {
+  const themeInitDone = localStorage.getItem('amc_redesign_theme_v3');
+  let savedTheme = localStorage.getItem('amc_theme');
+  if (!themeInitDone) {
+    savedTheme = 'dark';
+    localStorage.setItem('amc_theme', 'dark');
+    localStorage.setItem('amc_redesign_theme_v3', '1');
+  }
+  setTheme(savedTheme || 'dark');
+
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      playClickSound();
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+    });
+  }
+}
+
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('amc_theme', theme);
+
+  const themeToggleIcon = document.getElementById('themeToggleIcon');
+  const themeToggleLabel = document.getElementById('themeToggleLabel');
+  if (themeToggleIcon) {
+    themeToggleIcon.textContent = theme === 'dark' ? '🌙' : '☀️';
+  }
+  if (themeToggleLabel) {
+    themeToggleLabel.textContent = theme === 'dark' ? 'Malam' : 'Siang';
+  }
+
+  // Refresh Leaflet Map if present so tiles adapt properly
+  if (map) {
+    setTimeout(() => map.invalidateSize(), 120);
+  }
+}
 
 /* =========================================================================
    1. Hub & Branch Selector Logic
@@ -286,17 +331,31 @@ function initTripTypes() {
     const card = document.createElement('div');
     card.className = `trip-type-card ${idx === 0 ? 'selected' : ''}`;
     card.dataset.id = trip.id;
+
+    // Harmonious matching badge tint
+    const badgeBg = trip.id === 'non_emergency'
+      ? 'var(--amc-emerald-light)'
+      : trip.id === 'emergency_inhouse'
+      ? 'var(--amc-amber-light)'
+      : 'var(--amc-red-light)';
+
+    const badgeColor = trip.id === 'non_emergency'
+      ? 'var(--amc-emerald)'
+      : trip.id === 'emergency_inhouse'
+      ? 'var(--amc-amber)'
+      : 'var(--amc-red)';
+
     card.innerHTML = `
       <div>
         <div class="card-top">
           <span class="trip-type-name">${trip.name}</span>
-          <span class="trip-type-badge" style="background: rgba(239, 68, 68, 0.15); color: ${trip.color}; border: 1px solid ${trip.color}40;">
+          <span class="trip-type-badge" style="background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeColor};">
             ${trip.badge}
           </span>
         </div>
         <div class="trip-type-desc">${trip.description}</div>
       </div>
-      <div class="trip-type-price">RM ${trip.baseFare.toFixed(2)} <span style="font-size: 0.7rem; font-weight: 500; color: var(--text-dim);">kadar asas</span></div>
+      <div class="trip-type-price">RM ${trip.baseFare.toFixed(2)} <span class="rate-sub">kadar asas</span></div>
     `;
 
     card.addEventListener('click', () => {
@@ -818,10 +877,10 @@ function computeHaversineDistance(c1, c2) {
 }
 
 /* =========================================================================
-   9. Navigation Tabs Controller
+   9. Navigation Tabs Controller (Top & Frosted Bottom Dock)
    ========================================================================= */
 function initNavigationTabs() {
-  const tabs = document.querySelectorAll('.tab-btn');
+  const tabs = document.querySelectorAll('.tab-btn, .dock-tab-btn');
   const sections = document.querySelectorAll('.view-section');
 
   tabs.forEach(tab => {
@@ -829,8 +888,14 @@ function initNavigationTabs() {
       playClickSound();
       const targetId = tab.dataset.tab;
 
-      tabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
+      // Sync active state across both top nav tabs and bottom dock tabs
+      tabs.forEach(t => {
+        if (t.dataset.tab === targetId) {
+          t.classList.add('active');
+        } else {
+          t.classList.remove('active');
+        }
+      });
 
       sections.forEach(s => {
         s.classList.remove('active');
@@ -844,22 +909,62 @@ function initNavigationTabs() {
         setTimeout(() => map.invalidateSize(), 200);
       }
 
-      // Show/hide section navigation elements based on whether calculator-view is active
-      const sideDock = document.getElementById('sideQuickDock');
-      const miniBar = document.getElementById('persistentMiniBar');
-      const subnavStrip = document.getElementById('calcSubnavStrip');
+      // Hide or show calculator-specific elements
       const isCalc = targetId === 'calculator-view';
-
-      if (subnavStrip) subnavStrip.style.display = isCalc ? 'block' : 'none';
-      if (sideDock) sideDock.style.display = isCalc ? '' : 'none';
-      if (miniBar) {
-        miniBar.style.display = isCalc ? '' : 'none';
-        if (isCalc) {
-          miniBar.classList.toggle('hidden', state.calcStep === 5);
-        }
-      }
+      const stepper = document.getElementById('calcConnectedStepper');
+      const segmentedSwitch = document.querySelector('.segmented-mode-container');
+      if (stepper) stepper.style.display = isCalc ? 'block' : 'none';
+      if (segmentedSwitch) segmentedSwitch.style.display = isCalc ? 'block' : 'none';
     });
   });
+}
+
+/* =========================================================================
+   Segmented Mode Switcher: [ Calculator ] [ Map View ]
+   ========================================================================= */
+function initSegmentedModeSwitch() {
+  const btnCalc = document.getElementById('btnModeCalc');
+  const btnMap = document.getElementById('btnModeMap');
+  const calcContent = document.getElementById('calculatorModeContent');
+  const mapContent = document.getElementById('mapModeContent');
+  const locationCard = document.getElementById('section-location');
+
+  if (btnCalc && btnMap) {
+    btnCalc.addEventListener('click', () => {
+      playClickSound();
+      btnCalc.classList.add('active');
+      btnMap.classList.remove('active');
+      btnCalc.setAttribute('aria-selected', 'true');
+      btnMap.setAttribute('aria-selected', 'false');
+
+      if (calcContent) calcContent.style.display = 'block';
+      if (mapContent) mapContent.style.display = 'none';
+
+      if (locationCard) {
+        locationCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+
+    btnMap.addEventListener('click', () => {
+      playClickSound();
+      btnMap.classList.add('active');
+      btnCalc.classList.remove('active');
+      btnMap.setAttribute('aria-selected', 'true');
+      btnCalc.setAttribute('aria-selected', 'false');
+
+      if (calcContent) calcContent.style.display = 'none';
+      if (mapContent) mapContent.style.display = 'block';
+
+      if (map) {
+        setTimeout(() => {
+          map.invalidateSize();
+          if (routePolyline) {
+            map.fitBounds(routePolyline.getBounds(), { padding: [40, 40] });
+          }
+        }, 120);
+      }
+    });
+  }
 }
 
 /* =========================================================================
@@ -884,38 +989,36 @@ function switchCalcStep(stepNum, shouldScroll = true) {
     page.classList.toggle('active', s === stepNum);
   });
 
-  // 2. Update Header, Subnav Strip & Progress Fill
-  const stepInfo = CALC_STEPS[stepNum - 1];
-  const percent = stepNum * 20;
+  // 2. Update Connected Node Stepper
+  const stepperNodes = document.querySelectorAll('.stepper-node-btn');
+  stepperNodes.forEach(node => {
+    const s = parseInt(node.getAttribute('data-step'), 10);
+    if (s === stepNum) {
+      node.classList.add('active');
+      node.classList.remove('completed');
+    } else if (s < stepNum) {
+      node.classList.remove('active');
+      node.classList.add('completed');
+    } else {
+      node.classList.remove('active');
+      node.classList.remove('completed');
+    }
+  });
 
-  const subnavStepText = document.getElementById('subnavStepText');
-  const subnavStepPct = document.getElementById('subnavStepPct');
-  const subnavProgressFill = document.getElementById('subnavProgressFill');
+  // Stepper progress fill line: 10% on Step 1 up to 90% on Step 5
+  const stepperFill = document.getElementById('stepperProgressFill');
+  if (stepperFill) {
+    const fillWidths = { 1: '10%', 2: '30%', 3: '50%', 4: '70%', 5: '90%' };
+    stepperFill.style.width = fillWidths[stepNum] || '10%';
+  }
 
-  if (subnavStepText) subnavStepText.textContent = `Langkah ${stepNum} dari 5: ${stepInfo.title}`;
-  if (subnavStepPct) subnavStepPct.textContent = `${percent}%`;
-  if (subnavProgressFill) subnavProgressFill.style.width = `${percent}%`;
-
-  // 3. Update Subnav Step Chip Buttons
+  // 3. Update legacy subnav chips if present
   document.querySelectorAll('.step-chip-btn').forEach(btn => {
     const s = parseInt(btn.getAttribute('data-step'), 10);
     btn.classList.toggle('active', s === stepNum);
   });
 
-  // 4. Update Desktop Side Dock items
-  document.querySelectorAll('.dock-item').forEach(item => {
-    const s = parseInt(item.getAttribute('data-step'), 10);
-    item.classList.toggle('active', s === stepNum);
-  });
-
-  // 5. Toggle Persistent Bottom Mini Bar
-  // Visible on Steps 1 to 4, hidden on Step 5 (because Step 5 is the full invoice summary!)
-  const miniBar = document.getElementById('persistentMiniBar');
-  if (miniBar) {
-    miniBar.classList.toggle('hidden', stepNum === 5);
-  }
-
-  // 6. If Step 1, invalidate Leaflet Map size so it renders crisp and full width
+  // 4. If Step 1, invalidate Leaflet Map size so it renders crisp and full width
   if (stepNum === 1 && map) {
     setTimeout(() => {
       map.invalidateSize();
@@ -925,11 +1028,11 @@ function switchCalcStep(stepNum, shouldScroll = true) {
     }, 120);
   }
 
-  // 7. Scroll to top of the step smoothly
+  // 5. Scroll to top of the step smoothly
   if (shouldScroll) {
     const calcView = document.getElementById('calculator-view');
     if (calcView) {
-      const headerOffset = window.innerWidth <= 768 ? 120 : 80;
+      const headerOffset = window.innerWidth <= 768 ? 90 : 60;
       const elPos = calcView.getBoundingClientRect().top + window.pageYOffset - headerOffset;
       window.scrollTo({ top: Math.max(0, elPos), behavior: 'smooth' });
     }
@@ -937,9 +1040,9 @@ function switchCalcStep(stepNum, shouldScroll = true) {
 }
 
 function initMultiStepCalculator() {
-  // 1. Desktop Side Dock Clicks
-  const dockItems = document.querySelectorAll('.dock-item');
-  dockItems.forEach(btn => {
+  // 1. Connected Stepper Node Button Clicks
+  const stepperNodes = document.querySelectorAll('.stepper-node-btn');
+  stepperNodes.forEach(btn => {
     btn.addEventListener('click', () => {
       playClickSound();
       const step = btn.getAttribute('data-step');
@@ -947,7 +1050,7 @@ function initMultiStepCalculator() {
     });
   });
 
-  // 2. Subnav Step Chip Clicks (Between Top Nav & Content)
+  // 2. Legacy Subnav Step Chip Clicks
   const stepChips = document.querySelectorAll('.step-chip-btn');
   stepChips.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -957,17 +1060,7 @@ function initMultiStepCalculator() {
     });
   });
 
-  // 3. Mobile Drawer Cards Clicks
-  const drawerCards = document.querySelectorAll('.drawer-card');
-  drawerCards.forEach(card => {
-    card.addEventListener('click', () => {
-      playClickSound();
-      const step = card.getAttribute('data-step');
-      if (step) switchCalcStep(step);
-    });
-  });
-
-  // 4. Next Step Buttons
+  // 3. Next Step Buttons
   const nextBtns = document.querySelectorAll('.step-btn-next');
   nextBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -977,7 +1070,7 @@ function initMultiStepCalculator() {
     });
   });
 
-  // 5. Previous Step Buttons
+  // 4. Previous Step Buttons
   const prevBtns = document.querySelectorAll('.step-btn-prev');
   prevBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -987,7 +1080,7 @@ function initMultiStepCalculator() {
     });
   });
 
-  // 6. Restart / Recalculate Button on Step 5
+  // 5. Restart / Recalculate Button on Step 5
   const stepRestartBtn = document.getElementById('stepRestartBtn');
   if (stepRestartBtn) {
     stepRestartBtn.addEventListener('click', () => {
@@ -1318,15 +1411,15 @@ function renderRecentOrdersTable() {
   state.recentOrders.forEach(ord => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><span style="font-family: var(--font-mono); font-weight: 700; color: var(--amc-cyan);">${ord.id}</span></td>
+      <td><span style="font-family: var(--font-mono); font-weight: 800; color: var(--amc-blue);">${ord.id}</span></td>
       <td style="font-size: 0.78rem; color: var(--text-dim);">${ord.date}</td>
       <td><strong>${ord.route}</strong></td>
       <td>${ord.distanceKm} KM</td>
       <td>${ord.assistance}</td>
       <td style="font-size: 0.75rem; color: var(--text-sub);">${ord.equipment}</td>
-      <td style="font-family: var(--font-heading); font-weight: 800; color: #FFFFFF;">RM ${ord.total.toFixed(2)}</td>
+      <td style="font-family: var(--font-heading); font-weight: 800; color: var(--text-main);">RM ${ord.total.toFixed(2)}</td>
       <td>
-        <span style="background: rgba(16, 185, 129, 0.15); color: var(--amc-emerald); padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 700;">
+        <span style="background: var(--amc-emerald-light); color: var(--amc-emerald); padding: 0.22rem 0.6rem; border-radius: 9999px; font-size: 0.72rem; font-weight: 800; border: 1px solid rgba(5,150,105,0.25);">
           ${ord.status}
         </span>
       </td>
@@ -1370,10 +1463,10 @@ function initCatalog() {
     items.forEach(it => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><span style="background: rgba(14, 165, 233, 0.12); color: var(--amc-cyan); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem;">${it.cat}</span></td>
+        <td><span style="background: var(--amc-blue-light); color: var(--amc-blue); padding: 0.18rem 0.55rem; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">${it.cat}</span></td>
         <td><strong>${it.name}</strong></td>
         <td><code style="color: var(--text-dim);">${it.code}</code></td>
-        <td style="font-family: var(--font-heading); font-weight: 700; color: #FFFFFF;">RM ${it.price.toFixed(2)}</td>
+        <td style="font-family: var(--font-heading); font-weight: 800; color: var(--text-main);">RM ${it.price.toFixed(2)}</td>
       `;
       tbody.appendChild(tr);
     });
