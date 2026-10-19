@@ -32,6 +32,13 @@ import {
   subscribeToRealtimeBookings
 } from './services/supabaseClient.js';
 
+import {
+  haversineKm,
+  estimateDurationMin,
+  fetchRoadRoute,
+  searchAddressGeocode
+} from './services/routingService.js';
+
 /* =========================================================================
    APPLICATION STATE (MATCHES MOCKUP DEFAULTS)
    ========================================================================= */
@@ -51,10 +58,18 @@ const state = {
   destinationAddress: 'Hospital Raja Perempuan Zainab II (HRPZ II), Kota Bharu',
   destinationCoords: [6.1256, 102.2482],
 
-  // Multi-Leg Distances (Leg 1: Hub -> Pickup = 25.2 km, Leg 2: Pickup -> Dest = 1.1 km, Total = 26.3 km)
+  // Multi-Leg Distances & Durations (Leg 1: Hub -> Pickup, Leg 2: Pickup -> Dest, Total = Leg 1 + Leg 2)
   leg1Km: 25.2,
+  leg1DurationMin: 24,
   leg2Km: 1.1,
+  leg2DurationMin: 3,
   distanceKm: 26.3,
+  totalDurationMin: 27,
+  isRealRoad: false,
+  isCalculatingRoute: false,
+  routeGeometry: null,
+  leg1Geometry: null,
+  leg2Geometry: null,
 
   calcStep: 1, // 1: Lokasi, 2: Kategori, 3: Staf, 4: Alatan, 5: Invois
   step1Mode: 'lokasi', // 'lokasi' | 'peta'
@@ -80,12 +95,16 @@ const state = {
   isPhoneFrame: true
 };
 
-// Map References
+// Map References & Request Tokens
 let miniMap = null;
-let miniRouteLine = null;
+let miniRouteLeg1 = null;
+let miniRouteLeg2 = null;
+let miniMarkers = [];
 let fullMap = null;
-let fullRouteLine = null;
+let fullRouteLeg1 = null;
+let fullRouteLeg2 = null;
 let fullMarkers = [];
+let routeRequestId = 0;
 
 /* =========================================================================
    INITIALIZATION ON DOM LOAD
@@ -110,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initial calculation and map render
   calculateAll();
   initMiniLeafletMap();
+  calculateMultiLegRoute(true);
 });
 
 /* =========================================================================
@@ -136,12 +156,11 @@ function initTheme() {
 }
 
 /* =========================================================================
-   4. BRANCH DROPDOWN (HQ KOK LANAS, CAWANGAN RAUB, JELI, MACHANG)
+   4. BRANCH DROPDOWN (HQ KOK LANAS, CAWANGAN RAUB, JELI, MACHANG, ETC.)
    ========================================================================= */
 function initBranchDropdown() {
   const btn = document.getElementById('branchSelectBtn');
   const menu = document.getElementById('branchDropdownMenu');
-  const label = document.getElementById('activeBranchLabel');
   const items = document.querySelectorAll('.branch-item');
 
   if (btn && menu) {
@@ -174,21 +193,43 @@ function switchBranch(hubKey) {
   if (hubKey === 'raub') {
     state.currentHub = HUBS.RAUB;
     state.originCoords = HUBS.RAUB.coords;
-    state.pickupName = 'Bandar Raub';
-    state.destinationName = 'Hospital Raub';
-    state.destinationCoords = [3.7915, 101.8590];
-    state.leg1Km = 14.5;
-    state.leg2Km = 3.2;
-    state.distanceKm = 17.7;
-  } else {
+    if (!state.pickupPresetId || state.pickupPresetId.startsWith('kediaman_kb') || state.pickupPresetId.startsWith('kediaman_koklanas')) {
+      state.pickupPresetId = 'kediaman_raub';
+      state.pickupName = 'Bandar Raub';
+      state.pickupAddress = 'Bandar Raub, 27600 Raub, Pahang Darul Makmur';
+      state.pickupCoords = [3.7899, 101.8570];
+      state.selectedDestId = 'h_raub';
+      state.destinationName = 'Hospital Raub';
+      state.destinationCoords = [3.7915, 101.8590];
+    }
+  } else if (hubKey === 'kok_lanas') {
     state.currentHub = HUBS.KOK_LANAS;
     state.originCoords = HUBS.KOK_LANAS.coords;
-    state.pickupName = 'Bandar Kota Bharu';
-    state.destinationName = 'Hospital Raja Perempuan Zainab II';
-    state.destinationCoords = [6.1256, 102.2482];
-    state.leg1Km = 25.2;
-    state.leg2Km = 1.1;
-    state.distanceKm = 26.3;
+    if (!state.pickupPresetId || state.pickupPresetId.startsWith('kediaman_raub')) {
+      state.pickupPresetId = 'kediaman_kb';
+      state.pickupName = 'Bandar Kota Bharu';
+      state.pickupAddress = 'Bandar Kota Bharu, 15000 Kota Bharu, Kelantan';
+      state.pickupCoords = [6.1248, 102.2544];
+      state.selectedDestId = 'hrpz';
+      state.destinationName = 'Hospital Raja Perempuan Zainab II';
+      state.destinationCoords = [6.1256, 102.2482];
+    }
+  } else {
+    const customBranch = OTHER_BRANCHES.find(b => b.id === hubKey);
+    if (customBranch) {
+      state.currentHub = {
+        id: customBranch.id,
+        name: customBranch.name,
+        shortName: customBranch.name.replace('Al-Farhain Medical Center (Cawangan ', '').replace(')', ''),
+        state: customBranch.state,
+        coords: customBranch.coords,
+        ambulancePlate: 'AMC 7606',
+        primaryDriver: 'Kru Bertugas Al-Farhain',
+        contactNumber: '013-914 7606',
+        address: `${customBranch.name}, ${customBranch.state}`
+      };
+      state.originCoords = customBranch.coords;
+    }
   }
 
   // Update labels across all views
@@ -214,8 +255,76 @@ function switchBranch(hubKey) {
   const fleetBranch = document.getElementById('fleetAmbulanceBranch');
   if (fleetBranch) fleetBranch.textContent = `📍 ${state.currentHub.shortName}`;
 
-  calculateAll();
-  updateMapMarkers();
+  // Recalculate Multi-Leg Route dynamically from new starting hub
+  calculateMultiLegRoute(true);
+}
+
+/* =========================================================================
+   ROUTING & MULTI-LEG DISTANCE ENGINE
+   Leg 1: Starting Hub (Kok Lanas / Raub) ➔ Lokasi Pengambilan (Pesakit)
+   Leg 2: Lokasi Pengambilan (Pesakit) ➔ Hospital Tujuan
+   ========================================================================= */
+async function calculateMultiLegRoute(forceRecalc = false) {
+  const currentReq = ++routeRequestId;
+  state.isCalculatingRoute = true;
+  updateRouteCalculationStatus(true);
+
+  // 1. Instant preliminary calculation using calibrated Haversine road formula
+  const fastLeg1 = haversineKm(state.originCoords, state.pickupCoords, 1.28);
+  const fastLeg2 = haversineKm(state.pickupCoords, state.destinationCoords, 1.28);
+  const fastTotal = Math.round((fastLeg1 + fastLeg2) * 10) / 10;
+
+  // If we don't have real road geometry yet, set fast values immediately
+  if (!state.isRealRoad || forceRecalc) {
+    state.leg1Km = fastLeg1;
+    state.leg1DurationMin = estimateDurationMin(fastLeg1);
+    state.leg2Km = fastLeg2;
+    state.leg2DurationMin = estimateDurationMin(fastLeg2);
+    state.distanceKm = fastTotal;
+    state.totalDurationMin = estimateDurationMin(fastTotal);
+    calculateAll();
+  }
+
+  // 2. Fetch high-precision road route via OSRM
+  try {
+    const route = await fetchRoadRoute(state.originCoords, state.pickupCoords, state.destinationCoords);
+
+    // Guard against race conditions if user clicked again while fetching
+    if (currentReq !== routeRequestId) return;
+
+    state.leg1Km = route.leg1Km;
+    state.leg1DurationMin = route.leg1DurationMin;
+    state.leg2Km = route.leg2Km;
+    state.leg2DurationMin = route.leg2DurationMin;
+    state.distanceKm = route.totalKm;
+    state.totalDurationMin = route.totalDurationMin;
+    state.isRealRoad = route.isRealRoad;
+    state.routeGeometry = route.fullGeometry;
+    state.leg1Geometry = route.leg1Geometry;
+    state.leg2Geometry = route.leg2Geometry;
+  } catch (err) {
+    console.warn('[Routing] Failed to fetch live road route:', err);
+  } finally {
+    if (currentReq === routeRequestId) {
+      state.isCalculatingRoute = false;
+      updateRouteCalculationStatus(false);
+      calculateAll();
+      updateMapMarkers();
+    }
+  }
+}
+
+function updateRouteCalculationStatus(isCalculating) {
+  const badge = document.getElementById('mapRoutingStatusBadge');
+  const text = document.getElementById('mapRoutingStatusText');
+  if (badge) {
+    badge.classList.toggle('calculating', isCalculating);
+  }
+  if (text) {
+    text.textContent = isCalculating
+      ? 'Mengira laluan jalan raya...'
+      : (state.isRealRoad ? 'Laluan Jalan Raya Sebenar' : 'Anggaran Rangkaian Jalan');
+  }
 }
 
 /* =========================================================================
@@ -442,7 +551,9 @@ function calculateAll() {
 
   // Step 1: Distance and Base Fare Display
   const distSplit = document.getElementById('displayDistanceSplit');
-  if (distSplit) distSplit.textContent = `${state.leg1Km.toFixed(1)} km + ${state.leg2Km.toFixed(1)} km`;
+  if (distSplit) {
+    distSplit.textContent = `${state.leg1Km.toFixed(1)} km + ${state.leg2Km.toFixed(1)} km`;
+  }
 
   const totalKmEl = document.getElementById('displayTotalKm');
   if (totalKmEl) totalKmEl.textContent = `${totalKm.toFixed(1)} km`;
@@ -455,15 +566,21 @@ function calculateAll() {
   const step1PriceEl = document.getElementById('displayStep1Price');
   if (step1PriceEl) step1PriceEl.textContent = `RM${step1BaseTotal.toFixed(2)}`;
 
-  // Step 1 Peta view labels
+  // Step 1 Peta view labels with dynamic route endpoints and driving durations
+  const leg1Label = document.getElementById('mapLeg1Label');
+  if (leg1Label) leg1Label.textContent = `${state.currentHub.shortName} ➔ ${state.pickupName}`;
+
   const leg1KmEl = document.getElementById('mapLeg1Km');
-  if (leg1KmEl) leg1KmEl.textContent = `${state.leg1Km.toFixed(1)} km`;
+  if (leg1KmEl) leg1KmEl.textContent = `${state.leg1Km.toFixed(1)} km (~${state.leg1DurationMin} min)`;
+
+  const leg2Label = document.getElementById('mapLeg2Label');
+  if (leg2Label) leg2Label.textContent = `${state.pickupName} ➔ ${state.destinationName}`;
 
   const leg2KmEl = document.getElementById('mapLeg2Km');
-  if (leg2KmEl) leg2KmEl.textContent = `${state.leg2Km.toFixed(1)} km`;
+  if (leg2KmEl) leg2KmEl.textContent = `${state.leg2Km.toFixed(1)} km (~${state.leg2DurationMin} min)`;
 
   const mapTotalEl = document.getElementById('mapTotalDistanceKm');
-  if (mapTotalEl) mapTotalEl.textContent = `${totalKm.toFixed(1)} km`;
+  if (mapTotalEl) mapTotalEl.textContent = `${totalKm.toFixed(1)} km (~${state.totalDurationMin} min)`;
 
   // Sticky Bar estimate updates based on step:
   const stickyAmount = document.getElementById('stickyFareAmount');
@@ -549,6 +666,9 @@ function populatePrintableInvoice(baseFare, extraKm, extraKmRate, extraDistanceF
   const invOrigin = document.getElementById('invOrigin');
   if (invOrigin) invOrigin.textContent = state.currentHub.shortName;
 
+  const invPickup = document.getElementById('invPickup');
+  if (invPickup) invPickup.textContent = state.pickupName;
+
   const invDest = document.getElementById('invDestination');
   if (invDest) invDest.textContent = state.destinationName;
 
@@ -566,11 +686,14 @@ function populatePrintableInvoice(baseFare, extraKm, extraKmRate, extraDistanceF
     // 1. ORIGINAL BUTIRAN: Tambang Asas & Caj Jarak
     let rows = `
       <tr class="invoice-section-hdr">
-        <td colspan="3">1. MAKLUMAT TAMBANG ASAS &amp; PERJALANAN</td>
+        <td colspan="3">1. MAKLUMAT TAMBANG ASAS &amp; PERJALANAN MULTI-LEG</td>
       </tr>
       <tr>
         <td><strong>Kadar Asas (${state.selectedTripType.name})</strong></td>
-        <td>Kadar tetap sehingga ${BASE_SETTINGS.standardBaseKm.toFixed(0)} KM</td>
+        <td>
+          Kadar tetap sehingga ${BASE_SETTINGS.standardBaseKm.toFixed(0)} KM<br>
+          <small style="color:#64748B;">Laluan: ${state.leg1Km.toFixed(1)} km (${state.currentHub.shortName} ➔ ${state.pickupName}) + ${state.leg2Km.toFixed(1)} km (${state.pickupName} ➔ ${state.destinationName})</small>
+        </td>
         <td style="text-align: right; font-weight: 700;">RM ${baseFare.toFixed(2)}</td>
       </tr>
     `;
@@ -883,12 +1006,6 @@ function initMiniLeafletMap() {
   const container = document.getElementById('miniLeafletMap');
   if (!container || miniMap) return;
 
-  const latlngs = [
-    state.originCoords,
-    state.pickupCoords,
-    state.destinationCoords
-  ];
-
   miniMap = L.map('miniLeafletMap', {
     zoomControl: false,
     attributionControl: false,
@@ -902,19 +1019,49 @@ function initMiniLeafletMap() {
     maxZoom: 18
   }).addTo(miniMap);
 
-  miniRouteLine = L.polyline(latlngs, {
+  updateMiniMap();
+}
+
+function updateMiniMap() {
+  if (!miniMap) return;
+
+  if (miniRouteLeg1) miniMap.removeLayer(miniRouteLeg1);
+  if (miniRouteLeg2) miniMap.removeLayer(miniRouteLeg2);
+  miniMarkers.forEach(m => miniMap.removeLayer(m));
+  miniMarkers = [];
+
+  const leg1Points = state.leg1Geometry && state.leg1Geometry.length > 1
+    ? state.leg1Geometry
+    : [state.originCoords, state.pickupCoords];
+
+  const leg2Points = state.leg2Geometry && state.leg2Geometry.length > 1
+    ? state.leg2Geometry
+    : [state.pickupCoords, state.destinationCoords];
+
+  miniRouteLeg1 = L.polyline(leg1Points, {
     color: '#007D77',
-    weight: 5,
+    weight: 4.5,
     opacity: 0.9,
     smoothFactor: 1
   }).addTo(miniMap);
 
-  // Markers
-  L.circleMarker(state.originCoords, { radius: 5, color: '#007D77', fillColor: '#FFFFFF', fillOpacity: 1 }).addTo(miniMap);
-  L.circleMarker(state.pickupCoords, { radius: 6, color: '#23CCC5', fillColor: '#007D77', fillOpacity: 1 }).addTo(miniMap);
-  L.circleMarker(state.destinationCoords, { radius: 5, color: '#C61E2F', fillColor: '#FFFFFF', fillOpacity: 1 }).addTo(miniMap);
+  miniRouteLeg2 = L.polyline(leg2Points, {
+    color: '#DC2626',
+    weight: 4.5,
+    opacity: 0.9,
+    smoothFactor: 1
+  }).addTo(miniMap);
 
-  miniMap.fitBounds(miniRouteLine.getBounds(), { padding: [15, 15] });
+  const m1 = L.circleMarker(state.originCoords, { radius: 5, color: '#007D77', fillColor: '#FFFFFF', fillOpacity: 1, weight: 2.5 }).addTo(miniMap);
+  const m2 = L.circleMarker(state.pickupCoords, { radius: 6, color: '#0284C7', fillColor: '#38BDF8', fillOpacity: 1, weight: 2.5 }).addTo(miniMap);
+  const m3 = L.circleMarker(state.destinationCoords, { radius: 5, color: '#DC2626', fillColor: '#FFFFFF', fillOpacity: 1, weight: 2.5 }).addTo(miniMap);
+
+  miniMarkers = [m1, m2, m3];
+
+  const allBounds = L.featureGroup([miniRouteLeg1, miniRouteLeg2]).getBounds();
+  if (allBounds.isValid()) {
+    miniMap.fitBounds(allBounds, { padding: [15, 15] });
+  }
 }
 
 function initFullLeafletMap() {
@@ -931,8 +1078,21 @@ function initFullLeafletMap() {
   });
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
+    attribution: '© OpenStreetMap • Al-Farhain AMC Ambulans'
   }).addTo(fullMap);
+
+  // Enable click on full map to set patient location directly!
+  fullMap.on('click', (e) => {
+    const lat = Math.round(e.latlng.lat * 100000) / 100000;
+    const lng = Math.round(e.latlng.lng * 100000) / 100000;
+    playClickSound();
+    setPatientPickupLocation(
+      'Lokasi Dipilih Pada Peta',
+      `Koordinat: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      [lat, lng],
+      'custom_map_click'
+    );
+  });
 
   updateFullMap();
 }
@@ -940,46 +1100,123 @@ function initFullLeafletMap() {
 function updateFullMap() {
   if (!fullMap) return;
 
-  const latlngs = [
-    state.originCoords,
-    state.pickupCoords,
-    state.destinationCoords
-  ];
-
-  if (fullRouteLine) fullMap.removeLayer(fullRouteLine);
+  if (fullRouteLeg1) fullMap.removeLayer(fullRouteLeg1);
+  if (fullRouteLeg2) fullMap.removeLayer(fullRouteLeg2);
   fullMarkers.forEach(m => fullMap.removeLayer(m));
   fullMarkers = [];
 
-  fullRouteLine = L.polyline(latlngs, {
+  const leg1Points = state.leg1Geometry && state.leg1Geometry.length > 1
+    ? state.leg1Geometry
+    : [state.originCoords, state.pickupCoords];
+
+  const leg2Points = state.leg2Geometry && state.leg2Geometry.length > 1
+    ? state.leg2Geometry
+    : [state.pickupCoords, state.destinationCoords];
+
+  // Draw Leg 1 (Pangkalan ➔ Pesakit)
+  fullRouteLeg1 = L.polyline(leg1Points, {
     color: '#007D77',
     weight: 6,
-    opacity: 0.9
+    opacity: 0.9,
+    smoothFactor: 1
   }).addTo(fullMap);
 
-  // Custom marker for Origin
-  const m1 = L.marker(state.originCoords).bindPopup(`<b>1. ${state.currentHub.shortName}</b><br>Pangkalan Bertolak`).addTo(fullMap);
-  const m2 = L.marker(state.pickupCoords).bindPopup(`<b>2. Pengambilan: ${state.pickupName}</b>`).addTo(fullMap);
-  const m3 = L.marker(state.destinationCoords).bindPopup(`<b>3. Hospital: ${state.destinationName}</b>`).addTo(fullMap);
+  // Draw Leg 2 (Pesakit ➔ Hospital)
+  fullRouteLeg2 = L.polyline(leg2Points, {
+    color: '#DC2626',
+    weight: 6,
+    opacity: 0.9,
+    smoothFactor: 1
+  }).addTo(fullMap);
+
+  // Custom DivIcons
+  const hubIcon = L.divIcon({
+    className: 'custom-leaflet-marker marker-hub',
+    html: '<div class="marker-emoji-box">🏛️</div><div class="marker-tag-label">1. Pangkalan</div>',
+    iconSize: [40, 52],
+    iconAnchor: [20, 26]
+  });
+
+  const pickupIcon = L.divIcon({
+    className: 'custom-leaflet-marker marker-pickup',
+    html: '<div class="marker-emoji-box">📍</div><div class="marker-tag-label">2. Pesakit</div>',
+    iconSize: [40, 52],
+    iconAnchor: [20, 26]
+  });
+
+  const destIcon = L.divIcon({
+    className: 'custom-leaflet-marker marker-dest',
+    html: '<div class="marker-emoji-box">🏥</div><div class="marker-tag-label">3. Hospital</div>',
+    iconSize: [40, 52],
+    iconAnchor: [20, 26]
+  });
+
+  // Marker 1: Starting Hub
+  const m1 = L.marker(state.originCoords, { icon: hubIcon }).bindPopup(`
+    <div style="font-family: var(--font-body); font-size: 0.8rem;">
+      <strong style="color: #007D77; font-size: 0.88rem;">🏛️ 1. Pangkalan Bertolak</strong>
+      <div style="font-weight: 700; margin-top: 3px;">${state.currentHub.name}</div>
+      <div style="color: #64748B; font-size: 0.72rem; margin-top: 2px;">${state.currentHub.address}</div>
+      <div style="margin-top: 6px; font-size: 0.72rem; background: #F0FDFA; padding: 4px 8px; border-radius: 4px;">
+        Ambulan: <b>${state.currentHub.ambulancePlate}</b> (${state.currentHub.primaryDriver || 'Pemandu Bertugas'})
+      </div>
+    </div>
+  `).addTo(fullMap);
+
+  // Marker 2: Patient Pickup (DRAGGABLE!)
+  const m2 = L.marker(state.pickupCoords, { icon: pickupIcon, draggable: true }).bindPopup(`
+    <div style="font-family: var(--font-body); font-size: 0.8rem;">
+      <strong style="color: #0284C7; font-size: 0.88rem;">📍 2. Lokasi Pesakit (Pengambilan)</strong>
+      <div style="font-weight: 700; margin-top: 3px;">${state.pickupName}</div>
+      <div style="color: #64748B; font-size: 0.72rem; margin-top: 2px;">${state.pickupAddress}</div>
+      <div style="margin-top: 6px; font-size: 0.75rem; background: #E0F2FE; color: #0369A1; padding: 4px 8px; border-radius: 4px;">
+        🛣️ Jarak dari Pangkalan: <b>${state.leg1Km.toFixed(1)} km</b> (~${state.leg1DurationMin} min)
+      </div>
+      <div style="font-size: 0.68rem; color: #94A3B8; margin-top: 4px;">
+        💡 <i>Tip: Anda boleh seret pin ini untuk melaraskan kedudukan rumah pesakit.</i>
+      </div>
+    </div>
+  `).addTo(fullMap);
+
+  m2.on('dragend', (e) => {
+    const pos = e.target.getLatLng();
+    const lat = Math.round(pos.lat * 100000) / 100000;
+    const lng = Math.round(pos.lng * 100000) / 100000;
+    playClickSound();
+    setPatientPickupLocation(
+      'Lokasi Pin Dilaras',
+      `Koordinat: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      [lat, lng],
+      'custom_drag'
+    );
+  });
+
+  // Marker 3: Destination Hospital
+  const m3 = L.marker(state.destinationCoords, { icon: destIcon }).bindPopup(`
+    <div style="font-family: var(--font-body); font-size: 0.8rem;">
+      <strong style="color: #DC2626; font-size: 0.88rem;">🏥 3. Hospital Tujuan (Destinasi)</strong>
+      <div style="font-weight: 700; margin-top: 3px;">${state.destinationName}</div>
+      <div style="color: #64748B; font-size: 0.72rem; margin-top: 2px;">${state.destinationAddress}</div>
+      <div style="margin-top: 6px; font-size: 0.75rem; background: #FEE2E2; color: #991B1B; padding: 4px 8px; border-radius: 4px;">
+        🚑 Jarak dari Pesakit: <b>${state.leg2Km.toFixed(1)} km</b> (~${state.leg2DurationMin} min)
+      </div>
+      <div style="margin-top: 4px; font-size: 0.78rem; font-weight: 800; color: #007D77;">
+        🛣️ Jumlah Keseluruhan: ${state.distanceKm.toFixed(1)} km (~${state.totalDurationMin} min)
+      </div>
+    </div>
+  `).addTo(fullMap);
 
   fullMarkers = [m1, m2, m3];
-  fullMap.fitBounds(fullRouteLine.getBounds(), { padding: [30, 30] });
+
+  const allBounds = L.featureGroup([fullRouteLeg1, fullRouteLeg2]).getBounds();
+  if (allBounds.isValid()) {
+    fullMap.fitBounds(allBounds, { padding: [35, 35] });
+  }
 }
 
 function updateMapMarkers() {
-  const latlngs = [
-    state.originCoords,
-    state.pickupCoords,
-    state.destinationCoords
-  ];
-
-  if (miniMap && miniRouteLine) {
-    miniRouteLine.setLatLngs(latlngs);
-    miniMap.fitBounds(miniRouteLine.getBounds(), { padding: [15, 15] });
-  }
-
-  if (fullMap) {
-    updateFullMap();
-  }
+  updateMiniMap();
+  updateFullMap();
 }
 
 /* =========================================================================
@@ -1214,14 +1451,17 @@ function initActionModals() {
   if (btnShare) {
     btnShare.addEventListener('click', () => {
       const msg = `*AL-FARHAIN AMC AMBULANS - SEBUTHARGA TRIP*\n\n` +
-        `Pangkalan: ${state.currentHub.shortName}\n` +
-        `Pengambilan: ${state.pickupName}\n` +
-        `Hospital Tujuan: ${state.destinationName}\n` +
-        `Jumlah Jarak: ${state.distanceKm.toFixed(1)} KM\n` +
-        `Kategori: ${state.selectedTripType.name}\n` +
-        `Bantuan Staf: ${state.selectedAssistance.roleTitle}\n` +
+        `🏛️ *Pangkalan Bertolak:* ${state.currentHub.name}\n` +
+        `📍 *Lokasi Pengambilan (Pesakit):* ${state.pickupName} (${state.pickupAddress})\n` +
+        `🏥 *Hospital Tujuan:* ${state.destinationName}\n\n` +
+        `🛣️ *Pecahan Jarak Jalan Raya:*\n` +
+        `• Pangkalan ➔ Pesakit: ${state.leg1Km.toFixed(1)} KM (~${state.leg1DurationMin} min)\n` +
+        `• Pesakit ➔ Hospital: ${state.leg2Km.toFixed(1)} KM (~${state.leg2DurationMin} min)\n` +
+        `• *JUMLAH JARAK KESELURUHAN:* ${state.distanceKm.toFixed(1)} KM (~${state.totalDurationMin} min)\n\n` +
+        `🚑 *Kategori:* ${state.selectedTripType.name}\n` +
+        `👨‍⚕️ *Bantuan Staf:* ${state.selectedAssistance.roleTitle}\n` +
         `*JUMLAH ANGGARAN: ${document.getElementById('invSummaryGrandTotal').textContent}*\n\n` +
-        `Hubungi Talian 24 Jam Al-Farhain: 013-914 7606`;
+        `Hubungi Talian 24 Jam Al-Farhain: ${state.currentHub.contactNumber}`;
 
       window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
     });
@@ -1283,6 +1523,30 @@ function initActionModals() {
 /* =========================================================================
    18. LOCATION PICKER MODAL (PANGKALAN, PICKUP, DESTINASI)
    ========================================================================= */
+function setPatientPickupLocation(name, address, coords, presetId = 'custom') {
+  state.pickupPresetId = presetId;
+  state.pickupName = name;
+  state.pickupAddress = address || name;
+  state.pickupCoords = coords;
+
+  const displayEl = document.getElementById('displayPickupName');
+  if (displayEl) displayEl.textContent = state.pickupName;
+
+  calculateMultiLegRoute(true);
+}
+
+function setDestinationLocation(destId, name, coords, category = '') {
+  state.selectedDestId = destId;
+  state.destinationName = name;
+  state.destinationAddress = name;
+  state.destinationCoords = coords;
+
+  const displayEl = document.getElementById('displayDestName');
+  if (displayEl) displayEl.textContent = state.destinationName;
+
+  calculateMultiLegRoute(true);
+}
+
 function initLocationModal() {
   const modal = document.getElementById('locationPickerModal');
   const closeBtn = document.getElementById('closeLocationModalBtn');
@@ -1297,29 +1561,49 @@ function initLocationModal() {
     closeBtn.addEventListener('click', () => modal.classList.remove('show'));
   }
 
+  // STOP 1: PANGKALAN BERTOLAK
   if (rowPangkalan) {
     rowPangkalan.addEventListener('click', () => {
       playClickSound();
-      title.textContent = 'Pilih Pangkalan Ambulans';
+      title.textContent = 'Pilih Pangkalan Ambulans Bertolak';
       content.innerHTML = `
-        <div style="display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
           <div class="service-card ${state.currentHub.id === 'kok_lanas' ? 'selected' : ''}" data-hub="kok_lanas">
-            <div style="display:flex; align-items:center; gap:10px;">
+            <div class="service-card-left">
               <span style="font-size:1.4rem;">🏛️</span>
-              <div>
-                <strong>HQ Pusat Rawatan Kok Lanas (Kelantan)</strong>
-                <div style="font-size:0.72rem; color:var(--text-muted);">Plat: VPQ 7606 • Abe Di</div>
+              <div class="service-texts">
+                <span class="service-name">HQ Pusat Rawatan Kok Lanas (Kelantan)</span>
+                <span class="service-desc">Plat: VPQ 7606 • Abe Di / Syalihan • 24 Jam Kecemasan</span>
+                <span style="font-size:0.68rem; color:var(--text-muted); margin-top:2px; display:block;">${HUBS.KOK_LANAS.address}</span>
               </div>
+            </div>
+            <div class="service-price-col">
+              <span class="dist-badge-live">Kelantan HQ</span>
             </div>
           </div>
+
           <div class="service-card ${state.currentHub.id === 'raub' ? 'selected' : ''}" data-hub="raub">
-            <div style="display:flex; align-items:center; gap:10px;">
+            <div class="service-card-left">
               <span style="font-size:1.4rem;">🏛️</span>
-              <div>
-                <strong>Cawangan Raub (Pahang)</strong>
-                <div style="font-size:0.72rem; color:var(--text-muted);">Plat: DFG 7606 • Abe Din</div>
+              <div class="service-texts">
+                <span class="service-name">Al-Farhain Medical Center (Cawangan Raub, Pahang)</span>
+                <span class="service-desc">Plat: DFG 7606 • Abe Din Estimos • 24 Jam Kecemasan</span>
+                <span style="font-size:0.68rem; color:var(--text-muted); margin-top:2px; display:block;">${HUBS.RAUB.address}</span>
               </div>
             </div>
+            <div class="service-price-col">
+              <span class="dist-badge-live">Pahang Hub</span>
+            </div>
+          </div>
+
+          <div class="presets-section-title" style="margin-top:8px;">Cawangan Lain Al-Farhain</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            ${OTHER_BRANCHES.map(b => `
+              <div class="service-card ${state.currentHub.id === b.id ? 'selected' : ''}" data-hub="${b.id}" style="padding:10px;">
+                <div style="font-size:0.75rem; font-weight:700;">${b.name.replace('Al-Farhain Medical Center (Cawangan ', '').replace(')', '')}</div>
+                <div style="font-size:0.65rem; color:var(--text-muted);">${b.state}</div>
+              </div>
+            `).join('')}
           </div>
         </div>
       `;
@@ -1335,89 +1619,269 @@ function initLocationModal() {
     });
   }
 
+  // STOP 2: LOKASI PENGAMBILAN PESAKIT (PATIENT ADDRESS)
   if (rowPickup) {
     rowPickup.addEventListener('click', () => {
       playClickSound();
-      title.textContent = 'Pilih Lokasi Pengambilan';
-      const presets = PRESET_PICKUP_LOCATIONS[state.currentHub.id] || PRESET_PICKUP_LOCATIONS.kok_lanas;
+      title.textContent = 'Tetapkan Lokasi Pengambilan Pesakit';
 
-      let html = '<div style="display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto;">';
-      presets.forEach(p => {
-        html += `
-          <div class="service-card" data-pickup-name="${p.name}">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <span style="font-size:1.2rem;">📍</span>
-              <div>
-                <strong>${p.name}</strong>
-                <div style="font-size:0.7rem; color:var(--text-muted);">${p.address || p.area}</div>
-              </div>
-            </div>
+      const hubPresets = PRESET_PICKUP_LOCATIONS[state.currentHub.id] || PRESET_PICKUP_LOCATIONS.kok_lanas;
+
+      content.innerHTML = `
+        <div class="modal-hub-banner">
+          <span>🏛️</span>
+          <div>
+            <span style="font-size:0.7rem; color:var(--text-muted); display:block;">Pangkalan Bertolak (Kiraan jarak bermula dari sini):</span>
+            <strong style="color:var(--amc-teal-dark);">${state.currentHub.name}</strong>
           </div>
-        `;
-      });
-      html += '</div>';
+        </div>
 
-      content.innerHTML = html;
+        <div class="patient-search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="pickupSearchInput" class="patient-search-input" placeholder="Taip alamat rumah pesakit / taman / kampung..." autocomplete="off">
+          <button type="button" id="clearPickupSearchBtn" class="search-clear-btn" style="display:none;">&times;</button>
+        </div>
 
-      content.querySelectorAll('.service-card').forEach(c => {
-        c.addEventListener('click', () => {
+        <div id="geocodingResultsContainer" class="geocoding-results-list" style="display:none;"></div>
+
+        <button type="button" class="pick-map-action-btn" id="btnPickOnMapModal">
+          <span>🗺️</span>
+          <span>Pilih / Tetapkan Pin Rumah Pada Peta Terus</span>
+          <span>➔</span>
+        </button>
+
+        <div class="presets-section-title">Kawasan Kediaman Utama (${state.currentHub.shortName})</div>
+        <div id="presetsListContainer" style="display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; padding-right:2px;">
+          ${renderPresetPickupCards(hubPresets)}
+        </div>
+      `;
+
+      const btnPickMap = content.querySelector('#btnPickOnMapModal');
+      if (btnPickMap) {
+        btnPickMap.addEventListener('click', () => {
           playClickSound();
-          state.pickupName = c.dataset.pickupName;
-          const displayEl = document.getElementById('displayPickupName');
-          if (displayEl) displayEl.textContent = state.pickupName;
-          calculateAll();
           modal.classList.remove('show');
+          const switchPeta = document.getElementById('switchModePeta');
+          if (switchPeta) switchPeta.click();
+          alert('Sila klik pada mana-mana lokasi di atas peta atau seret pin biru (📍) untuk menetapkan kedudukan rumah pesakit.');
         });
-      });
+      }
 
+      const searchInput = content.querySelector('#pickupSearchInput');
+      const clearBtn = content.querySelector('#clearPickupSearchBtn');
+      const geocodingBox = content.querySelector('#geocodingResultsContainer');
+      const presetsBox = content.querySelector('#presetsListContainer');
+
+      if (clearBtn && searchInput) {
+        clearBtn.addEventListener('click', () => {
+          searchInput.value = '';
+          clearBtn.style.display = 'none';
+          geocodingBox.style.display = 'none';
+          presetsBox.innerHTML = renderPresetPickupCards(hubPresets);
+          attachPresetClickListeners();
+          searchInput.focus();
+        });
+      }
+
+      let debounceTimer = null;
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          const q = e.target.value.trim();
+          if (clearBtn) clearBtn.style.display = q ? 'flex' : 'none';
+
+          const filtered = hubPresets.filter(p =>
+            p.name.toLowerCase().includes(q.toLowerCase()) ||
+            (p.address && p.address.toLowerCase().includes(q.toLowerCase())) ||
+            (p.area && p.area.toLowerCase().includes(q.toLowerCase()))
+          );
+          presetsBox.innerHTML = renderPresetPickupCards(filtered.length ? filtered : hubPresets);
+          attachPresetClickListeners();
+
+          clearTimeout(debounceTimer);
+          if (q.length >= 3) {
+            debounceTimer = setTimeout(async () => {
+              geocodingBox.style.display = 'block';
+              geocodingBox.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:8px; text-align:center;">🔍 Mencari alamat tepat di peta OSM...</div>';
+
+              const results = await searchAddressGeocode(q, state.currentHub.state);
+              if (results.length) {
+                geocodingBox.innerHTML = `
+                  <div style="font-size:0.68rem; font-weight:800; color:#0284C7; text-transform:uppercase; margin-bottom:4px;">
+                    Hasil Carian Alamat OSM (${results.length})
+                  </div>
+                  ${results.map(r => {
+                    const estDist = haversineKm(state.originCoords, r.coords, 1.28);
+                    const estMin = estimateDurationMin(estDist);
+                    return `
+                      <div class="geocoding-result-item" data-geo-name="${escapeHtml(r.name)}" data-geo-address="${escapeHtml(r.address)}" data-lat="${r.coords[0]}" data-lng="${r.coords[1]}">
+                        <div style="flex:1; padding-right:8px;">
+                          <div style="font-size:0.8rem; font-weight:700; color:var(--text-heading);">${r.name}</div>
+                          <div style="font-size:0.68rem; color:var(--text-muted); line-height:1.3;">${r.address}</div>
+                        </div>
+                        <div style="text-align:right;">
+                          <span class="dist-badge-live">~${estDist} KM</span>
+                          <span class="dist-time-sub">~${estMin} min respon</span>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                `;
+
+                geocodingBox.querySelectorAll('.geocoding-result-item').forEach(item => {
+                  item.addEventListener('click', () => {
+                    const lat = parseFloat(item.dataset.lat);
+                    const lng = parseFloat(item.dataset.lng);
+                    playClickSound();
+                    setPatientPickupLocation(
+                      item.dataset.geoName,
+                      item.dataset.geoAddress,
+                      [lat, lng],
+                      'geocoded'
+                    );
+                    modal.classList.remove('show');
+                  });
+                });
+              } else {
+                geocodingBox.innerHTML = '<div style="font-size:0.72rem; color:var(--text-muted); padding:6px; text-align:center;">Tiada alamat tepat dijumpai. Anda boleh pilih dari senarai di bawah atau letak pin pada peta.</div>';
+              }
+            }, 400);
+          } else {
+            geocodingBox.style.display = 'none';
+          }
+        });
+      }
+
+      function attachPresetClickListeners() {
+        presetsBox.querySelectorAll('.service-card').forEach(c => {
+          c.addEventListener('click', () => {
+            const pId = c.dataset.pickupId;
+            const found = hubPresets.find(p => p.id === pId);
+            if (found && found.coords) {
+              playClickSound();
+              setPatientPickupLocation(found.name, found.address, found.coords, found.id);
+              modal.classList.remove('show');
+            }
+          });
+        });
+      }
+
+      attachPresetClickListeners();
       modal.classList.add('show');
+      if (searchInput) setTimeout(() => searchInput.focus(), 200);
     });
   }
 
+  // STOP 3: HOSPITAL TUJUAN (DESTINASI)
   if (rowDest) {
     rowDest.addEventListener('click', () => {
       playClickSound();
-      title.textContent = 'Pilih Hospital Destinasi';
+      title.textContent = 'Pilih Hospital / Fasiliti Destinasi';
 
-      let html = '<div style="display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto;">';
-      PRESET_DESTINATIONS.forEach(d => {
-        html += `
-          <div class="service-card" data-dest-name="${d.name}" data-km="${d.distanceFromKokLanas}">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <span style="font-size:1.2rem;">🏥</span>
-              <div>
-                <strong>${d.name}</strong>
-                <div style="font-size:0.7rem; color:var(--text-muted);">${d.category} • ~${d.distanceFromKokLanas} KM</div>
-              </div>
-            </div>
+      content.innerHTML = `
+        <div class="modal-hub-banner">
+          <span>📍</span>
+          <div>
+            <span style="font-size:0.7rem; color:var(--text-muted); display:block;">Diukur Dari Lokasi Pesakit:</span>
+            <strong style="color:var(--amc-teal-dark);">${state.pickupName}</strong>
           </div>
-        `;
-      });
-      html += '</div>';
+        </div>
 
-      content.innerHTML = html;
+        <div class="patient-search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="destSearchInput" class="patient-search-input" placeholder="Cari nama hospital, pakar, atau daerah..." autocomplete="off">
+        </div>
 
-      content.querySelectorAll('.service-card').forEach(c => {
-        c.addEventListener('click', () => {
-          playClickSound();
-          state.destinationName = c.dataset.destName;
-          const km = parseFloat(c.dataset.km) || 26.3;
-          state.distanceKm = km;
-          state.leg1Km = Math.min(km, 25.2);
-          state.leg2Km = Math.max(1.1, km - state.leg1Km);
+        <div id="destListContainer" style="display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto; padding-right:2px;">
+          ${renderPresetDestCards(PRESET_DESTINATIONS)}
+        </div>
+      `;
 
-          const displayEl = document.getElementById('displayDestName');
-          if (displayEl) displayEl.textContent = state.destinationName;
+      const destSearchInput = content.querySelector('#destSearchInput');
+      const destList = content.querySelector('#destListContainer');
 
-          calculateAll();
-          updateMapMarkers();
-          modal.classList.remove('show');
+      if (destSearchInput) {
+        destSearchInput.addEventListener('input', (e) => {
+          const q = e.target.value.toLowerCase().trim();
+          const filtered = PRESET_DESTINATIONS.filter(d =>
+            d.name.toLowerCase().includes(q) ||
+            d.category.toLowerCase().includes(q) ||
+            (d.state && d.state.toLowerCase().includes(q))
+          );
+          destList.innerHTML = renderPresetDestCards(filtered.length ? filtered : PRESET_DESTINATIONS);
+          attachDestClickListeners();
         });
-      });
+      }
 
+      function attachDestClickListeners() {
+        destList.querySelectorAll('.service-card').forEach(c => {
+          c.addEventListener('click', () => {
+            const dId = c.dataset.destId;
+            const found = PRESET_DESTINATIONS.find(d => d.id === dId);
+            if (found && found.coords) {
+              playClickSound();
+              setDestinationLocation(found.id, found.name, found.coords, found.category);
+              modal.classList.remove('show');
+            }
+          });
+        });
+      }
+
+      attachDestClickListeners();
       modal.classList.add('show');
+      if (destSearchInput) setTimeout(() => destSearchInput.focus(), 200);
     });
   }
+}
+
+function renderPresetPickupCards(presets) {
+  return presets.map(p => {
+    const isCurrent = state.pickupPresetId === p.id || state.pickupName === p.name;
+    const estDist = p.coords ? haversineKm(state.originCoords, p.coords, 1.28) : 0;
+    const estMin = estimateDurationMin(estDist);
+    return `
+      <div class="service-card ${isCurrent ? 'selected' : ''}" data-pickup-id="${p.id}">
+        <div class="service-card-left">
+          <span style="font-size:1.3rem;">📍</span>
+          <div class="service-texts">
+            <span class="service-name">${p.name}</span>
+            <span class="service-desc">${p.address || p.area}</span>
+          </div>
+        </div>
+        <div class="service-price-col">
+          <span class="dist-badge-live">🚗 ~${estDist} KM</span>
+          <span class="dist-time-sub">~${estMin} min respon</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderPresetDestCards(dests) {
+  return dests.map(d => {
+    const isCurrent = state.selectedDestId === d.id || state.destinationName === d.name;
+    const estDist = d.coords ? haversineKm(state.pickupCoords, d.coords, 1.28) : 0;
+    const estMin = estimateDurationMin(estDist);
+    return `
+      <div class="service-card ${isCurrent ? 'selected' : ''}" data-dest-id="${d.id}">
+        <div class="service-card-left">
+          <span style="font-size:1.3rem;">🏥</span>
+          <div class="service-texts">
+            <span class="service-name">${d.name}</span>
+            <span class="service-desc">${d.category} • ${d.state}</span>
+          </div>
+        </div>
+        <div class="service-price-col">
+          <span class="dist-badge-live">~${estDist} KM</span>
+          <span class="dist-time-sub">~${estMin} min transit</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 /* =========================================================================

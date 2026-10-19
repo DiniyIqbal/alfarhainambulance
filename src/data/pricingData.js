@@ -116,11 +116,39 @@ export const PRESET_PICKUP_LOCATIONS = {
       area: 'Pasir Puteh'
     },
     {
-      id: 'custom_pickup',
-      name: '📍 Alamat Rumah Khas / Lokasi Sendiri (Taip Alamat)',
-      address: '',
-      coords: null,
-      area: 'Tersuai'
+      id: 'kediaman_pengkalanchepa',
+      name: 'Kediaman Pesakit Pengkalan Chepa / Panji',
+      address: 'Pengkalan Chepa, 16100 Kota Bharu, Kelantan',
+      coords: [6.1667, 102.2833],
+      area: 'Pengkalan Chepa'
+    },
+    {
+      id: 'kediaman_wakafcheyeh',
+      name: 'Kediaman Pesakit Wakaf Che Yeh / Kadok / Pendek',
+      address: 'Wakaf Che Yeh / Kadok, 15150 Kota Bharu, Kelantan',
+      coords: [6.0520, 102.2350],
+      area: 'Wakaf Che Yeh'
+    },
+    {
+      id: 'kediaman_melor',
+      name: 'Kediaman Pesakit Melor / Peringat / Padang Kala',
+      address: 'Melor / Peringat, 16400 Kota Bharu, Kelantan',
+      coords: [5.9810, 102.2880],
+      area: 'Melor'
+    },
+    {
+      id: 'kediaman_salor',
+      name: 'Kediaman Pesakit Salor / Pasir Hor',
+      address: 'Salor, 15100 Kota Bharu, Kelantan',
+      coords: [6.0650, 102.2150],
+      area: 'Salor'
+    },
+    {
+      id: 'kediaman_jeli',
+      name: 'Kediaman Pesakit Jeli / Bukit Bunga',
+      address: 'Bandar Jeli, 17600 Jeli, Kelantan',
+      coords: [5.6987, 101.8427],
+      area: 'Jeli'
     }
   ],
   raub: [
@@ -153,6 +181,13 @@ export const PRESET_PICKUP_LOCATIONS = {
       area: 'Tras'
     },
     {
+      id: 'kediaman_dong',
+      name: 'Kediaman Pesakit Dong / Bukit Fraser',
+      address: 'Dong / Bukit Fraser, 27600 Raub, Pahang',
+      coords: [3.8500, 101.8800],
+      area: 'Dong'
+    },
+    {
       id: 'kediaman_bentong',
       name: 'Kediaman Pesakit Daerah Bentong / Karak',
       address: 'Bentong, 28700 Bentong, Pahang',
@@ -174,11 +209,11 @@ export const PRESET_PICKUP_LOCATIONS = {
       area: 'Cameron'
     },
     {
-      id: 'custom_pickup',
-      name: '📍 Alamat Rumah Khas / Lokasi Sendiri (Taip Alamat)',
-      address: '',
-      coords: null,
-      area: 'Tersuai'
+      id: 'kediaman_temerloh',
+      name: 'Kediaman Pesakit Mentakab / Temerloh',
+      address: 'Bandar Mentakab / Temerloh, 28400 Mentakab, Pahang',
+      coords: [3.4800, 102.3500],
+      area: 'Temerloh'
     }
   ]
 };

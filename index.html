@@ -248,15 +248,20 @@
             <!-- Content Mode B: Peta (Screen 06) -->
             <div id="step1PetaModeContent" style="display: none;">
               <div class="full-map-section">
-                <div class="map-badge-top-right">
-                  <span>ℹ️</span> <span>Pratonton laluan - ilustrasi</span>
+                <div class="map-routing-status" id="mapRoutingStatusBadge">
+                  <span class="pulse-dot"></span>
+                  <span id="mapRoutingStatusText">Laluan Jalan Raya Sebenar</span>
                 </div>
 
                 <div class="full-leaflet-container">
                   <div id="leafletMapFull"></div>
                 </div>
 
-                <div class="ui-card map-route-summary-card">
+                <div class="map-interactive-hint">
+                  <span>💡</span> <span>Klik di mana-mana atas peta atau seret pin pesakit (📍) untuk melaraskan lokasi rumah</span>
+                </div>
+
+                <div class="ui-card map-route-summary-card" style="margin-top: 10px;">
                   <div class="map-leg-row">
                     <div class="map-leg-left">
                       <span class="map-leg-num">1</span>
@@ -273,7 +278,7 @@
                   </div>
                   <div class="map-divider"></div>
                   <div class="map-total-row">
-                    <span class="map-total-label">Jumlah jarak</span>
+                    <span class="map-total-label">Jumlah jarak perjalanan</span>
                     <span class="map-total-km" id="mapTotalDistanceKm">26.3 km</span>
                   </div>
 
@@ -856,7 +861,8 @@
           </div>
           <div>
             <strong>MAKLUMAT TRIP:</strong><br>
-            Asal: <span id="invOrigin">Kok Lanas HQ</span><br>
+            Pangkalan: <span id="invOrigin">Kok Lanas HQ</span><br>
+            Pengambilan: <span id="invPickup" style="font-weight: 700;">Bandar Kota Bharu</span><br>
             Tujuan: <span id="invDestination">HRPZ II Kota Bharu</span><br>
             Jarak: <span id="invDistanceKm" style="font-weight: 700;">26.3 KM</span>
           </div>
