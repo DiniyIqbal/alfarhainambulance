@@ -1,798 +1,873 @@
 <!DOCTYPE html>
-<html lang="ms" data-theme="dark">
+<html lang="ms">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Al-Farhain AMC Ambulans | Kalkulator Tambang & Sistem Pengurusan Ambulans</title>
-  <meta name="description" content="Sistem Kalkulator Tambang Ambulans Al-Farhain Medical Center (AMC). Kiraan jarak, pakej bantuan staf perubatan (M.A, C.A, Dr), peralatan oksigen, ventilator, dan penjanaan invois rasmi.">
+  <title>Al-Farhain AMC Ambulans | Kalkulator Tambang &amp; Pengurusan Fleet</title>
+  <meta name="description" content="Sistem Pengurusan Ambulans Al-Farhain Medical Center (AMC). Pengurusan Fleet, Prestasi Operasi, Katalog Harga, dan Kalkulator Tambang Perubatan 24 Jam.">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  
   <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="theme-color" content="#0EA5E9">
+  <meta name="theme-color" content="#006C67">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AMC Ambulans">
 
-  <!-- Leaflet CSS for Interactive OpenStreetMap -->
+  <!-- Leaflet CSS for OpenStreetMap -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <!-- Custom Stylesheet -->
+  <!-- Custom Modern Design Stylesheet -->
   <link rel="stylesheet" href="./src/style.css">
 </head>
 <body>
 
-  <!-- Modern Top Header Glass Card (Based on Mockup) -->
-  <header class="app-header-container">
-    <div class="header-glass-card">
-      <div class="header-card-top-row">
-        <div class="header-brand-group">
-          <div class="header-avatar-badge" title="Al-Farhain Medical Center Ambulance">🚑</div>
-          <div class="header-titles">
-            <h1 class="header-main-title">AL-FARHAIN AMC AMBULANS</h1>
-            <div class="header-sub-row">
-              <span class="header-branch-name" id="activeHubBadge">Kok Lanas HQ - Emergency Dispatch</span>
-              <span class="header-live-badge"><span class="live-dot-pulse"></span> 24 Jam</span>
-            </div>
+  <!-- Single Clean Mobile Frame Viewport (Clean, Uncluttered, Self-Contained) -->
+  <div class="mobile-app-shell" id="appShell">
+
+
+    <!-- 2. Integrated App Header (#006C67) -->
+    <header class="app-header">
+      <!-- Main Brand & Action Row -->
+      <div class="header-main-row">
+        <div class="header-brand">
+          <div class="brand-cross-icon" title="Al-Farhain Medical Center">
+            <!-- Medical Cross SVG -->
+            <svg viewBox="0 0 24 24">
+              <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
+            </svg>
+          </div>
+          <div class="brand-titles">
+            <span class="brand-title-main">AL-FARHAIN</span>
+            <span class="brand-title-sub">AMC AMBULANS</span>
           </div>
         </div>
 
-        <!-- Micro Header Utilities (Theme Toggle, Supabase, Phone QR) -->
-        <div class="header-micro-tools">
-          <button class="micro-icon-btn" id="themeToggleBtn" title="Tukar Tema (Siang / Malam)" aria-label="Tukar Tema Paparan">
+        <div class="header-right-actions">
+          <!-- Cawangan Dropdown Pill -->
+          <div class="branch-dropdown-wrapper">
+            <button class="branch-select-pill" id="branchSelectBtn" aria-expanded="false" title="Pilih Cawangan">
+              <span style="font-size: 0.8rem;">🏛️</span>
+              <span id="activeBranchLabel">HQ Kok Lanas</span>
+              <span class="chevron-icon">▾</span>
+            </button>
+            <div class="branch-dropdown-menu" id="branchDropdownMenu">
+              <div class="branch-item active" data-hub="kok_lanas">
+                <span class="branch-item-name">HQ Kok Lanas</span>
+                <span class="branch-item-plate">VPQ 7606 (Kelantan)</span>
+              </div>
+              <div class="branch-item" data-hub="raub">
+                <span class="branch-item-name">Cawangan Raub</span>
+                <span class="branch-item-plate">DFG 7606 (Pahang)</span>
+              </div>
+              <div class="branch-item" data-hub="jeli">
+                <span class="branch-item-name">Cawangan Jeli</span>
+                <span class="branch-item-plate">AMC Regional (Kelantan)</span>
+              </div>
+              <div class="branch-item" data-hub="machang">
+                <span class="branch-item-name">Cawangan Machang</span>
+                <span class="branch-item-plate">AMC Fast Response</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Integrated Emergency SOS Button -->
+          <button class="header-sos-capsule" id="sosEmergencyBtn" title="Kecemasan SOS 24 Jam">
+            <span class="sos-dot-pulse"></span>
+            <span>SOS</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Integrated Sleek Micro Utility Strip (Theme, Supabase Cloud, QR) -->
+      <div class="header-utility-strip">
+        <div class="utility-live-tag">
+          <span class="live-dot-pulse"></span>
+          <span>Operasi 24 Jam</span>
+        </div>
+
+        <div class="utility-actions-group">
+          <button class="utility-tool-btn" id="themeToggleBtn" title="Tukar Tema Paparan">
             <span id="themeToggleIcon">🌙</span>
+            <span>Tema</span>
           </button>
-          <button class="micro-icon-btn" id="supabaseConnectBtn" title="Status Pangkalan Data Supabase">
-            <span id="supabaseDot" class="status-dot status-warning"></span>
+          <button class="utility-tool-btn" id="supabaseConnectBtn" title="Status Pangkalan Data Supabase">
+            <span id="supabaseDot" class="status-indicator-dot"></span>
+            <span>Cloud</span>
           </button>
-          <button class="micro-icon-btn" id="openMobileModalBtn" title="Buka di Telefon Pintar / Imbas QR Kod">
-            <span>📱</span>
+          <button class="utility-tool-btn" id="openMobileModalBtn" title="Buka di Telefon Pintar / Imbas QR">
+            <span>📲</span>
+            <span>QR Kod</span>
           </button>
         </div>
       </div>
+    </header>
 
-      <!-- Controls Row: Cawangan dropdown on left, Red KECEMASAN SOS capsule on right -->
-      <div class="header-card-controls-row">
-        <div class="cawangan-select-box">
-          <label for="hubSelector" class="cawangan-label">Cawangan:</label>
-          <div class="custom-select-trigger">
-            <select id="hubSelector" aria-label="Pilih Cawangan Hub Operasi">
-              <option value="kok_lanas" selected>HQ Kok Lanas</option>
-              <option value="raub">Cawangan Raub</option>
-              <option value="jeli">Cawangan Jeli</option>
-              <option value="machang">Cawangan Machang</option>
-            </select>
-            <span class="select-chevron">⌄</span>
+      <!-- 3. Connected 5-Step Stepper (Shown when in Dispatch View) -->
+      <div class="stepper-container" id="dispatchStepperContainer">
+        <div class="stepper-track-line">
+          <div class="stepper-progress-bar">
+            <div class="stepper-progress-fill" id="stepperProgressFill" style="width: 10%;"></div>
+          </div>
+          <div class="stepper-nodes">
+            <button class="stepper-node-item active" data-step="1">
+              <div class="node-circle">1</div>
+              <span class="node-title">Lokasi</span>
+            </button>
+            <button class="stepper-node-item" data-step="2">
+              <div class="node-circle">2</div>
+              <span class="node-title">Kategori</span>
+            </button>
+            <button class="stepper-node-item" data-step="3">
+              <div class="node-circle">3</div>
+              <span class="node-title">Staf</span>
+            </button>
+            <button class="stepper-node-item" data-step="4">
+              <div class="node-circle">4</div>
+              <span class="node-title">Alatan</span>
+            </button>
+            <button class="stepper-node-item" data-step="5">
+              <div class="node-circle">5</div>
+              <span class="node-title">Invois</span>
+            </button>
           </div>
         </div>
-
-        <!-- Priority Emergency SOS Button (Minimized Round S.O.S Button) -->
-        <button class="sos-round-button" id="sosEmergencyBtn" title="Kecemasan SOS Pantas" aria-label="Kecemasan SOS">
-          <span>S.O.S</span>
-        </button>
       </div>
-    </div>
 
-    <!-- Segmented Mode Switcher: [ Calculator ] [ Map View ] -->
-    <div class="segmented-mode-container">
-      <div class="segmented-mode-switch" role="tablist" aria-label="Mod Paparan">
-        <button class="segment-btn active" id="btnModeCalc" data-mode="calculator" role="tab" aria-selected="true">
-          Calculator
-        </button>
-        <button class="segment-btn" id="btnModeMap" data-mode="map" role="tab" aria-selected="false">
-          Map View
-        </button>
-      </div>
-    </div>
+      <!-- 4. Scrollable Phone Content View -->
+      <main class="phone-content" id="phoneContent">
 
-    <!-- Connected Node Stepper Tracker (Based on Mockup) -->
-    <div class="connected-stepper-wrapper" id="calcConnectedStepper" aria-label="Penjejak Langkah Pengiraan">
-      <div class="stepper-track-bar">
-        <div class="stepper-fill-progress" id="stepperProgressFill" style="width: 10%;"></div>
-      </div>
-      <div class="stepper-nodes-flex">
-        <button class="stepper-node-btn active" data-step="1" title="Langkah 1: Lokasi & Peta">
-          <div class="stepper-node-dot"></div>
-          <span class="stepper-node-title">1. Lokasi &amp; Peta</span>
-        </button>
-        <button class="stepper-node-btn" data-step="2" title="Langkah 2: Kategori Perkhidmatan">
-          <div class="stepper-node-dot"></div>
-          <span class="stepper-node-title">2. Kategori</span>
-        </button>
-        <button class="stepper-node-btn" data-step="3" title="Langkah 3: Bantuan Staf">
-          <div class="stepper-node-dot"></div>
-          <span class="stepper-node-title">3. Staf</span>
-        </button>
-        <button class="stepper-node-btn" data-step="4" title="Langkah 4: Peralatan & Ubatan">
-          <div class="stepper-node-dot"></div>
-          <span class="stepper-node-title">4. Alatan</span>
-        </button>
-        <button class="stepper-node-btn" data-step="5" title="Langkah 5: Semakan Kos & Invois">
-          <div class="stepper-node-dot"></div>
-          <span class="stepper-node-title">5. Invois</span>
-        </button>
-      </div>
-    </div>
-  </header>
+        <!-- =============================================================
+             VIEW 1: DISPATCH (LOKASI, KATEGORI, STAF, ALATAN, INVOIS & PETA)
+             ============================================================= -->
+        <section id="calculator-view" class="view-section active">
 
-  <!-- Main Container -->
-  <main class="app-container">
+          <!-- -------------------------------------------------------------
+               STEP 1: LOKASI & JARAK (SCREEN 01 & 06)
+               ------------------------------------------------------------- -->
+          <div class="calc-step-page active" id="step-page-1" data-step="1">
 
-    <!-- ==================== VIEW 1: TRIP CALCULATOR (CORE FEATURE) ==================== -->
-    <section id="calculator-view" class="view-section active">
-
-      <!-- Stage Container for Dedicated Step Pages -->
-      <div class="calculator-stage-container">
-
-        <!-- ==================== STEP PAGE 1: LOKASI & PETA ==================== -->
-        <div class="calc-step-page active" id="step-page-1" data-step="1">
-          <!-- 1. Location & Route Picker Card (Matches Image Exactly) -->
-          <div class="glass-card modern-step-card" id="section-location">
-            <div class="step-card-header">
-              <h2 class="step-card-title">1. Lokasi &amp; Kiraan Jarak Perjalanan</h2>
-              <div class="step-card-subtitle">Step 1: Enter Locations</div>
+            <!-- Segmented Switch: [ 📍 Lokasi ] [ 🗺️ Peta ] -->
+            <div class="mode-segmented-bar">
+              <button class="mode-segment-btn active" id="btnModeLokasi">
+                <span>📍</span> <span>Lokasi</span>
+              </button>
+              <button class="mode-segment-btn" id="btnModePeta">
+                <span>🗺️</span> <span>Peta</span>
+              </button>
             </div>
 
-            <div class="step-card-content">
-              <!-- CALCULATOR MODE VIEW (3-Point Ambulance Routing & Estimate Price) -->
-              <div id="calculatorModeContent">
-                
-                <!-- 1. Starting Point: Pangkalan Ambulans (Kok Lanas HQ vs Raub Branch) -->
-                <div class="pill-input-group">
-                  <div class="pill-input-label">
-                    <span class="pill-icon">🏢</span>
-                    <span>1. Pangkalan Ambulans (Starting Point)</span>
-                    <span class="pill-badge-tag">Pilih 1 daripada 2</span>
-                  </div>
-                  <div class="pill-input-box">
-                    <span class="box-icon">🚑</span>
-                    <select id="startingHubSelect" class="pill-select-element" aria-label="Pangkalan Ambulans Bertolak">
-                      <option value="kok_lanas" selected>HQ Pusat Rawatan Al-Farhain Kok Lanas (Kelantan) - Plat: VPQ 7606</option>
-                      <option value="raub">Al-Farhain Medical Center Cawangan Raub (Pahang) - Plat: DFG 7606</option>
-                    </select>
-                  </div>
-                </div>
+            <!-- Content Mode A: Lokasi (Screen 01) -->
+            <div id="step1LokasiModeContent">
+              <div class="page-title-row">
+                <h2 class="page-title">Rancang perjalanan</h2>
+              </div>
+              <div class="page-subtitle">Tetapkan pangkalan, pengambilan dan destinasi.</div>
 
-                <!-- 2. Customer Pickup Point: Lokasi Rumah Pesakit -->
-                <div class="pill-input-group">
-                  <div class="pill-input-label">
-                    <span class="pill-icon">🏠</span>
-                    <span>2. Lokasi Pengambilan Pesakit (Pickup Point)</span>
-                  </div>
-                  <!-- Quick Preset Dropdown for Pickup Area -->
-                  <div class="pill-input-box">
-                    <span class="box-icon">📍</span>
-                    <select id="pickupPresetSelect" class="pill-select-element" aria-label="Kawasan Pengambilan Pesakit">
-                      <!-- Populated dynamically based on Kok Lanas vs Raub -->
-                    </select>
-                  </div>
-                  <!-- Customizable Home Address Input -->
-                  <div class="pill-input-box mt-xs">
-                    <span class="box-icon">✍️</span>
-                    <input type="text" id="pickupAddressInput" class="pill-text-element" placeholder="Alamat lengkap rumah pesakit..." value="Kediaman Pesakit, Kota Bharu" aria-label="Alamat Rumah Pesakit">
-                  </div>
-                </div>
+              <!-- Location Pickers Card -->
+              <div class="ui-card location-nodes-card">
+                <div class="location-stops-list">
+                  <div class="stops-connector-line"></div>
 
-                <!-- 3. Destination: Destinasi / Hospital Tujuan -->
-                <div class="pill-input-group">
-                  <div class="pill-input-label">
-                    <span class="pill-icon">🏥</span>
-                    <span>3. Destinasi / Drop-off (Hospital Tujuan)</span>
-                  </div>
-                  <!-- Preset Hospital Dropdown -->
-                  <div class="pill-input-box">
-                    <span class="box-icon">🏥</span>
-                    <select id="destinationSelect" class="pill-select-element" aria-label="Hospital Destinasi Tujuan">
-                      <!-- Populated dynamically via JS -->
-                    </select>
-                  </div>
-                  <!-- Customizable Destination Address Input -->
-                  <div class="pill-input-box mt-xs">
-                    <span class="box-icon">📝</span>
-                    <input type="text" id="destAddressInput" class="pill-text-element" placeholder="Alamat hospital / lokasi drop-off pesakit..." value="Hospital Raja Perempuan Zainab II (HRPZ II), Kota Bharu" aria-label="Alamat Hospital Destinasi">
-                  </div>
-                </div>
-
-                <!-- Multi-Leg Route Breakdown Card -->
-                <div class="route-legs-card" id="routeLegsCard">
-                  <div class="leg-item">
-                    <div class="leg-badge leg-1">①</div>
-                    <div class="leg-details">
-                      <span class="leg-title">Pangkalan ➔ Rumah Pesakit</span>
-                      <span class="leg-path" id="leg1Text">HQ Kok Lanas ➔ Kediaman Pesakit</span>
-                    </div>
-                    <span class="leg-km" id="leg1KmBadge">24.5 KM</span>
-                  </div>
-                  <div class="leg-connector-line"></div>
-                  <div class="leg-item">
-                    <div class="leg-badge leg-2">②</div>
-                    <div class="leg-details">
-                      <span class="leg-title">Rumah Pesakit ➔ Hospital</span>
-                      <span class="leg-path" id="leg2Text">Kediaman Pesakit ➔ HRPZ II</span>
-                    </div>
-                    <span class="leg-km" id="leg2KmBadge">4.5 KM</span>
-                  </div>
-                </div>
-
-                <!-- Route Distance Meta Bar -->
-                <div class="route-meta-bar">
-                  <div class="meta-item">
-                    <span class="meta-title">Jumlah Jarak (1+2)</span>
-                    <span class="meta-val" id="displayDistanceKm">29.0 KM</span>
-                  </div>
-                  <div class="meta-item">
-                    <span class="meta-title">Basis (Standard)</span>
-                    <span class="meta-val text-emerald">25.0 KM</span>
-                  </div>
-                  <div class="meta-item">
-                    <span class="meta-title">Jarak Tambahan</span>
-                    <span class="meta-val text-amber" id="displayExtraKm">+4.0 KM</span>
-                  </div>
-                </div>
-
-                <!-- Live Estimated Fare Card in Step 1 -->
-                <div class="step1-estimate-card" id="step1EstimateCard">
-                  <div class="estimate-top-row">
-                    <div class="estimate-info-col">
-                      <div class="estimate-pill-title">
-                        <span class="pill-pulse-dot"></span>
-                        <span>Anggaran Tambang Asas</span>
-                      </div>
-                      <div class="estimate-route-caption" id="estimateRouteCaption">
-                        Kiraan dari Pangkalan ➔ Rumah ➔ Destinasi
+                  <!-- Stop 1: Pangkalan -->
+                  <div class="location-stop-item" id="stopPangkalanRow" title="Tukar Pangkalan Bertolak">
+                    <div class="stop-left-group">
+                      <div class="stop-node-icon pangkalan">🏠</div>
+                      <div class="stop-text-block">
+                        <span class="stop-label">Pangkalan</span>
+                        <span class="stop-name" id="displayPangkalanName">Kok Lanas HQ</span>
                       </div>
                     </div>
-                    <div class="estimate-price-badge">
-                      <span class="price-curr">RM</span>
-                      <span class="price-amount" id="step1EstimateFare">262.00</span>
+                    <span class="stop-chevron">›</span>
+                  </div>
+
+                  <!-- Stop 2: Pengambilan -->
+                  <div class="location-stop-item" id="stopPickupRow" title="Pilih Kawasan Pengambilan Pesakit">
+                    <div class="stop-left-group">
+                      <div class="stop-node-icon pickup">📍</div>
+                      <div class="stop-text-block">
+                        <span class="stop-label">Pengambilan</span>
+                        <span class="stop-name" id="displayPickupName">Bandar Kota Bharu</span>
+                      </div>
                     </div>
+                    <span class="stop-chevron">›</span>
                   </div>
 
-                  <div class="estimate-chips-row">
-                    <div class="estimate-chip">
-                      <span class="chip-circle-icon bg-emerald">✓</span>
-                      <span>Basis (&le;25 KM): <strong>RM 250.00</strong></span>
+                  <!-- Stop 3: Hospital Destinasi -->
+                  <div class="location-stop-item" id="stopDestRow" title="Pilih Hospital Destinasi">
+                    <div class="stop-left-group">
+                      <div class="stop-node-icon dest">🏁</div>
+                      <div class="stop-text-block">
+                        <span class="stop-label">Hospital tujuan</span>
+                        <span class="stop-name" id="displayDestName">Hospital Raja Perempuan Zainab II</span>
+                      </div>
                     </div>
-                    <div class="estimate-chip" id="step1ExtraChip">
-                      <span class="chip-circle-icon bg-amber">+</span>
-                      <span id="step1ExtraBreakdownText">Lebihan 4.0 KM (&times;RM 3.00): <strong>+RM 12.00</strong></span>
+                    <span class="stop-chevron">›</span>
+                  </div>
+                </div>
+
+                <!-- Mini Map Preview with route line -->
+                <div class="mini-map-preview-box" id="miniMapContainer" title="Klik untuk lihat peta penuh">
+                  <div id="miniLeafletMap"></div>
+                  <div class="mini-map-expand-pill">
+                    <span>🗺️</span> <span>Buka Peta</span>
+                  </div>
+                </div>
+
+                <!-- Distance Split Breakdown -->
+                <div class="distance-split-row">
+                  <div class="dist-left">
+                    <span>🛣️</span>
+                    <span id="displayDistanceSplit">25.2 km + 1.1 km</span>
+                    <span style="font-size: 0.65rem; color: var(--text-muted);">(Jarak jalan + akses)</span>
+                  </div>
+                  <div class="dist-right">
+                    <span>Jumlah keseluruhan:</span>
+                    <span class="dist-total-bold" id="displayTotalKm">26.3 km</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Base Estimate Price Card -->
+              <div class="ui-card estimate-base-card">
+                <div class="estimate-left-col">
+                  <div class="estimate-calc-icon">🧮</div>
+                  <div class="estimate-title-group">
+                    <span class="estimate-title">Anggaran asas</span>
+                    <span class="estimate-formula-text" id="displayEstimateFormula">RM250 + (1.3 km × RM3) Kadar asas + jarak tambahan</span>
+                  </div>
+                </div>
+                <div class="estimate-price-large" id="displayStep1Price">RM253.90</div>
+              </div>
+
+              <!-- Primary Next Button -->
+              <button class="primary-action-btn" id="btnContinueToCategory">
+                <span>Teruskan ke Kategori</span>
+                <span>➔</span>
+              </button>
+            </div>
+
+            <!-- Content Mode B: Peta (Screen 06) -->
+            <div id="step1PetaModeContent" style="display: none;">
+              <div class="full-map-section">
+                <div class="map-badge-top-right">
+                  <span>ℹ️</span> <span>Pratonton laluan - ilustrasi</span>
+                </div>
+
+                <div class="full-leaflet-container">
+                  <div id="leafletMapFull"></div>
+                </div>
+
+                <div class="ui-card map-route-summary-card">
+                  <div class="map-leg-row">
+                    <div class="map-leg-left">
+                      <span class="map-leg-num">1</span>
+                      <span id="mapLeg1Label">Pangkalan ➔ Pengambilan</span>
                     </div>
+                    <span class="map-leg-km" id="mapLeg1Km">25.2 km</span>
+                  </div>
+                  <div class="map-leg-row">
+                    <div class="map-leg-left">
+                      <span class="map-leg-num">2</span>
+                      <span id="mapLeg2Label">Pengambilan ➔ Hospital</span>
+                    </div>
+                    <span class="map-leg-km" id="mapLeg2Km">1.1 km</span>
+                  </div>
+                  <div class="map-divider"></div>
+                  <div class="map-total-row">
+                    <span class="map-total-label">Jumlah jarak</span>
+                    <span class="map-total-km" id="mapTotalDistanceKm">26.3 km</span>
                   </div>
 
-                  <div class="estimate-footer-note">
-                    <span class="note-icon">💡</span>
-                    <span>Termasuk pemandu terlatih &amp; pembantu EMT asas percuma. Pakej staf tambahan &amp; peralatan boleh ditambah di Langkah 2-4.</span>
-                  </div>
-                </div>
-
-              </div>
-
-              <!-- MAP VIEW MODE CONTENT (Shown when user toggles [ Map View ]) -->
-              <div id="mapModeContent" style="display: none;">
-                <!-- Location Live Search Bar with Instant Autocomplete -->
-                <div class="map-search-wrapper" style="position: relative;">
-                  <div class="pill-input-box search-pill-box">
-                    <span class="box-icon">🔍</span>
-                    <input type="text" id="mapSearchInput" class="pill-text-element" placeholder="Cari nama hospital, klinik, jalan atau pesakit..." autocomplete="off">
-                    <button id="clearSearchBtn" class="clear-search-btn" title="Kosongkan carian">&times;</button>
-                  </div>
-                  <!-- Autocomplete Dropdown -->
-                  <div id="searchResultsDropdown" class="search-results-dropdown"></div>
-                </div>
-
-                <!-- Interactive Real Map Container -->
-                <div class="interactive-map-container" id="mapContainer">
-                  <div id="leafletMap"></div>
-
-                  <!-- Top Left Floating Coordinate & Instructions Pill -->
-                  <div class="map-coords-overlay">
-                    <span class="coords-icon">🎯</span>
-                    <span id="mapCoordsBadge">HRPZ II Kota Bharu (27.2 KM)</span>
-                    <span class="drag-hint">• Boleh tarik pin merah</span>
-                  </div>
-
-                  <!-- Top Right Layer Switcher -->
-                  <div class="map-layers-overlay">
-                    <button class="map-layer-btn active" data-layer="google_streets" title="Peta Jalan Terperinci">
-                      🗺️ Jalan
-                    </button>
-                    <button class="map-layer-btn" data-layer="google_hybrid" title="Imej Satelit Sebenar dengan Label Jalan">
-                      🛰️ Satelit
-                    </button>
-                    <button class="map-layer-btn" data-layer="osm" title="OpenStreetMap Terbuka">
-                      🌐 OSM
-                    </button>
-                  </div>
-
-                  <!-- Bottom Right Navigation & Control Tools -->
-                  <div class="map-tools-overlay">
-                    <button class="map-btn" id="locateMeBtn" title="Gunakan GPS Peranti Anda">
-                      <span>📡</span> Lokasi Saya
-                    </button>
-                    <button class="map-btn" id="openGoogleMapsBtn" title="Buka Laluan Lengkap dalam Google Maps">
-                      <span>🗺️</span> Google Maps
-                    </button>
-                    <button class="map-btn" id="toggleMapExpandBtn" title="Besarkan / Kecilkan Saiz Peta">
-                      <span id="expandBtnIcon">⛶</span> <span id="expandBtnText">Besarkan</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div class="map-instruction-bar">
-                  <span>💡</span>
-                  <span><strong>Petua Peta:</strong> Klik di mana-mana tempat atas peta atau <strong>tarik (drag)</strong> pin merah untuk tandakan lokasi tepat pesakit. Jarak pemanduan sebenar dihitung secara automatik!</span>
-                </div>
-
-                <!-- Manual Distance Fine-Tuning Slider -->
-                <div class="manual-distance-box">
-                  <span style="font-size: 0.8rem; color: var(--text-sub); white-space: nowrap;">Pelaras KM Manual:</span>
-                  <input type="range" id="distanceSlider" class="distance-slider" min="1" max="400" step="0.5" value="27.2">
-                  <div style="display: flex; align-items: center; gap: 0.3rem;">
-                    <input type="number" id="manualKmInput" class="distance-km-input" value="27.2" step="0.1" min="1">
-                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim);">KM</span>
-                  </div>
+                  <button class="primary-action-btn" id="btnUseThisRoute">
+                    <span>Guna Laluan Ini</span>
+                    <span>➔</span>
+                  </button>
                 </div>
               </div>
+            </div>
 
+          </div>
+
+          <!-- -------------------------------------------------------------
+               STEP 2: KATEGORI PERKHIDMATAN (SCREEN 02)
+               ------------------------------------------------------------- -->
+          <div class="calc-step-page" id="step-page-2" data-step="2">
+            <div class="page-title-row">
+              <h2 class="page-title">Jenis perkhidmatan</h2>
+            </div>
+            <div class="page-subtitle">Pilih kategori mengikut keperluan tempahan.</div>
+
+            <!-- 4 Service Options -->
+            <div class="service-cards-stack" id="serviceCardsContainer">
+              <!-- Populated by JS -->
+            </div>
+
+            <div class="disclaimer-note-pill">
+              <span>ℹ️</span>
+              <span>Kategori ditentukan oleh staf bertugas.</span>
             </div>
           </div>
 
-          <!-- Step 1 Footer (Capsule Button matching mockup) -->
-          <div class="step-nav-footer step-1-cta-row">
-            <button class="capsule-primary-btn step-btn-next" data-next="2" id="btnCalculateFareStep1">
-              <span>Calculate Fare (Step 1 of 5)</span>
+          <!-- -------------------------------------------------------------
+               STEP 3: BANTUAN STAF / KRU PENGIRING (SCREEN 03)
+               ------------------------------------------------------------- -->
+          <div class="calc-step-page" id="step-page-3" data-step="3">
+            <div class="page-title-row">
+              <h2 class="page-title">Kru pengiring</h2>
+            </div>
+            <div class="page-subtitle">Pemandu dan kru EMT asas termasuk.</div>
+
+            <!-- 4 Staff Options -->
+            <div class="staff-cards-stack" id="staffCardsContainer">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- -------------------------------------------------------------
+               STEP 4: PERALATAN & UBATAN (SCREEN 04)
+               ------------------------------------------------------------- -->
+          <div class="calc-step-page" id="step-page-4" data-step="4">
+            <div class="page-title-row">
+              <h2 class="page-title">Keperluan perjalanan</h2>
+            </div>
+            <div class="page-subtitle">Tambah peralatan mengikut keperluan.</div>
+
+            <!-- Search Equipment Input -->
+            <div class="search-bar-box">
+              <span>🔍</span>
+              <input type="text" id="equipmentSearchInput" placeholder="Cari peralatan...">
+            </div>
+
+            <!-- Equipment List with +/- Steppers -->
+            <div class="equipments-stack" id="equipmentListContainer">
+              <!-- Populated by JS -->
+            </div>
+
+            <button class="expand-all-equip-btn" id="btnShowAllEquipment">
+              <span>📑</span> <span>Lihat semua peralatan</span>
             </button>
           </div>
+
+          <!-- -------------------------------------------------------------
+               STEP 5: SEMAK PERJALANAN / INVOIS (SCREEN 05)
+               ------------------------------------------------------------- -->
+          <div class="calc-step-page" id="step-page-5" data-step="5">
+            <div class="page-title-row">
+              <h2 class="page-title">Semak perjalanan</h2>
+              <span class="title-badge-pill anggaran">ANGGARAN</span>
+            </div>
+
+            <!-- Route Summary Card -->
+            <div class="ui-card route-stops-numbered-card">
+              <div class="route-stops-header-row">
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Laluan Misi Ambulans</span>
+                <span class="distance-pill-badge" id="invSummaryTotalKm">26.3 km</span>
+              </div>
+              <div class="numbered-stops-list">
+                <div class="numbered-stop-row">
+                  <span class="stop-num-badge">1</span>
+                  <div class="stop-detail-col">
+                    <span class="stop-title-bold" id="invSummaryStop1Title">Kok Lanas HQ</span>
+                    <span class="stop-sub-address" id="invSummaryStop1Sub">Kok Lanas, Kelantan</span>
+                  </div>
+                </div>
+                <div class="numbered-stop-row">
+                  <span class="stop-num-badge">2</span>
+                  <div class="stop-detail-col">
+                    <span class="stop-title-bold" id="invSummaryStop2Title">Bandar Kota Bharu</span>
+                    <span class="stop-sub-address">Pengambilan pesakit</span>
+                  </div>
+                </div>
+                <div class="numbered-stop-row">
+                  <span class="stop-num-badge">3</span>
+                  <div class="stop-detail-col">
+                    <span class="stop-title-bold" id="invSummaryStop3Title">HRPZ II</span>
+                    <span class="stop-sub-address">Hospital Raja Perempuan Zainab II, Kota Bharu</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cost Breakdown Card (Butiran Kos) -->
+            <div class="ui-card cost-breakdown-card">
+              <div class="cost-card-title">Butiran kos</div>
+              
+              <div id="costItemsContainer">
+                <!-- Populated dynamically -->
+              </div>
+
+              <div class="cost-total-row">
+                <span class="cost-total-label">Jumlah anggaran</span>
+                <span class="cost-total-price" id="invSummaryGrandTotal">RM503.90</span>
+              </div>
+
+              <div class="info-note-box">
+                <span>ℹ️</span>
+                <span>Semak butiran sebelum pengesahan.</span>
+              </div>
+            </div>
+
+            <!-- Step 5 Action Buttons -->
+            <button class="primary-action-btn" id="btnGenerateInvoiceModal">
+              <span>Jana Invois</span>
+              <span>➔</span>
+            </button>
+
+            <div class="dual-actions-row">
+              <button class="secondary-pill-btn" id="btnDirectCall">
+                <span>📞</span> <span>Hubungi</span>
+              </button>
+              <button class="secondary-pill-btn" id="btnShareWhatsApp">
+                <span>🔗</span> <span>Kongsi</span>
+              </button>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- =============================================================
+             VIEW 2: FLEET (SCREEN 07 — PENGURUSAN FLEET)
+             ============================================================= -->
+        <section id="driver-view" class="view-section">
+          <div class="page-title-row">
+            <h2 class="page-title">Pengurusan Fleet</h2>
+            <span class="title-badge-pill demo">DEMO</span>
+          </div>
+          <div class="page-subtitle" id="fleetSubtitleLocation">📍 Kok Lanas HQ</div>
+
+          <!-- Summary Metric Cards (2 Units / 1 Dalam perjalanan) -->
+          <div class="fleet-stats-grid">
+            <div class="fleet-stat-card">
+              <div class="fleet-stat-icon-circle">🚑</div>
+              <div>
+                <div class="fleet-stat-value">2 Unit</div>
+                <div class="fleet-stat-label">Jumlah kenderaan</div>
+              </div>
+            </div>
+            <div class="fleet-stat-card">
+              <div class="fleet-stat-icon-circle">🧭</div>
+              <div>
+                <div class="fleet-stat-value" id="fleetActiveCount">1</div>
+                <div class="fleet-stat-label">Dalam perjalanan</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Ambulance Card (VPQ 7606) -->
+          <div class="ui-card active-ambulance-card">
+            <div class="amb-header-row">
+              <div class="amb-graphic-box">
+                <!-- SVG Ambulance Illustration -->
+                <svg viewBox="0 0 160 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Wheels -->
+                  <circle cx="36" cy="62" r="14" fill="#334155"/>
+                  <circle cx="36" cy="62" r="6" fill="#CBD5E1"/>
+                  <circle cx="124" cy="62" r="14" fill="#334155"/>
+                  <circle cx="124" cy="62" r="6" fill="#CBD5E1"/>
+                  <!-- Van Body -->
+                  <path d="M12 28C12 23.58 15.58 20 20 20H108L132 34V60H12V28Z" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/>
+                  <!-- Front Cabin Slant -->
+                  <path d="M108 22H118L138 38V60H132V36L110 24H108V22Z" fill="#F8FAFC"/>
+                  <!-- Front Windshield -->
+                  <path d="M112 26L130 38H112V26Z" fill="#38BDF8" opacity="0.65"/>
+                  <!-- Side Window -->
+                  <rect x="74" y="26" width="30" height="14" rx="2" fill="#38BDF8" opacity="0.4"/>
+                  <!-- Teal Livery Stripe -->
+                  <rect x="12" y="44" width="130" height="6" fill="#007D77"/>
+                  <rect x="12" y="50" width="130" height="2" fill="#C61E2F"/>
+                  <!-- Star of Life / Medical Cross -->
+                  <rect x="36" y="29" width="4" height="10" rx="1" fill="#007D77"/>
+                  <rect x="33" y="32" width="10" height="4" rx="1" fill="#007D77"/>
+                  <!-- Roof Light Bar -->
+                  <rect x="55" y="16" width="22" height="4" rx="2" fill="#EF4444"/>
+                  <rect x="66" y="16" width="11" height="4" rx="2" fill="#3B82F6"/>
+                </svg>
+              </div>
+
+              <div class="amb-title-meta">
+                <div class="amb-plate-title" id="fleetAmbulancePlate">VPQ 7606</div>
+                <div class="amb-branch-sub" id="fleetAmbulanceBranch">📍 Kok Lanas HQ</div>
+              </div>
+
+              <span class="status-pill-green" id="fleetMissionBadge">Dalam perjalanan</span>
+            </div>
+
+            <!-- 5-Stage Fleet Progress Timeline -->
+            <div class="fleet-timeline-bar" id="fleetTimelineBar">
+              <div class="timeline-line"></div>
+              <div class="timeline-step completed" data-stage="1">
+                <div class="timeline-dot">✓</div>
+                <span class="timeline-label">Diterima</span>
+              </div>
+              <div class="timeline-step active" data-stage="2">
+                <div class="timeline-dot">●</div>
+                <span class="timeline-label">Menuju lokasi</span>
+              </div>
+              <div class="timeline-step" data-stage="3">
+                <div class="timeline-dot">○</div>
+                <span class="timeline-label">Tiba di lokasi</span>
+              </div>
+              <div class="timeline-step" data-stage="4">
+                <div class="timeline-dot">○</div>
+                <span class="timeline-label">Dalam transit</span>
+              </div>
+              <div class="timeline-step" data-stage="5">
+                <div class="timeline-dot">○</div>
+                <span class="timeline-label">Selesai</span>
+              </div>
+            </div>
+
+            <!-- Telemetry Box (ETA & Distance) -->
+            <div class="fleet-telemetry-box">
+              <div class="telemetry-item">
+                <span class="telemetry-icon">⏱️</span>
+                <div class="telemetry-info">
+                  <span class="telemetry-lbl">ETA</span>
+                  <span class="telemetry-val" id="fleetEtaVal">27 min</span>
+                </div>
+              </div>
+              <div style="width: 1px; height: 26px; background-color: var(--border-light);"></div>
+              <div class="telemetry-item">
+                <span class="telemetry-icon">📍</span>
+                <div class="telemetry-info">
+                  <span class="telemetry-lbl">Baki</span>
+                  <span class="telemetry-val" id="fleetRemainingKmVal">26.3 km</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 4px;">
+              <span>ℹ️</span> <span>Data contoh · bukan GPS langsung</span>
+            </div>
+
+            <!-- Interactive Update Status CTA Button -->
+            <button class="update-status-btn" id="btnUpdateFleetStatus">
+              <span>🔄</span> <span>Kemas Kini Status</span>
+            </button>
+          </div>
+
+          <!-- Secondary Ambulance Card (DFG 7606) -->
+          <div class="ui-card secondary-amb-card" id="fleetSecondaryCard">
+            <div class="secondary-amb-left">
+              <span style="font-size: 1.5rem;">🚑</span>
+              <div>
+                <div style="font-family: var(--font-heading); font-weight: 800; font-size: 1rem; color: var(--text-heading);" id="fleetSecPlate">DFG 7606</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);" id="fleetSecBranch">📍 Cawangan Raub</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="status-pill-green" style="background-color: #ECFDF5; color: #059669; border-color: rgba(5, 150, 105, 0.2);">Bersedia</span>
+              <span class="stop-chevron">›</span>
+            </div>
+          </div>
+
+          <!-- Safety Checklist Accordion Card -->
+          <div class="ui-card safety-checklist-card">
+            <div class="checklist-header" id="checklistHeaderToggle">
+              <div class="checklist-title-group">
+                <span>📋</span>
+                <span>Senarai semak keselamatan</span>
+              </div>
+              <span class="stop-chevron" id="checklistChevron">▲</span>
+            </div>
+            <div class="checklist-items-stack" id="checklistItemsStack">
+              <label class="checklist-item-row">
+                <input type="checkbox" checked id="chkOxygen">
+                <span>Oksigen diperiksa</span>
+              </label>
+              <label class="checklist-item-row">
+                <input type="checkbox" checked id="chkStretcher">
+                <span>Stretcher dikunci</span>
+              </label>
+              <label class="checklist-item-row">
+                <input type="checkbox" checked id="chkAed">
+                <span>Defibrillator AED siap sedia</span>
+              </label>
+              <label class="checklist-item-row">
+                <input type="checkbox" checked id="chkRadio">
+                <span>Lampu siren &amp; radio dua hala berfungsi</span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- =============================================================
+             VIEW 3: REPORTS (SCREEN 08 — PRESTASI OPERASI)
+             ============================================================= -->
+        <section id="admin-view" class="view-section">
+          <div class="page-title-row">
+            <h2 class="page-title">Prestasi Operasi</h2>
+            <span class="title-badge-pill demo">DATA CONTOH</span>
+          </div>
+
+          <!-- Month Selector Pill -->
+          <div class="month-selector-pill" id="monthSelectorPill">
+            <span>📅</span>
+            <span id="activeReportMonth">Oktober 2026</span>
+            <span style="font-size: 0.65rem;">▾</span>
+          </div>
+
+          <!-- 4 Stat Metric Cards (2x2 Grid with Sparklines) -->
+          <div class="reports-stats-grid">
+            <!-- Metric 1: Jumlah Trip -->
+            <div class="report-metric-card">
+              <div class="metric-top-row">
+                <span style="color: var(--amc-teal); font-size: 0.95rem;">📈</span>
+                <span>Jumlah trip</span>
+              </div>
+              <div class="metric-value-row">142</div>
+              <svg class="metric-sparkline-svg" viewBox="0 0 100 24" fill="none">
+                <path d="M0 18 Q 20 16, 40 10 T 80 8 T 100 4" stroke="#007D77" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+
+            <!-- Metric 2: Hasil Tambang -->
+            <div class="report-metric-card">
+              <div class="metric-top-row">
+                <span style="color: var(--amc-teal); font-size: 0.95rem;">💰</span>
+                <span>Hasil tambang</span>
+              </div>
+              <div class="metric-value-row">RM48,250</div>
+              <svg class="metric-sparkline-svg" viewBox="0 0 100 24" fill="none">
+                <path d="M0 19 Q 25 15, 50 12 T 75 6 T 100 2" stroke="#007D77" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+
+            <!-- Metric 3: Unit Bersedia -->
+            <div class="report-metric-card">
+              <div class="metric-top-row">
+                <span style="color: var(--amc-teal); font-size: 0.95rem;">🚑</span>
+                <span>Unit bersedia</span>
+              </div>
+              <div class="metric-value-row">1 / 2</div>
+              <svg class="metric-sparkline-svg" viewBox="0 0 100 24" fill="none">
+                <path d="M0 14 Q 30 18, 60 10 T 100 8" stroke="#007D77" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+
+            <!-- Metric 4: Purata Respons -->
+            <div class="report-metric-card">
+              <div class="metric-top-row">
+                <span style="color: var(--amc-teal); font-size: 0.95rem;">⏱️</span>
+                <span>Purata respons</span>
+              </div>
+              <div class="metric-value-row">8.4 min</div>
+              <svg class="metric-sparkline-svg" viewBox="0 0 100 24" fill="none">
+                <path d="M0 8 Q 25 12, 50 14 T 75 16 T 100 18" stroke="#007D77" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Trip Mingguan Bar Chart -->
+          <div class="ui-card weekly-chart-card">
+            <div class="chart-title-row">
+              <span class="chart-title">Trip mingguan</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">Purata: 26/hari</span>
+            </div>
+
+            <div class="bar-chart-container" id="weeklyBarChartContainer">
+              <div class="bar-column-item" data-day="Isnin" data-val="22">
+                <div class="bar-pill" style="height: 55%;"></div>
+                <span class="bar-day-label">I</span>
+              </div>
+              <div class="bar-column-item" data-day="Selasa" data-val="28">
+                <div class="bar-pill" style="height: 70%;"></div>
+                <span class="bar-day-label">S</span>
+              </div>
+              <div class="bar-column-item" data-day="Rabu" data-val="38">
+                <div class="bar-pill" style="height: 95%;"></div>
+                <span class="bar-day-label">R</span>
+              </div>
+              <div class="bar-column-item" data-day="Khamis" data-val="24">
+                <div class="bar-pill" style="height: 60%;"></div>
+                <span class="bar-day-label">K</span>
+              </div>
+              <div class="bar-column-item" data-day="Jumaat" data-val="22">
+                <div class="bar-pill" style="height: 55%;"></div>
+                <span class="bar-day-label">J</span>
+              </div>
+              <div class="bar-column-item" data-day="Sabtu" data-val="32">
+                <div class="bar-pill" style="height: 80%;"></div>
+                <span class="bar-day-label">S</span>
+              </div>
+              <div class="bar-column-item" data-day="Ahad" data-val="18">
+                <div class="bar-pill" style="height: 45%;"></div>
+                <span class="bar-day-label">A</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Perjalanan Terkini List -->
+          <div class="recent-trips-section-header">
+            <span style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: var(--text-heading);">Perjalanan terkini</span>
+            <div style="font-size: 0.75rem; color: var(--text-muted); cursor: pointer;">Semua ▾</div>
+          </div>
+
+          <div id="recentTripsContainer">
+            <!-- Item 1 -->
+            <div class="recent-trip-item-card">
+              <div class="trip-item-top">
+                <div class="trip-id-group">
+                  <span>📄</span>
+                  <span>INV-AMC-1042</span>
+                  <span class="status-pill-green" style="background:#ECFDF5; color:#059669; padding: 2px 6px;">Selesai</span>
+                </div>
+                <span class="trip-date-meta">12 Okt 2026 14:32</span>
+              </div>
+              <div class="trip-route-desc">📍 Kok Lanas ➔ HRPZ II</div>
+              <div class="trip-item-bottom">
+                <span class="trip-specs-text">🛣️ 29 km · Pakej PPP</span>
+                <span class="trip-fare-total">RM562.00</span>
+              </div>
+            </div>
+
+            <!-- Item 2 -->
+            <div class="recent-trip-item-card">
+              <div class="trip-item-top">
+                <div class="trip-id-group">
+                  <span>📄</span>
+                  <span>INV-AMC-1041</span>
+                  <span class="status-pill-green" style="background:#ECFDF5; color:#059669; padding: 2px 6px;">Selesai</span>
+                </div>
+                <span class="trip-date-meta">11 Okt 2026 09:15</span>
+              </div>
+              <div class="trip-route-desc">📍 Kok Lanas ➔ Hospital Machang</div>
+              <div class="trip-item-bottom">
+                <span class="trip-specs-text">🛣️ 18 km · Pakej PPP</span>
+                <span class="trip-fare-total">RM300.00</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 10px; text-align: center;">
+            <span>ℹ️</span> <span>Data contoh · bukan prestasi syarikat yang disahkan</span>
+          </div>
+        </section>
+
+        <!-- =============================================================
+             VIEW 4: KATALOG HARGA (SCREEN 09 — KATALOG HARGA)
+             ============================================================= -->
+        <section id="catalog-view" class="view-section">
+          <div class="page-title-row">
+            <h2 class="page-title">Katalog Harga</h2>
+          </div>
+          <div class="page-subtitle">Servis, staf &amp; peralatan</div>
+
+          <!-- Search Catalog Input -->
+          <div class="search-bar-box">
+            <span>🔍</span>
+            <input type="text" id="catalogSearchInput" placeholder="Cari servis atau peralatan...">
+          </div>
+
+          <!-- Filter Pills: [ Semua ] [ Servis ] [ Staf ] [ Alatan ] -->
+          <div class="catalog-filters-row">
+            <button class="catalog-filter-pill active" data-filter="all">Semua</button>
+            <button class="catalog-filter-pill" data-filter="service">Servis</button>
+            <button class="catalog-filter-pill" data-filter="staff">Staf</button>
+            <button class="catalog-filter-pill" data-filter="equipment">Alatan</button>
+          </div>
+
+          <!-- Catalog Items Stack -->
+          <div class="catalog-list-stack" id="catalogListContainer">
+            <!-- Populated dynamically via JS matching mockup list -->
+          </div>
+
+          <div style="font-size: 0.68rem; color: var(--text-muted); text-align: center; margin: 12px 0;">
+            <span>ℹ️</span> <span>Harga rujukan daripada aplikasi</span>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- 5. Sticky Bottom Action Bar for Steps 2, 3, 4 (Above Dock) -->
+      <div class="sticky-step-action-bar" id="stickyStepActionBar" style="display: none;">
+        <div class="sticky-fare-block">
+          <span class="sticky-fare-label">Anggaran:</span>
+          <span class="sticky-fare-price" id="stickyFareAmount">RM253.90</span>
+          <span class="sticky-fare-sub" id="stickyFareDetailLink">Lihat butiran ▾</span>
         </div>
-
-        <!-- ==================== STEP PAGE 2: KATEGORI PERKHIDMATAN ==================== -->
-        <div class="calc-step-page" id="step-page-2" data-step="2">
-          <!-- 2. Trip Type Selection -->
-          <div class="glass-card" id="section-category">
-            <div class="card-header">
-              <h2><span>🚨</span> 2. Kategori Perkhidmatan &amp; Kecemasan</h2>
-              <span class="header-badge">Pilih Satu Kategori</span>
-            </div>
-            <div class="trip-types-grid" id="tripTypesContainer">
-              <!-- Populated dynamically -->
-            </div>
-          </div>
-
-          <!-- Step 2 Footer -->
-          <div class="step-nav-footer">
-            <button class="step-btn-prev" data-prev="1">
-              <span>⬅</span> <span>Kembali: Lokasi &amp; Peta</span>
-            </button>
-            <button class="step-btn-next" data-next="3">
-              <span>Seterusnya: Bantuan Staf (3/5)</span> <span>➔</span>
-            </button>
-          </div>
+        <div class="sticky-buttons-group">
+          <button class="btn-nav-prev" id="btnStickyPrev">← Kembali</button>
+          <button class="btn-nav-next" id="btnStickyNext">Teruskan →</button>
         </div>
-
-        <!-- ==================== STEP PAGE 3: BANTUAN STAF ==================== -->
-        <div class="calc-step-page" id="step-page-3" data-step="3">
-          <!-- 3. Medical Assistance Packages -->
-          <div class="glass-card" id="section-assistance">
-            <div class="card-header">
-              <h2><span>👨‍⚕️</span> 3. Bantuan Paramedik &amp; Pegawai Perubatan</h2>
-              <span class="header-badge">Pakej Mengiringi</span>
-            </div>
-            <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 1rem;">
-              Setiap ambulan Al-Farhain sudah dilengkapi Pemandu Terlatih dan kru EMT percuma. Anda boleh menambah Penolong Pegawai Perubatan (PPP), Pembantu Klinikal (C.A), atau Doktor Perubatan mengikut keadaan klinikal pesakit.
-            </p>
-            <div class="assistance-grid" id="assistanceContainer">
-              <!-- Populated dynamically -->
-            </div>
-          </div>
-
-          <!-- Step 3 Footer -->
-          <div class="step-nav-footer">
-            <button class="step-btn-prev" data-prev="2">
-              <span>⬅</span> <span>Kembali: Kategori Trip</span>
-            </button>
-            <button class="step-btn-next" data-next="4">
-              <span>Seterusnya: Peralatan &amp; Ubatan (4/5)</span> <span>➔</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- ==================== STEP PAGE 4: PERALATAN & UBATAN ==================== -->
-        <div class="calc-step-page" id="step-page-4" data-step="4">
-          <!-- 4. Additional Equipments & Medicines -->
-          <div class="glass-card" id="section-equipment">
-            <div class="card-header">
-              <h2><span>🩺</span> 4. Peralatan &amp; Bekalan Ubatan Tambahan</h2>
-              <span class="header-badge">Pilihan Keperluan Transit</span>
-            </div>
-            <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 1rem;">
-              Peralatan sokongan hayat gred hospital untuk memastikan kestabilan pesakit sepanjang perjalanan:
-            </p>
-            <div class="equipment-grid" id="equipmentContainer">
-              <!-- Populated dynamically -->
-            </div>
-          </div>
-
-          <!-- Step 4 Footer -->
-          <div class="step-nav-footer">
-            <button class="step-btn-prev" data-prev="3">
-              <span>⬅</span> <span>Kembali: Bantuan Staf</span>
-            </button>
-            <button class="step-btn-next" data-next="5">
-              <span>Seterusnya: Semakan Tambang &amp; Invois (5/5)</span> <span>➔</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- ==================== STEP PAGE 5: SEMAKAN KOS & INVOIS ==================== -->
-        <div class="calc-step-page" id="step-page-5" data-step="5">
-          <!-- Right Summary & Quotation Panel -->
-          <div class="summary-panel" id="section-summary">
-            <div class="bill-breakdown-card">
-              <div class="bill-header">
-                <div>
-                  <h3 class="bill-header-title">SEMAKAN KOS ANGGARAN</h3>
-                  <span style="font-size: 0.72rem; color: var(--text-dim);">AMC Ambulance Fare Calculator</span>
-                </div>
-                <span class="live-badge">
-                  <span class="status-dot"></span> KIRAAN KETAT
-                </span>
-              </div>
-
-              <!-- Formula Reference Card -->
-              <div class="formula-card">
-                <span class="formula-tag">FORMULA EXCEL AMC:</span><br>
-                • Basis (&le; 25 KM) = <strong>RM 250.00</strong><br>
-                • Melebihi 25 KM = (Jarak - 25) &times; <strong>RM <span id="ratePerKmLabel">3.00</span></strong>/KM
-              </div>
-
-              <!-- Diesel Surge Toggle -->
-              <div class="diesel-toggle-bar">
-                <label>
-                  <input type="checkbox" id="dieselSurgeToggle">
-                  <span>Mod Kenaikan Diesel (RM 4.50 / KM)</span>
-                </label>
-                <span style="font-size: 0.7rem; font-weight: 700; color: #F59E0B;">+50%</span>
-              </div>
-
-              <!-- Bill Breakdown Lines -->
-              <div class="bill-lines">
-                <div class="bill-line highlight">
-                  <span>Kategori Trip (<span id="summaryTripName">Kecemasan</span>):</span>
-                  <span class="bill-line-val" id="summaryTripBase">RM 250.00</span>
-                </div>
-
-                <div class="bill-line">
-                  <span>Jarak Asas (&le; 25 KM):</span>
-                  <span class="bill-line-val" id="summaryBaseKmFare">RM 250.00</span>
-                </div>
-
-                <div class="bill-line">
-                  <span>Caj Lebihan Jarak (<span id="summaryExtraKmCount">2.2</span> KM &times; RM <span id="summaryKmRate">3.00</span>):</span>
-                  <span class="bill-line-val" id="summaryExtraKmFare">RM 6.60</span>
-                </div>
-
-                <div class="bill-line highlight">
-                  <span>Pakej Bantuan Staf (<span id="summaryAssistanceRole">Tiada</span>):</span>
-                  <span class="bill-line-val" id="summaryAssistanceFare">RM 0.00</span>
-                </div>
-
-                <div class="bill-line">
-                  <span>Peralatan &amp; Ubatan Tambahan (<span id="summaryEquipCount">0</span> item):</span>
-                  <span class="bill-line-val" id="summaryEquipFare">RM 0.00</span>
-                </div>
-
-                <div class="bill-line">
-                  <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
-                    <input type="checkbox" id="includeMiscFee" checked>
-                    <span>Lain-lain Caj / Caj Sokongan:</span>
-                  </label>
-                  <span class="bill-line-val" id="summaryMiscFare">RM 50.00</span>
-                </div>
-              </div>
-
-              <!-- Grand Total Showcase -->
-              <div class="grand-total-box">
-                <div>
-                  <span class="grand-total-label">JUMLAH KESELURUHAN</span>
-                  <div style="font-size: 0.72rem; color: rgba(255,255,255,0.7);">Kadar Anggaran Rasmi AMC</div>
-                </div>
-                <div class="grand-total-number">
-                  <span class="currency">RM</span>
-                  <span id="grandTotalDisplay">306.60</span>
-                </div>
-              </div>
-
-              <!-- Action Buttons -->
-              <div class="summary-actions">
-                <button class="primary-btn" id="generateInvoiceBtn">
-                  <span>📄</span> JANA INVOIS &amp; SAHKAN TRIP
-                </button>
-
-                <button class="secondary-btn" id="directCallDriverBtn">
-                  <span>📞</span> Hubungi Pemandu (013-914 7606)
-                </button>
-
-                <button class="secondary-btn" id="shareWhatsAppBtn">
-                  <span>💬</span> Kongsi Butiran Ke WhatsApp
-                </button>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Step 5 Footer -->
-          <div class="step-nav-footer">
-            <button class="step-btn-prev" data-prev="4">
-              <span>⬅</span> <span>Kembali: Ubah Peralatan</span>
-            </button>
-            <button class="step-btn-restart" id="stepRestartBtn">
-              <span>🔄</span> <span>Kira Semula / Tempahan Baru</span>
-            </button>
-          </div>
-        </div>
-
       </div>
-    </section>
 
-    <!-- ==================== VIEW 2: DRIVER COCKPIT HUD ==================== -->
-    <section id="driver-view" class="view-section">
-      <div class="cockpit-grid">
-        <!-- Driver Profile HUD -->
-        <div class="cockpit-hud-card">
-          <div class="driver-profile-header">
-            <div class="driver-avatar">👨‍✈️</div>
-            <div class="driver-details">
-              <h3 id="hudDriverName">Abe Di / Syalihan</h3>
-              <p id="hudPlateNumber">No. Plat: <strong>VPQ 7606</strong> (HQ Kok Lanas)</p>
-              <p>Hotline: 013-914 7606</p>
-            </div>
-          </div>
+      <!-- 6. Frosted Bottom Dock (Dispatch, Fleet, Reports, Katalog) -->
+      <nav class="phone-bottom-dock" id="phoneBottomDock">
+        <button class="dock-tab-item active" data-tab="calculator-view">
+          <svg class="dock-icon-svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 14h-3V7c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h1c0 1.66 1.34 3 3 3s3-1.34 3-3h4c0 1.66 1.34 3 3 3s3-1.34 3-3h1c1.1 0 2-.9 2-2v-3.5L19 14zm-11 5c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm8-7H9V9h7v3zm2 7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm1.5-6H17V9.5h2.5l1.5 2V13z"/>
+          </svg>
+          <span class="dock-tab-title">Dispatch</span>
+        </button>
 
-          <div>
-            <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Status Misi Terkini:</span>
-            <div style="margin-top: 0.3rem;">
-              <span class="mission-status-pill" id="hudMissionPill">DALAM PERJALANAN (EN ROUTE)</span>
-            </div>
-          </div>
+        <button class="dock-tab-item" data-tab="driver-view">
+          <svg class="dock-icon-svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
+          </svg>
+          <span class="dock-tab-title">Fleet</span>
+        </button>
 
-          <!-- Stage Stepper -->
-          <div class="stage-tracker-stepper">
-            <div class="stage-step completed" data-stage="1">
-              <span class="step-num">✓</span>
-              <span>1. Pesanan Diterima (Dispatched)</span>
-            </div>
-            <div class="stage-step active" data-stage="2">
-              <span class="step-num">2</span>
-              <span>2. Menuju Lokasi (En Route)</span>
-            </div>
-            <div class="stage-step" data-stage="3">
-              <span class="step-num">3</span>
-              <span>3. Tiba di Lokasi Pesakit (On Scene)</span>
-            </div>
-            <div class="stage-step" data-stage="4">
-              <span class="step-num">4</span>
-              <span>4. Membawa Pesakit (In Transit)</span>
-            </div>
-            <div class="stage-step" data-stage="5">
-              <span class="step-num">5</span>
-              <span>5. Selesai di Destinasi (Arrived)</span>
-            </div>
-          </div>
+        <button class="dock-tab-item" data-tab="admin-view">
+          <svg class="dock-icon-svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/>
+          </svg>
+          <span class="dock-tab-title">Reports</span>
+        </button>
 
-          <!-- Driver Action Quick Buttons -->
-          <button class="primary-btn" id="nextStageBtn" style="padding: 0.7rem;">
-            <span>⏩</span> Kemaskini Status Seterusnya
-          </button>
-        </div>
+        <button class="dock-tab-item" data-tab="catalog-view">
+          <svg class="dock-icon-svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+          </svg>
+          <span class="dock-tab-title">Katalog</span>
+        </button>
+      </nav>
 
-        <!-- Active Trip Telemetry & Map -->
-        <div class="glass-card">
-          <div class="card-header">
-            <h2><span>🧭</span> Telemetri Laluan &amp; Navigasi Pemandu</h2>
-            <span class="header-badge">Masa Nyata (Live GPS)</span>
-          </div>
+    </div>
 
-          <div class="route-meta-bar" style="margin-bottom: 1.25rem;">
-            <div class="meta-item">
-              <span class="meta-title">Kelajuan Anggaran</span>
-              <span class="meta-val text-emerald">75 KM/J</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-title">Baki Jarak</span>
-              <span class="meta-val text-amber" id="hudRemainingKm">14.5 KM</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-title">Anggaran Tiba (ETA)</span>
-              <span class="meta-val" id="hudEtaMinutes">18 Minit</span>
-            </div>
-          </div>
-
-          <!-- Telemetry Checklist -->
-          <div style="background: rgba(15, 23, 42, 0.6); padding: 1rem; border-radius: var(--radius-md); border: 1px solid rgba(255, 255, 255, 0.05);">
-            <h4 style="font-size: 0.85rem; margin-bottom: 0.75rem; color: var(--text-white);">Senarai Semak Keselamatan Pesakit:</h4>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; font-size: 0.8rem;">
-              <label style="display: flex; align-items: center; gap: 0.4rem;"><input type="checkbox" checked> Bekalan Oksigen Stabil (>150 Bar)</label>
-              <label style="display: flex; align-items: center; gap: 0.4rem;"><input type="checkbox" checked> Bateri Defibrillator AED 100%</label>
-              <label style="display: flex; align-items: center; gap: 0.4rem;"><input type="checkbox" checked> Tali Keselamatan Stretcher Terkunci</label>
-              <label style="display: flex; align-items: center; gap: 0.4rem;"><input type="checkbox" checked> Lampu Siren &amp; Radio Dua Hala Berfungsi</label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== VIEW 3: BRANCH ADMIN HUB & ANALYTICS ==================== -->
-    <section id="admin-view" class="view-section">
-      <div class="analytics-metrics-grid">
-        <div class="metric-card">
-          <div class="metric-header">
-            <span>Jumlah Trip Bulan Ini</span>
-            <span>🚑</span>
-          </div>
-          <div class="metric-value">142 Trip</div>
-          <div class="metric-delta">▲ +18% berbanding bulan lepas</div>
-        </div>
-
-        <div class="metric-card">
-          <div class="metric-header">
-            <span>Jumlah Hasil Tambang</span>
-            <span>💰</span>
-          </div>
-          <div class="metric-value">RM 48,250</div>
-          <div class="metric-delta">▲ Kestabilan operasi kukuh</div>
-        </div>
-
-        <div class="metric-card">
-          <div class="metric-header">
-            <span>Ambulan Bersedia (Ready)</span>
-            <span>🟢</span>
-          </div>
-          <div class="metric-value">2 / 2 Unit</div>
-          <div class="metric-delta">VPQ 7606 &amp; DFG 7606 Aktif</div>
-        </div>
-
-        <div class="metric-card">
-          <div class="metric-header">
-            <span>Purata Respons Kecemasan</span>
-            <span>⏱️</span>
-          </div>
-          <div class="metric-value">8.4 Minit</div>
-          <div class="metric-delta">Standard SOP Al-Farhain dipatuhi</div>
-        </div>
-      </div>
-
-      <div class="glass-card">
-        <div class="card-header">
-          <h2><span>📋</span> Rekod Panggilan &amp; Perjalanan Terkini</h2>
-          <span class="header-badge">Log Pengurusan AMC</span>
-        </div>
-
-        <div class="table-responsive">
-          <table class="custom-table">
-            <thead>
-              <tr>
-                <th>No. Rujukan</th>
-                <th>Masa / Tarikh</th>
-                <th>Asal ➔ Destinasi</th>
-                <th>Jarak</th>
-                <th>Pakej Staf</th>
-                <th>Peralatan</th>
-                <th>Jumlah (RM)</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="recentTripsTableBody">
-              <!-- Populated via JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== VIEW 4: PRICE & SERVICE CATALOGUE ==================== -->
-    <section id="catalog-view" class="view-section">
-      <div class="glass-card">
-        <div class="card-header">
-          <h2><span>📦</span> Katalog Harga Servis, Stok &amp; Prosedur Al-Farhain</h2>
-          <input type="text" id="catalogSearchInput" class="custom-input" style="max-width: 300px; padding: 0.5rem 1rem;" placeholder="Cari ubat, servis, ujian...">
-        </div>
-
-        <div class="table-responsive">
-          <table class="custom-table" id="catalogTable">
-            <thead>
-              <tr>
-                <th>Kategori</th>
-                <th>Nama Servis / Peralatan</th>
-                <th>Kod / Rujukan</th>
-                <th>Harga Piawai (RM)</th>
-              </tr>
-            </thead>
-            <tbody id="catalogTableBody">
-              <!-- Loaded from pricing database -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== VIEW 5: AI FAQ ASSISTANT ==================== -->
-    <section id="faq-view" class="view-section">
-      <div class="faq-grid">
-        <!-- Chatbot Window -->
-        <div class="glass-card chat-box-card">
-          <div class="card-header">
-            <h2><span>🤖</span> Pembantu Maya AMC Ambulans</h2>
-            <span class="header-badge">100 Soalan Lazim (FAQ)</span>
-          </div>
-
-          <div class="chat-messages-container" id="chatMessages">
-            <div class="chat-bubble bot">
-              Salam sejahtera! Saya pembantu maya Pusat Rawatan Al-Farhain. Anda boleh bertanyakan apa sahaja mengenai pengiraan jarak, kadar harga per KM, pakej staf pengiring (M.A, C.A, Dr), peralatan oksigen, atau prosedur kecemasan.
-            </div>
-          </div>
-
-          <div class="chat-input-bar">
-            <input type="text" id="chatInput" class="custom-input" placeholder="Tanya soalan mengenai harga atau servis ambulan...">
-            <button class="primary-btn" id="sendChatBtn" style="padding: 0.75rem 1.25rem;">Hantar</button>
-          </div>
-        </div>
-
-        <!-- Quick FAQ Questions -->
-        <div class="glass-card">
-          <div class="card-header">
-            <h2><span>💡</span> Soalan Lazim Paling Kerap Ditanya</h2>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 0.65rem;" id="quickFaqList">
-            <!-- Populated via JS -->
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ==================== MODAL: OFFICIAL AMC INVOICE / RECEIPT ==================== -->
-  <div class="modal-backdrop" id="invoiceModal">
-    <div class="modal-window">
+  <!-- =============================================================
+       MODAL 1: OFFICIAL AMC PRINTABLE INVOICE / RESIT
+       ============================================================= -->
+  <div class="modal-overlay" id="invoiceModal">
+    <div class="modal-card">
       <button class="modal-close-btn" id="closeInvoiceModalBtn">&times;</button>
       
-      <!-- Printable Invoice Area -->
-      <div class="invoice-print-area" id="printableInvoice">
-        <div class="invoice-header-official">
+      <div class="printable-invoice-box" id="printableInvoice">
+        <div class="invoice-org-header">
           <div>
-            <h2>PUSAT RAWATAN AL-FARHAIN</h2>
-            <p style="font-size: 0.75rem; color: #475569;">
-              HQ Kok Lanas: Pt 5075-5077 Kompleks Perniagaan Saidina Ali Ketereh, Kota Bharu<br>
-              Cawangan Raub: Bandar Raub, Pahang • Talian 24 Jam: 013-914 7606
-            </p>
+            <h2 style="font-family: var(--font-heading); color: var(--amc-teal-dark); font-size: 1.2rem; font-weight: 800;">PUSAT RAWATAN AL-FARHAIN</h2>
+            <div style="font-size: 0.72rem; color: #475569; margin-top: 2px;">
+              Perkhidmatan Ambulans Kecemasan &amp; Pengangkutan Perubatan 24 Jam<br>
+              Talian Hotline: 013-914 7606 • Kelantan &amp; Pahang
+            </div>
           </div>
           <div style="text-align: right;">
-            <span style="background: #E0F2FE; color: #0369A1; font-weight: 800; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px;">INVOIS RASMI</span>
-            <div style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; margin-top: 0.3rem;" id="invNumber">INV-AMC-8821</div>
-            <div style="font-size: 0.72rem; color: #64748B;" id="invDate">15/10/2026 15:30</div>
+            <span style="background: #E6F7F6; color: var(--amc-teal-dark); font-weight: 800; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px;">INVOIS RASMI</span>
+            <div style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; margin-top: 4px;" id="invNumber">INV-AMC-1042</div>
+            <div style="font-size: 0.7rem; color: #64748B;" id="invDate">19/10/2026 09:45</div>
           </div>
         </div>
 
         <div class="invoice-meta-grid">
           <div>
-            <strong style="color: #0F172A;">MAKLUMAT AMBULAN &amp; PEMANDU:</strong><br>
-            Kenderaan: <span id="invPlateNumber">VPQ 7606</span><br>
+            <strong>MAKLUMAT AMBULAN:</strong><br>
+            Plat: <span id="invPlateNumber" style="font-weight: 700;">VPQ 7606</span><br>
             Pemandu: <span id="invDriverName">Abe Di / Syalihan</span><br>
-            Cawangan: <span id="invBranchName">HQ Kok Lanas (Kelantan)</span>
+            Cawangan: <span id="invBranchName">HQ Kok Lanas</span>
           </div>
           <div>
-            <strong style="color: #0F172A;">MAKLUMAT LALUAN &amp; TRIP:</strong><br>
-            Asal: <span id="invOrigin">HQ Kok Lanas</span><br>
-            Destinasi: <span id="invDestination">HRPZ II Kota Bharu</span><br>
-            Jarak: <span id="invDistanceKm">27.2 KM</span>
+            <strong>MAKLUMAT TRIP:</strong><br>
+            Asal: <span id="invOrigin">Kok Lanas HQ</span><br>
+            Tujuan: <span id="invDestination">HRPZ II Kota Bharu</span><br>
+            Jarak: <span id="invDistanceKm" style="font-weight: 700;">26.3 KM</span>
           </div>
         </div>
 
-        <table class="invoice-table-official">
+        <table class="invoice-items-table">
           <thead>
             <tr>
-              <th>Butiran Servis / Caj</th>
-              <th>Kuantiti / Kiraan</th>
-              <th style="text-align: right;">Jumlah (RM)</th>
+              <th style="width: 44%;">Butiran Perkhidmatan</th>
+              <th style="width: 38%;">Status / Keterangan</th>
+              <th style="width: 18%; text-align: right;">Jumlah (RM)</th>
             </tr>
           </thead>
           <tbody id="invTableBody">
@@ -800,198 +875,134 @@
           </tbody>
         </table>
 
-        <div class="invoice-total-official">
-          <div class="invoice-total-official-box">
-            <span style="font-size: 0.8rem; font-weight: 700; color: #166534;">JUMLAH PERLU DIBAYAR:</span>
-            <h3 id="invGrandTotal">RM 306.60</h3>
-          </div>
+        <div class="invoice-capability-note">
+          💡 <strong>Nota Keupayaan Armada:</strong> Pilihan staf &amp; peralatan bertanda <em>"Pilihan Sedia Ada / 0 Unit"</em> disenaraikan sebagai pendedahan skop perkhidmatan lengkap Al-Farhain AMC dan <strong>tidak dikira</strong> dalam jumlah bayaran melainkan dipilih.
         </div>
 
-        <div style="margin-top: 1.5rem; border-top: 1px dashed #CBD5E1; padding-top: 0.8rem; font-size: 0.7rem; color: #64748B; display: flex; justify-content: space-between;">
+        <div class="invoice-total-highlight">
+          <span style="font-size: 0.85rem; font-weight: 700;">JUMLAH PERLU DIBAYAR:</span>
+          <span id="invGrandTotal">RM 503.90</span>
+        </div>
+
+        <div style="margin-top: 14px; border-top: 1px dashed #CBD5E1; padding-top: 8px; font-size: 0.68rem; color: #64748B; display: flex; justify-content: space-between;">
           <span>Terima kasih kerana memilih Perkhidmatan Ambulan AMC Al-Farhain.</span>
-          <span>Dicetak secara automatik oleh Sistem AMC Ambulans</span>
+          <span>Dicetak secara automatik</span>
         </div>
       </div>
 
-      <!-- Modal Bottom Actions -->
-      <div style="display: flex; gap: 0.85rem; justify-content: flex-end; margin-top: 1rem;">
-        <button class="secondary-btn" id="printInvoiceBtn">
-          <span>🖨️</span> Cetak / Simpan PDF
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px;">
+        <button class="btn-nav-prev" id="btnPrintInvoice">
+          <span>🖨️</span> <span>Cetak / PDF</span>
         </button>
-        <button class="primary-btn" id="confirmPaymentBtn">
-          <span>✅</span> Selesai &amp; Sahkan Pembayaran
+        <button class="primary-action-btn" id="btnConfirmBookingClose" style="width: auto; padding: 10px 20px;">
+          <span>✅</span> <span>Selesai</span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== MODAL: EMERGENCY SOS ==================== -->
-  <div class="modal-backdrop" id="sosModal">
-    <div class="modal-window" style="max-width: 520px; border-color: var(--amc-red); box-shadow: var(--glow-red);">
+  <!-- =============================================================
+       MODAL 2: LOCATION PICKER (PANGKALAN, PICKUP, DESTINASI)
+       ============================================================= -->
+  <div class="modal-overlay" id="locationPickerModal">
+    <div class="modal-card">
+      <button class="modal-close-btn" id="closeLocationModalBtn">&times;</button>
+      <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 800; color: var(--text-heading); margin-bottom: 12px;" id="locationModalTitle">
+        Pilih Lokasi
+      </h3>
+
+      <div id="locationPickerContent">
+        <!-- Preset options and custom address inputs rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================
+       MODAL 3: EMERGENCY SOS (24 JAM)
+       ============================================================= -->
+  <div class="modal-overlay" id="sosModal">
+    <div class="modal-card" style="max-width: 440px; border-color: var(--amc-red-border);">
       <button class="modal-close-btn" id="closeSosModalBtn">&times;</button>
-      
-      <div style="text-align: center; margin-bottom: 1.25rem;">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem; animation: pulse-sos 1s infinite;">🚨</div>
-        <h2 style="font-family: var(--font-heading); color: #EF4444; font-size: 1.5rem; font-weight: 900;">AMBULANS KECEMASAN 24 JAM</h2>
-        <p style="font-size: 0.85rem; color: var(--text-sub);">Pusat Kawalan Kecemasan Al-Farhain sedia digerakkan dengan serta-merta.</p>
+      <div style="text-align: center; margin-bottom: 14px;">
+        <span style="font-size: 2.5rem;">🚨</span>
+        <h2 style="font-family: var(--font-heading); color: var(--amc-red); font-size: 1.3rem; font-weight: 800; margin-top: 4px;">
+          AMBULANS KECEMASAN 24 JAM
+        </h2>
+        <p style="font-size: 0.78rem; color: var(--text-sub); margin-top: 4px;">
+          Pusat Kawalan Kecemasan Al-Farhain sedia digerakkan dengan serta-merta.
+        </p>
       </div>
 
-      <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem; font-size: 0.82rem; color: #FCA5A5;">
+      <div style="background: var(--amc-red-light); border: 1px solid var(--amc-red-border); border-radius: var(--radius-md); padding: 12px; margin-bottom: 14px; font-size: 0.78rem; color: var(--amc-red); line-height: 1.4;">
         <strong>TRIAGE KECEMASAN SEGERA:</strong>
-        <p style="margin-top: 0.3rem;">Jika pesakit tidak sedarkan diri, mengalami serangan jantung akut, atau pendarahan teruk, hubungi hotline ambulans Al-Farhain serta-merta tanpa berlengah:</p>
+        <p style="margin-top: 4px;">Jika pesakit tidak sedarkan diri atau mengalami serangan kritikal, sila hubungi hotline ambulans Al-Farhain tanpa berlengah.</p>
       </div>
 
-      <a href="tel:0139147606" class="primary-btn" style="background: var(--grad-danger); box-shadow: var(--glow-red); text-decoration: none; font-size: 1.15rem; padding: 1rem;">
-        <span>📞</span> HUBUNGI HOTLINE: 013-914 7606
+      <a href="tel:0139147606" class="primary-action-btn" style="background-color: var(--amc-red); text-decoration: none; font-size: 1.05rem; padding: 14px;">
+        <span>📞</span> <span>HUBUNGI: 013-914 7606</span>
       </a>
-
-      <button class="secondary-btn" id="dispatchSosNowBtn" style="width: 100%; margin-top: 0.85rem; padding: 0.85rem;">
-        <span>🚑</span> Gerakkan Ambulans Terdekat ke Lokasi Saya
-      </button>
     </div>
   </div>
 
-  <!-- ==================== MODAL: SUPABASE CONFIGURATION ==================== -->
-  <div class="modal-backdrop" id="supabaseModal">
-    <div class="modal-window" style="max-width: 600px; border-color: #10B981; box-shadow: 0 0 35px rgba(16, 185, 129, 0.35);">
+  <!-- =============================================================
+       MODAL 4: SUPABASE DATABASE CONFIGURATION
+       ============================================================= -->
+  <div class="modal-overlay" id="supabaseModal">
+    <div class="modal-card">
       <button class="modal-close-btn" id="closeSupabaseModalBtn">&times;</button>
-      
-      <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.25rem;">
-        <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: 1px solid rgba(16, 185, 129, 0.4);">⚡</div>
+      <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 800; color: var(--text-heading); margin-bottom: 6px;">
+        ⚡ Pangkalan Data Supabase
+      </h3>
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;">
+        Penyegerakan awan untuk simpanan rekod dan penjejakan pemandu masa nyata.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
         <div>
-          <h2 style="font-family: var(--font-heading); color: var(--text-heading); font-size: 1.25rem; font-weight: 800;">Sambungan Pangkalan Data Supabase</h2>
-          <p style="font-size: 0.78rem; color: var(--text-sub);">Hubungkan kalkulator ke pangkalan data cloud Supabase untuk penyegerakan tempahan masa nyata.</p>
+          <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Project URL</label>
+          <input type="url" id="supabaseUrlInput" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="https://xyz.supabase.co">
         </div>
+        <div>
+          <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Anon Public Key</label>
+          <input type="password" id="supabaseKeyInput" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="eyJhbGci...">
+        </div>
+        <div id="supabaseTestResult" style="display: none; padding: 8px 12px; border-radius: 8px; font-size: 0.75rem;"></div>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.25rem;">
-        <div class="location-input-group">
-          <label class="location-label">
-            <span>Project URL (Contoh: https://xyzcompany.supabase.co)</span>
-            <span class="tag">Wajib</span>
-          </label>
-          <input type="url" id="supabaseUrlInput" class="custom-input" style="padding-left: 1rem;" placeholder="https://your-project-id.supabase.co">
-        </div>
-
-        <div class="location-input-group">
-          <label class="location-label">
-            <span>Anon / Public API Key (eyJhbGci...)</span>
-            <span class="tag">Wajib</span>
-          </label>
-          <input type="password" id="supabaseKeyInput" class="custom-input" style="padding-left: 1rem;" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-        </div>
-
-        <div id="supabaseTestResult" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.82rem; line-height: 1.4;">
-        </div>
-
-        <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-card); border-radius: var(--radius-md); padding: 0.85rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <span style="font-size: 0.78rem; font-weight: 700; color: #10B981;">Skrip Jadual Database (SQL Editor):</span>
-            <button id="copySqlBtn" class="map-btn" style="padding: 0.2rem 0.6rem; font-size: 0.7rem;">📋 Salin SQL</button>
-          </div>
-          <p style="font-size: 0.72rem; color: var(--text-sub);">
-            Fail <code>supabase_schema.sql</code> telah dijana dalam projek anda. Buka <strong>Supabase Dashboard &gt; SQL Editor</strong>, tampal skrip ini, dan tekan <strong>Run</strong> untuk mencipta jadual <code>ambulance_bookings</code>, polisi keselamatan (RLS), dan penstriman langsung.
-          </p>
-        </div>
-      </div>
-
-      <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-        <button class="secondary-btn" id="testSupabaseBtn">
-          <span>🔍</span> Uji Sambungan
-        </button>
-        <button class="primary-btn" id="saveSupabaseBtn" style="background: var(--grad-emerald);">
-          <span>💾</span> Simpan &amp; Aktifkan
-        </button>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="btn-nav-prev" id="testSupabaseBtn">Uji Sambungan</button>
+        <button class="primary-action-btn" id="saveSupabaseBtn" style="width: auto; padding: 8px 18px;">Simpan</button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== MODAL: OPEN IN MOBILE & APK GUIDE ==================== -->
-  <div class="modal-backdrop" id="mobileModal">
-    <div class="modal-window" style="max-width: 580px; border-color: var(--amc-blue); box-shadow: var(--shadow-lg);">
+  <!-- =============================================================
+       MODAL 5: MOBILE QR CODE / APK INSTALL
+       ============================================================= -->
+  <div class="modal-overlay" id="mobileModal">
+    <div class="modal-card" style="text-align: center;">
       <button class="modal-close-btn" id="closeMobileModalBtn">&times;</button>
-      
-      <div style="text-align: center; margin-bottom: 1.25rem;">
-        <div style="font-size: 2.4rem; margin-bottom: 0.3rem;">📱</div>
-        <h2 style="font-family: var(--font-heading); color: var(--text-heading); font-size: 1.35rem; font-weight: 800;">Buka Di Telefon Pintar &amp; Pasang APK</h2>
-        <p style="font-size: 0.8rem; color: var(--text-sub);">Dua cara mudah untuk menjalankan aplikasi ini pada peranti mudah alih (Android &amp; iOS)</p>
+      <span style="font-size: 2.2rem;">📱</span>
+      <h3 style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; color: var(--text-heading); margin: 6px 0;">
+        Buka di Telefon Pintar
+      </h3>
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;">
+        Imbas kod QR di bawah dengan kamera telefon untuk terus buka aplikasi:
+      </p>
+
+      <div style="background: #FFFFFF; padding: 12px; border-radius: 16px; display: inline-block; box-shadow: var(--shadow-card); border: 1px solid var(--border-light); margin-bottom: 12px;">
+        <img id="qrCodeImg" src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=http://localhost:5173/" alt="QR Code" style="width: 160px; height: 160px; display: block;">
       </div>
 
-      <!-- Option 1: Live Wi-Fi Scan (Instant) -->
-      <div style="background: var(--bg-card-selected); border: 1px solid var(--border-card); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem; text-align: center;">
-        <div style="font-size: 0.85rem; font-weight: 800; color: var(--amc-blue); margin-bottom: 0.6rem; text-transform: uppercase;">
-          Cara 1: Imbas QR Kod (Serta-Merta / Instant)
-        </div>
-        <p style="font-size: 0.78rem; color: var(--text-sub); margin-bottom: 0.85rem;">
-          Pastikan telefon anda disambungkan ke Wi-Fi yang sama dengan komputer ini, kemudian imbas kod QR di bawah dengan kamera telefon:
-        </p>
-
-        <div style="background: #FFFFFF; padding: 10px; border-radius: 12px; display: inline-block; box-shadow: var(--shadow-card);">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=http://192.168.68.103:5173/" alt="QR Kod Mudah Alih" style="width: 180px; height: 180px; display: block;">
-        </div>
-
-        <div style="margin-top: 0.85rem;">
-          <code style="background: var(--bg-surface-elevated); color: var(--amc-blue); padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem; font-weight: bold; border: 1px solid var(--border-card);">
-            http://192.168.68.103:5173/
-          </code>
-        </div>
-        <p style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.6rem;">
-          💡 <strong>Petua Pasang (PWA):</strong> Selepas buka di telefon, tekan menu 3 titik di Google Chrome &gt; pilih <strong>"Install app"</strong> atau <strong>"Add to Home screen"</strong> untuk memasangnya sebagai aplikasi telefon penuh dengan ikon di skrin utama!
-        </p>
-      </div>
-
-      <!-- Option 2: Build Native APK with Flutter -->
-      <div style="background: var(--amc-emerald-light); border: 1px solid rgba(5, 150, 105, 0.25); border-radius: var(--radius-md); padding: 1.1rem; font-size: 0.78rem; line-height: 1.5;">
-        <div style="font-size: 0.85rem; font-weight: 800; color: var(--amc-emerald); margin-bottom: 0.4rem; text-transform: uppercase;">
-          Cara 2: Jana Fail .APK Melalui Flutter
-        </div>
-        <p style="color: var(--text-sub); margin-bottom: 0.5rem;">
-          Kod sumber lengkap Flutter telah disediakan dalam folder <code>flutter_app/</code>. Untuk membina fail pemasangan APK:
-        </p>
-        <ol style="margin-left: 1.25rem; color: var(--text-main);">
-          <li>Buka folder <code>flutter_app/</code> dalam terminal / VS Code.</li>
-          <li>Jalankan arahan: <code>flutter pub get</code></li>
-          <li>Jalankan arahan pembina APK: <code>flutter build apk --release</code></li>
-          <li>Fail APK anda akan siap di: <br><code style="color: var(--amc-emerald); font-weight: bold;">flutter_app/build/app/outputs/flutter-apk/app-release.apk</code></li>
-          <li>Hantar fail APK tersebut ke telefon anda melalui WhatsApp/Google Drive dan pasang (*Install*).</li>
-        </ol>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-        <button class="primary-btn" id="closeMobileModalBtn2" style="padding: 0.6rem 1.5rem;">Tutup</button>
-      </div>
+      <p style="font-size: 0.72rem; color: var(--text-sub); line-height: 1.4;">
+        💡 <strong>Petua Pasang (PWA):</strong> Buka di Chrome / Safari pada telefon, tekan menu <strong>"Add to Home screen"</strong> untuk memasang aplikasi penuh.
+      </p>
     </div>
   </div>
-
-
-  <!-- ==================== FIXED FROSTED GLASS BOTTOM DOCK (BASED ON MOCKUP) ==================== -->
-  <nav class="app-bottom-dock" id="appBottomDock" aria-label="Navigasi Bawah">
-    <button class="dock-tab-btn active" data-tab="calculator-view">
-      <span class="dock-icon">📋</span>
-      <span class="dock-title">Dispatch</span>
-    </button>
-    <button class="dock-tab-btn" data-tab="driver-view">
-      <span class="dock-icon">🚗</span>
-      <span class="dock-title">Fleet</span>
-    </button>
-    <button class="dock-tab-btn" data-tab="admin-view">
-      <span class="dock-icon">📊</span>
-      <span class="dock-title">Reports</span>
-    </button>
-    <button class="dock-tab-btn" data-tab="catalog-view">
-      <span class="dock-icon">👤</span>
-      <span class="dock-title">Profile</span>
-    </button>
-  </nav>
-
-  <!-- ==================== GLOBAL FLOATING BACK-TO-TOP BUTTON ==================== -->
-  <button class="back-to-top-btn" id="backToTopBtn" title="Kembali ke atas" aria-label="Kembali ke atas">
-    <span>⬆️</span>
-  </button>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <!-- Application Logic -->
+  <!-- Main Application Script -->
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
