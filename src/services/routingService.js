@@ -39,34 +39,48 @@ export function estimateDurationMin(distanceKm, isEmergency = true) {
 
 /**
  * Fetches real road routing geometry and precise driving distances via OSRM.
- * Returns exact road curvature coordinates for Leaflet polyline and exact leg distances.
+ * Supports both standard 2-leg trips (Hub -> Pickup -> Dest) and 3-leg return/multi-stop trips
+ * (Hub -> Pickup -> Dest 1 -> Return Home / Dest 2).
  */
-export async function fetchRoadRoute(originCoords, pickupCoords, destCoords) {
+export async function fetchRoadRoute(originCoords, pickupCoords, destCoords, dest2Coords = null) {
+  const hasDest2 = Boolean(dest2Coords && dest2Coords.length >= 2);
+
   // Prepare fallback immediately
   const fallbackLeg1Km = haversineKm(originCoords, pickupCoords, 1.26);
   const fallbackLeg2Km = haversineKm(pickupCoords, destCoords, 1.26);
-  const fallbackTotalKm = Math.round((fallbackLeg1Km + fallbackLeg2Km) * 10) / 10;
+  const fallbackLeg3Km = hasDest2 ? haversineKm(destCoords, dest2Coords, 1.26) : 0;
+  const fallbackTotalKm = Math.round((fallbackLeg1Km + fallbackLeg2Km + fallbackLeg3Km) * 10) / 10;
 
   const fallbackResult = {
     success: false,
     isRealRoad: false,
+    hasLeg3: hasDest2,
     leg1Km: fallbackLeg1Km,
     leg1DurationMin: estimateDurationMin(fallbackLeg1Km),
     leg2Km: fallbackLeg2Km,
     leg2DurationMin: estimateDurationMin(fallbackLeg2Km),
+    leg3Km: fallbackLeg3Km,
+    leg3DurationMin: hasDest2 ? estimateDurationMin(fallbackLeg3Km) : 0,
     totalKm: fallbackTotalKm,
     totalDurationMin: estimateDurationMin(fallbackTotalKm),
-    fullGeometry: [originCoords, pickupCoords, destCoords],
+    fullGeometry: hasDest2
+      ? [originCoords, pickupCoords, destCoords, dest2Coords]
+      : [originCoords, pickupCoords, destCoords],
     leg1Geometry: [originCoords, pickupCoords],
-    leg2Geometry: [pickupCoords, destCoords]
+    leg2Geometry: [pickupCoords, destCoords],
+    leg3Geometry: hasDest2 ? [destCoords, dest2Coords] : null
   };
 
   try {
-    const coordsStr = `${originCoords[1]},${originCoords[0]};${pickupCoords[1]},${pickupCoords[0]};${destCoords[1]},${destCoords[0]}`;
+    let coordsStr = `${originCoords[1]},${originCoords[0]};${pickupCoords[1]},${pickupCoords[0]};${destCoords[1]},${destCoords[0]}`;
+    if (hasDest2) {
+      coordsStr += `;${dest2Coords[1]},${dest2Coords[0]}`;
+    }
+
     const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson&steps=false`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 6500);
 
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
@@ -87,39 +101,61 @@ export async function fetchRoadRoute(originCoords, pickupCoords, destCoords) {
     const leg2Meters = legs[1]?.distance ?? (fallbackLeg2Km * 1000);
     const leg2Sec = legs[1]?.duration ?? (fallbackResult.leg2DurationMin * 60);
 
+    const leg3Meters = hasDest2 ? (legs[2]?.distance ?? (fallbackLeg3Km * 1000)) : 0;
+    const leg3Sec = hasDest2 ? (legs[2]?.duration ?? (fallbackResult.leg3DurationMin * 60)) : 0;
+
     const leg1Km = Math.round((leg1Meters / 1000) * 10) / 10;
     const leg2Km = Math.round((leg2Meters / 1000) * 10) / 10;
-    const totalKm = Math.round((route.distance / 1000) * 10) / 10 || Math.round((leg1Km + leg2Km) * 10) / 10;
+    const leg3Km = hasDest2 ? Math.round((leg3Meters / 1000) * 10) / 10 : 0;
+    const totalKm = Math.round((route.distance / 1000) * 10) / 10 || Math.round((leg1Km + leg2Km + leg3Km) * 10) / 10;
 
     // GeoJSON coordinates come in [lon, lat], Leaflet expects [lat, lon]
     const fullLatLngs = (route.geometry?.coordinates || []).map(coord => [coord[1], coord[0]]);
 
-    // Find closest point to pickupCoords to split into leg1 & leg2 polylines
-    let splitIdx = Math.floor(fullLatLngs.length / 2);
-    let minD = Infinity;
+    // Find closest points to split into leg1, leg2, and optional leg3
+    let idx1 = Math.floor(fullLatLngs.length / (hasDest2 ? 3 : 2));
+    let minD1 = Infinity;
     fullLatLngs.forEach((pt, idx) => {
       const d = Math.hypot(pt[0] - pickupCoords[0], pt[1] - pickupCoords[1]);
-      if (d < minD) {
-        minD = d;
-        splitIdx = idx;
+      if (d < minD1) {
+        minD1 = d;
+        idx1 = idx;
       }
     });
 
-    const leg1LatLngs = fullLatLngs.slice(0, splitIdx + 1);
-    const leg2LatLngs = fullLatLngs.slice(splitIdx);
+    let idx2 = fullLatLngs.length - 1;
+    if (hasDest2) {
+      let minD2 = Infinity;
+      for (let i = idx1; i < fullLatLngs.length; i++) {
+        const pt = fullLatLngs[i];
+        const d = Math.hypot(pt[0] - destCoords[0], pt[1] - destCoords[1]);
+        if (d < minD2) {
+          minD2 = d;
+          idx2 = i;
+        }
+      }
+    }
+
+    const leg1LatLngs = fullLatLngs.slice(0, idx1 + 1);
+    const leg2LatLngs = hasDest2 ? fullLatLngs.slice(idx1, idx2 + 1) : fullLatLngs.slice(idx1);
+    const leg3LatLngs = hasDest2 ? fullLatLngs.slice(idx2) : null;
 
     return {
       success: true,
       isRealRoad: true,
+      hasLeg3: hasDest2,
       leg1Km,
       leg1DurationMin: Math.max(2, Math.round(leg1Sec / 60)),
       leg2Km,
       leg2DurationMin: Math.max(2, Math.round(leg2Sec / 60)),
+      leg3Km,
+      leg3DurationMin: hasDest2 ? Math.max(2, Math.round(leg3Sec / 60)) : 0,
       totalKm,
       totalDurationMin: Math.max(4, Math.round(route.duration / 60)),
       fullGeometry: fullLatLngs.length > 2 ? fullLatLngs : fallbackResult.fullGeometry,
       leg1Geometry: leg1LatLngs.length > 1 ? leg1LatLngs : fallbackResult.leg1Geometry,
-      leg2Geometry: leg2LatLngs.length > 1 ? leg2LatLngs : fallbackResult.leg2Geometry
+      leg2Geometry: leg2LatLngs.length > 1 ? leg2LatLngs : fallbackResult.leg2Geometry,
+      leg3Geometry: (hasDest2 && leg3LatLngs && leg3LatLngs.length > 1) ? leg3LatLngs : fallbackResult.leg3Geometry
     };
   } catch (err) {
     console.warn('[RoutingService] OSRM live routing unavailable or timed out, using calibrated fallback:', err.message);

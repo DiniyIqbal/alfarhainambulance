@@ -738,6 +738,65 @@ html, body {
   color: var(--amc-teal);
 }
 
+.stop-node-icon.return {
+  background-color: #F3E8FF;
+  color: #7C3AED;
+}
+
+.btn-remove-stop {
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: #64748B;
+  cursor: pointer;
+  transition: var(--transition);
+  padding: 0;
+}
+
+.btn-remove-stop:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+  border-color: #FCA5A5;
+  transform: scale(1.08);
+}
+
+.add-stop-actions-row {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+
+.btn-add-stop-pill {
+  flex: 1;
+  background: #F8FAFC;
+  border: 1.5px dashed var(--amc-teal);
+  border-radius: var(--radius-full);
+  padding: 7px 10px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--amc-teal-dark);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: var(--transition);
+}
+
+.btn-add-stop-pill:hover {
+  background: #E6F7F6;
+  border-style: solid;
+  transform: translateY(-1px);
+}
+
 .stop-text-block {
   display: flex;
   flex-direction: column;
@@ -2844,6 +2903,17 @@ html, body {
   border-color: #FEE2E2;
 }
 
+.marker-return .marker-emoji-box {
+  background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+  color: #FFFFFF;
+  border-color: #EDE9FE;
+}
+
+.map-leg-num.leg3, .stop-num-badge.leg3 {
+  background-color: #7C3AED !important;
+  color: #FFFFFF !important;
+}
+
 .marker-tag-label {
   background: rgba(15, 23, 42, 0.88);
   color: #FFFFFF;
@@ -2867,4 +2937,148 @@ html, body {
   justify-content: center;
   gap: 5px;
 }
+
+/* Category Filter Pills for Medical Center Destination Modal */
+.dest-cat-pills-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  scrollbar-width: thin;
+}
+
+.dest-cat-pill {
+  white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid var(--border-light);
+  background-color: #F8FAFC;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dest-cat-pill:hover {
+  background-color: #E2E8F0;
+  color: var(--text-heading);
+}
+
+.dest-cat-pill.active {
+  background-color: var(--amc-teal);
+  color: #FFFFFF;
+  border-color: var(--amc-teal);
+  box-shadow: 0 2px 4px rgba(0, 108, 103, 0.2);
+}
+
+/* Custom Address Box for User to Fill In */
+.custom-dest-box {
+  background: #F8FAFC;
+  border: 1.5px dashed var(--amc-teal);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.custom-dest-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.custom-dest-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--amc-teal-dark);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.custom-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.custom-field-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.custom-input-field {
+  width: 100%;
+  padding: 8px 10px;
+  background-color: #FFFFFF;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-heading);
+  outline: none;
+  transition: var(--transition);
+}
+
+.custom-input-field:focus {
+  border-color: var(--amc-teal);
+  box-shadow: 0 0 0 2.5px rgba(0, 108, 103, 0.12);
+}
+
+.custom-dest-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-geocode-search {
+  flex: 1;
+  background: #F0FDF4;
+  border: 1px solid #86EFAC;
+  color: #166534;
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: var(--transition);
+}
+
+.btn-geocode-search:hover {
+  background: #DCFCE7;
+}
+
+.btn-confirm-custom-dest {
+  flex: 1;
+  background: var(--amc-teal);
+  border: none;
+  color: #FFFFFF;
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: var(--transition);
+}
+
+.btn-confirm-custom-dest:hover {
+  background: var(--amc-teal-dark);
+}
+
 

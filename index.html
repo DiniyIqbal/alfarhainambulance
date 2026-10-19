@@ -191,17 +191,42 @@
                     <span class="stop-chevron">›</span>
                   </div>
 
-                  <!-- Stop 3: Hospital Destinasi -->
-                  <div class="location-stop-item" id="stopDestRow" title="Pilih Hospital Destinasi">
+                  <!-- Stop 3: Pusat Perubatan Destinasi -->
+                  <div class="location-stop-item" id="stopDestRow" title="Pilih Pusat Perubatan Destinasi">
                     <div class="stop-left-group">
                       <div class="stop-node-icon dest">🏁</div>
                       <div class="stop-text-block">
-                        <span class="stop-label">Hospital tujuan</span>
+                        <span class="stop-label" id="labelDest1">Pusat Perubatan Tujuan</span>
                         <span class="stop-name" id="displayDestName">Hospital Raja Perempuan Zainab II</span>
                       </div>
                     </div>
                     <span class="stop-chevron">›</span>
                   </div>
+
+                  <!-- Stop 4: Hantar Pulang / Destinasi Ke-2 (Optional Multi-Stop) -->
+                  <div class="location-stop-item" id="stopReturnRow" style="display: none;" title="Pilih Destinasi Hantar Pulang / Pusat Perubatan Seterusnya">
+                    <div class="stop-left-group">
+                      <div class="stop-node-icon return" id="stopReturnIcon">🔄</div>
+                      <div class="stop-text-block">
+                        <span class="stop-label" id="stopReturnLabel">Hantar Pulang (Kediaman)</span>
+                        <span class="stop-name" id="displayReturnName">Bandar Kota Bharu</span>
+                      </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <button type="button" class="btn-remove-stop" id="btnRemoveStop4" title="Buang Destinasi Ini">&times;</button>
+                      <span class="stop-chevron">›</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Action Buttons to Add Stop 4 (Hantar Pulang / Destinasi Ke-2) -->
+                <div class="add-stop-actions-row" id="addStopActionsRow">
+                  <button type="button" class="btn-add-stop-pill" id="btnAddReturnHome">
+                    <span>🔄</span> <span>+ Hantar Pulang (Dua Hala)</span>
+                  </button>
+                  <button type="button" class="btn-add-stop-pill" id="btnAddSecondDest">
+                    <span>🏥</span> <span>+ Destinasi Ke-2</span>
+                  </button>
                 </div>
 
                 <!-- Mini Map Preview with route line -->
@@ -275,6 +300,13 @@
                       <span id="mapLeg2Label">Pengambilan ➔ Hospital</span>
                     </div>
                     <span class="map-leg-km" id="mapLeg2Km">1.1 km</span>
+                  </div>
+                  <div class="map-leg-row" id="mapLeg3Row" style="display: none;">
+                    <div class="map-leg-left">
+                      <span class="map-leg-num leg3">3</span>
+                      <span id="mapLeg3Label">Destinasi 1 ➔ Pulang / Destinasi 2</span>
+                    </div>
+                    <span class="map-leg-km" id="mapLeg3Km">0.0 km</span>
                   </div>
                   <div class="map-divider"></div>
                   <div class="map-total-row">
@@ -386,7 +418,15 @@
                   <span class="stop-num-badge">3</span>
                   <div class="stop-detail-col">
                     <span class="stop-title-bold" id="invSummaryStop3Title">HRPZ II</span>
-                    <span class="stop-sub-address">Hospital Raja Perempuan Zainab II, Kota Bharu</span>
+                    <span class="stop-sub-address" id="invSummaryStop3Sub">Hospital Raja Perempuan Zainab II, Kota Bharu</span>
+                  </div>
+                </div>
+                <!-- Stop 4: Pulang / Destinasi 2 (Optional) -->
+                <div class="numbered-stop-row" id="invSummaryStop4Row" style="display: none;">
+                  <span class="stop-num-badge leg3" id="invSummaryStop4Num">4</span>
+                  <div class="stop-detail-col">
+                    <span class="stop-title-bold" id="invSummaryStop4Title">Hantar Pulang (Kediaman)</span>
+                    <span class="stop-sub-address" id="invSummaryStop4Sub">Bandar Kota Bharu</span>
                   </div>
                 </div>
               </div>
@@ -864,6 +904,7 @@
             Pangkalan: <span id="invOrigin">Kok Lanas HQ</span><br>
             Pengambilan: <span id="invPickup" style="font-weight: 700;">Bandar Kota Bharu</span><br>
             Tujuan: <span id="invDestination">HRPZ II Kota Bharu</span><br>
+            <span id="invReturnInfoRow" style="display: none;">Pulang / Seterusnya: <span id="invReturnInfo" style="font-weight: 700;">-</span><br></span>
             Jarak: <span id="invDistanceKm" style="font-weight: 700;">26.3 KM</span>
           </div>
         </div>
