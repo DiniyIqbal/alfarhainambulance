@@ -97,6 +97,10 @@
             <span>📲</span>
             <span>QR Kod</span>
           </button>
+          <button class="utility-tool-btn" id="mobileAuthBtn" title="Log Masuk / Akaun Pemandu & Staf">
+            <span id="mobileAuthIcon">👤</span>
+            <span id="mobileAuthLabel">Log Masuk</span>
+          </button>
         </div>
       </div>
     </header>
@@ -1044,6 +1048,103 @@
       <p style="font-size: 0.72rem; color: var(--text-sub); line-height: 1.4;">
         💡 <strong>Petua Pasang (PWA):</strong> Buka di Chrome / Safari pada telefon, tekan menu <strong>"Add to Home screen"</strong> untuk memasang aplikasi penuh.
       </p>
+    </div>
+  </div>
+
+  <!-- =============================================================
+       MODAL 6: LOG MASUK / DAFTAR AKAUN (MOBILE)
+       ============================================================= -->
+  <div class="modal-overlay" id="mobileAuthModal">
+    <div class="modal-card" style="max-width: 420px;">
+      <button class="modal-close-btn" id="closeMobileAuthModalBtn">&times;</button>
+
+      <!-- Logged Out View -->
+      <div id="mobileAuthFormContainer">
+        <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 800; color: var(--text-heading); margin-bottom: 4px;">
+          <span id="mobileAuthTitleIcon">🔐</span> <span id="mobileAuthModalTitle">Akaun Al-Farhain</span>
+        </h3>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">
+          Log masuk untuk pemandu bertugas atau pendaftaran akaun baharu.
+        </p>
+
+        <!-- Segmented Tab: Log Masuk vs Daftar -->
+        <div class="mode-segmented-bar" style="margin-bottom: 12px;">
+          <button type="button" class="mode-segment-btn active" id="btnMobileTabLogin">
+            <span>🔑</span> <span>Log Masuk</span>
+          </button>
+          <button type="button" class="mode-segment-btn" id="btnMobileTabRegister">
+            <span>✍️</span> <span>Daftar</span>
+          </button>
+        </div>
+
+        <form id="mobileAuthForm">
+          <!-- Register fields only -->
+          <div id="mobileRegisterFields" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 10px;">
+            <div>
+              <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Nama Penuh</label>
+              <input type="text" id="mobileAuthNameInput" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="Cth: Abe Di / Syalihan">
+            </div>
+            <div>
+              <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Peranan</label>
+              <select id="mobileAuthRoleInput" class="search-bar-box" style="width: 100%; margin-top: 4px;">
+                <option value="driver">Pemandu / Krew EMT Bertugas</option>
+                <option value="paramedic">Penolong Pegawai Perubatan (M.A)</option>
+                <option value="customer">Pengguna Awam / Waris Pesakit</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Common fields -->
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
+            <div>
+              <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Alamat Emel</label>
+              <input type="email" id="mobileAuthEmailInput" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="pemandu@alfarhain.my" required>
+            </div>
+            <div>
+              <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Kata Laluan</label>
+              <input type="password" id="mobileAuthPasswordInput" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="Minimum 6 aksara" required minlength="6">
+            </div>
+            <div id="mobileAuthStatusMsg" style="display: none; padding: 8px 12px; border-radius: 8px; font-size: 0.74rem;"></div>
+          </div>
+
+          <!-- Quick 1-Click Demo Login for Drivers -->
+          <div style="background: var(--bg-card); border: 1px dashed var(--border-light); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 14px;">
+            <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
+              ⚡ Log Masuk Segera Pemandu (Demo):
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <button type="button" class="btn-demo-quick-auth-mobile" data-email="abedi@alfarhain.my" data-name="Abe Di / Syalihan" data-plate="VPQ 7606" data-role="Pemandu EMT Kok Lanas">
+                <span>🚑</span> <span>Abe Di (Pemandu VPQ 7606 • Kelantan)</span>
+              </button>
+              <button type="button" class="btn-demo-quick-auth-mobile" data-email="abedin@alfarhain.my" data-name="Abe Din Estimos Sukrosa" data-plate="DFG 7606" data-role="Pemandu EMT Raub">
+                <span>🚐</span> <span>Abe Din Estimos (Pemandu DFG 7606 • Pahang)</span>
+              </button>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px; justify-content: flex-end;">
+            <button type="button" class="btn-nav-prev" onclick="document.getElementById('mobileAuthModal').classList.remove('show')">Batal</button>
+            <button type="submit" class="primary-action-btn" id="btnMobileSubmitAuth" style="width: auto; padding: 8px 18px;">Log Masuk</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Logged In View -->
+      <div id="mobileAuthProfileContainer" style="display: none; text-align: center; padding: 14px 0;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #00A896, #028090); color: #FFF; font-weight: 800; font-size: 1.3rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto;" id="mobileUserAvatarBig">
+          AD
+        </div>
+        <h3 style="font-family: var(--font-heading); font-size: 1.1rem; font-weight: 800; color: var(--text-heading);" id="mobileUserNameBig">Abe Di / Syalihan</h3>
+        <div style="font-size: 0.78rem; color: var(--amc-teal-dark); font-weight: 700; margin-top: 2px;" id="mobileUserRoleBig">Pemandu Krew EMT Bertugas</div>
+        <div style="font-size: 0.72rem; color: var(--text-muted);" id="mobileUserEmailBig">abedi@alfarhain.my</div>
+
+        <div style="margin-top: 16px; display: flex; gap: 10px; justify-content: center;">
+          <button type="button" class="btn-nav-prev" onclick="document.getElementById('mobileAuthModal').classList.remove('show')">Tutup</button>
+          <button type="button" class="btn-nav-prev" id="btnMobileSignOut" style="border-color: #EF4444; color: #EF4444;">
+            <span>🚪</span> <span>Log Keluar</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Al-Farhain AMC | Portal Pengurus Cawangan &amp; Bilik Gerakan</title>
+  <meta name="description" content="Sistem Bilik Gerakan &amp; Portal Pengurus Cawangan Al-Farhain Medical Center (AMC). Pemantauan Radar, Dispatch Ambulans, Analisis Hasil &amp; Armada.">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
+  <!-- Leaflet CSS for Radar Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <!-- Enterprise UI/UX Portal Stylesheet -->
+  <link rel="stylesheet" href="./src/portal/portal.css">
+</head>
+<body>
+
+  <!-- =========================================================================
+       1. LEFT ENTERPRISE SIDEBAR
+       ========================================================================= -->
+  <aside class="portal-sidebar">
+    <!-- Brand Header -->
+    <div class="sidebar-header">
+      <div class="brand-wrapper">
+        <div class="brand-icon-emblem" title="Al-Farhain Medical Center">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
+          </svg>
+        </div>
+        <div class="brand-meta">
+          <span class="brand-name">AL-FARHAIN</span>
+          <span class="brand-sub">AMC AMBULANS</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Branch Quick Switcher -->
+    <div class="sidebar-branch-box">
+      <div class="branch-select-pill-group">
+        <span style="font-size: 0.9rem;">🏛️</span>
+        <select id="portalBranchSelect" title="Tukar Cawangan Pengurus">
+          <option value="kok_lanas">HQ Kok Lanas (Kelantan)</option>
+          <option value="raub">Cawangan Raub (Pahang)</option>
+          <option value="all">Semua Cawangan (Overview)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Navigation Menu Items -->
+    <nav class="sidebar-nav-list">
+      <div class="nav-section-label">Operasi Utama</div>
+
+      <button class="sidebar-nav-item active" data-target="radarView">
+        <div class="nav-item-left">
+          <span class="nav-icon">🛰️</span>
+          <span>Bilik Gerakan Radar</span>
+        </div>
+        <span class="nav-badge-pill">LIVE</span>
+      </button>
+
+      <button class="sidebar-nav-item" data-target="dispatchView">
+        <div class="nav-item-left">
+          <span class="nav-icon">⚡</span>
+          <span>Pipeline Dispatch</span>
+        </div>
+        <span class="nav-badge-pill" id="badgeActiveMissionsCount">2 Aktif</span>
+      </button>
+
+      <div class="nav-section-label" style="margin-top: 10px;">Pengurusan &amp; Kewangan</div>
+
+      <button class="sidebar-nav-item" data-target="revenueView">
+        <div class="nav-item-left">
+          <span class="nav-icon">📈</span>
+          <span>Analisis Hasil &amp; Lejar</span>
+        </div>
+      </button>
+
+      <button class="sidebar-nav-item" data-target="fleetView">
+        <div class="nav-item-left">
+          <span class="nav-icon">🚑</span>
+          <span>Armada &amp; Kesihatan Van</span>
+        </div>
+        <span class="nav-badge-pill">2 Unit</span>
+      </button>
+
+      <button class="sidebar-nav-item" data-target="crewView">
+        <div class="nav-item-left">
+          <span class="nav-icon">👥</span>
+          <span>Jadual Krew &amp; Syif</span>
+        </div>
+      </button>
+    </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+      <div class="cloud-status-badge" id="portalCloudBtn" title="Tetapan Sambungan Supabase">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="cloud-indicator-dot" id="portalCloudDot"></span>
+          <span id="portalCloudStatusText" style="font-weight: 600;">Supabase Sync</span>
+        </div>
+        <span style="color: var(--text-muted); font-size: 0.7rem;">⚙️</span>
+      </div>
+
+      <div class="operator-profile-card">
+        <div class="operator-info">
+          <div class="operator-avatar">AMC</div>
+          <div>
+            <div class="operator-text-title" id="activeOperatorTitle">Pengurus Cawangan</div>
+            <div class="operator-text-sub">Talian: 013-914 7606</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- =========================================================================
+       2. MAIN COMMAND AREA (RIGHT)
+       ========================================================================= -->
+  <main class="portal-main-area">
+
+    <!-- Top Command Bar -->
+    <header class="portal-topbar">
+      <!-- Universal Search -->
+      <div class="topbar-search-box">
+        <span class="search-icon-fixed">🔍</span>
+        <input type="text" id="portalGlobalSearchInput" class="topbar-search-input" placeholder="Cari pesakit, no. invois, pemandu, atau no. plat...">
+        <span class="search-shortcut-pill">/</span>
+      </div>
+
+      <!-- Right Action Tools -->
+      <div class="topbar-actions-cluster">
+        <div class="live-clock-badge" id="liveClockText">--:--:-- MYT</div>
+
+        <button class="sound-toggle-btn" id="portalSoundToggleBtn" title="Tukar Bunyi Siren &amp; Alert">
+          <span id="soundToggleIcon">🔊</span>
+          <span>Audio Alert</span>
+        </button>
+
+        <a href="/" target="_blank" class="btn-open-mobile-view" title="Buka Aplikasi Telefon / Pemandu">
+          <span>📱</span>
+          <span>App Telefon</span>
+        </a>
+
+        <!-- User Authentication & Account Pill -->
+        <button class="portal-user-pill" id="portalAuthBtn" title="Log Masuk / Akaun Pengurus">
+          <div class="user-avatar-mini" id="portalUserAvatar">👤</div>
+          <div class="user-pill-texts">
+            <span class="user-pill-name" id="portalUserName">Log Masuk</span>
+            <span class="user-pill-role" id="portalUserRole">Akses Sistem</span>
+          </div>
+        </button>
+
+        <button class="btn-primary-dispatch" id="openDispatchModalBtn">
+          <span>🚀</span>
+          <span>+ Gerakkan Unit Baharu</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Canvas Views Container -->
+    <div class="views-canvas-container">
+
+      <!-- -------------------------------------------------------------------
+           VIEW 1: TACTICAL RADAR DECK
+           ------------------------------------------------------------------- -->
+      <section class="view-section-pane active" id="radarView">
+        <div class="radar-map-viewport">
+          <div id="portalRadarMap"></div>
+
+          <!-- Floating Map Quick Jump Controls -->
+          <div class="map-floating-quick-controls">
+            <button class="map-control-pill active" id="btnMapFocusBranch">
+              <span>🎯</span> <span id="mapFocusBranchLabel">HQ Kok Lanas</span>
+            </button>
+            <button class="map-control-pill" id="btnMapFocusRaub">
+              <span>🏛️</span> <span>Cawangan Raub</span>
+            </button>
+            <button class="map-control-pill" id="btnMapFocusAll">
+              <span>🇲🇾</span> <span>Seluruh Semenanjung</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Telemetry Sidebar -->
+        <aside class="radar-telemetry-panel">
+          <div class="telemetry-panel-header">
+            <h3 class="telemetry-panel-title">
+              <span>🚑</span> <span>Armada &amp; Telemetri Unit</span>
+            </h3>
+            <span style="font-size: 0.72rem; color: var(--amc-emerald); font-weight: 700;">● MASA NYATA</span>
+          </div>
+
+          <div class="telemetry-scroll-area" id="telemetryUnitsList">
+            <!-- Rendered dynamically -->
+          </div>
+        </aside>
+      </section>
+
+      <!-- -------------------------------------------------------------------
+           VIEW 2: DISPATCH PIPELINE (KANBAN BOARD)
+           ------------------------------------------------------------------- -->
+      <section class="view-section-pane" id="dispatchView">
+        <div class="kanban-viewport">
+          <!-- Col 1: Digerakkan -->
+          <div class="kanban-column-container">
+            <div class="kanban-column-header">
+              <div class="kanban-header-title">
+                <span style="color: #FBBF24;">●</span> <span>Digerakkan (En Route)</span>
+              </div>
+              <span class="nav-badge-pill" id="badgeCount-Dispatched">0</span>
+            </div>
+            <div class="kanban-items-stack" id="kanbanCol-Dispatched"></div>
+          </div>
+
+          <!-- Col 2: On Scene -->
+          <div class="kanban-column-container">
+            <div class="kanban-column-header">
+              <div class="kanban-header-title">
+                <span style="color: #38BDF8;">●</span> <span>Di Lokasi Pesakit</span>
+              </div>
+              <span class="nav-badge-pill" id="badgeCount-OnScene">0</span>
+            </div>
+            <div class="kanban-items-stack" id="kanbanCol-OnScene"></div>
+          </div>
+
+          <!-- Col 3: In Transit -->
+          <div class="kanban-column-container">
+            <div class="kanban-column-header">
+              <div class="kanban-header-title">
+                <span style="color: #818CF8;">●</span> <span>Dalam Transit Hospital</span>
+              </div>
+              <span class="nav-badge-pill" id="badgeCount-InTransit">0</span>
+            </div>
+            <div class="kanban-items-stack" id="kanbanCol-InTransit"></div>
+          </div>
+
+          <!-- Col 4: Selesai -->
+          <div class="kanban-column-container">
+            <div class="kanban-column-header">
+              <div class="kanban-header-title">
+                <span style="color: #34D399;">●</span> <span>Misi Selesai / Discaj</span>
+              </div>
+              <span class="nav-badge-pill" id="badgeCount-Selesai">0</span>
+            </div>
+            <div class="kanban-items-stack" id="kanbanCol-Selesai"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------------------
+           VIEW 3: REVENUE ANALYTICS DECK
+           ------------------------------------------------------------------- -->
+      <section class="view-section-pane" id="revenueView">
+        <!-- Top KPI Cards -->
+        <div class="metrics-quad-grid">
+          <div class="kpi-metric-card">
+            <div class="kpi-title-row">
+              <span>Jumlah Hasil Bulan Semasa</span>
+              <span>💵</span>
+            </div>
+            <div class="kpi-hero-num" id="revMetricTotal">RM 0.00</div>
+            <div>
+              <span class="kpi-trend-tag">▲ +14.2%</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted); margin-left: 6px;">vs bulan lepas</span>
+            </div>
+          </div>
+
+          <div class="kpi-metric-card">
+            <div class="kpi-title-row">
+              <span>Jumlah Misi Berjaya</span>
+              <span>🚑</span>
+            </div>
+            <div class="kpi-hero-num" id="revMetricTrips">0</div>
+            <div>
+              <span class="kpi-trend-tag">100% Selesai</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted); margin-left: 6px;">Tiada pembatalan</span>
+            </div>
+          </div>
+
+          <div class="kpi-metric-card">
+            <div class="kpi-title-row">
+              <span>Jumlah Jarak Tempuh</span>
+              <span>🛣️</span>
+            </div>
+            <div class="kpi-hero-num" id="revMetricKm">0.0 KM</div>
+            <div>
+              <span style="font-size: 0.72rem; color: var(--text-muted);">Surcaj KM &amp; Diesel Aktif</span>
+            </div>
+          </div>
+
+          <div class="kpi-metric-card">
+            <div class="kpi-title-row">
+              <span>Purata Tambang Misi</span>
+              <span>🏷️</span>
+            </div>
+            <div class="kpi-hero-num" id="revMetricAvgFare">RM 0.00</div>
+            <div>
+              <span style="font-size: 0.72rem; color: var(--text-muted);">Formula Asas RM250 + KM</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Middle Analytics Deck: Categories & Branch Breakdown -->
+        <div class="analytics-double-deck">
+          <div class="analytics-panel">
+            <div class="panel-title-bar">
+              <h3><span>📊</span> <span>Pecahan Hasil Mengikut Kategori Misi</span></h3>
+              <span style="font-size: 0.74rem; color: var(--text-muted);">Kecemasan vs Discaj vs Inter-Hospital</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:6px;">
+                  <span><b>Kecemasan Standard &amp; Trauma</b> (RM250 Asas)</span>
+                  <span style="font-family:var(--font-mono); color:#FBBF24;">65%</span>
+                </div>
+                <div class="gauge-track"><div class="gauge-fill" style="width: 65%;"></div></div>
+              </div>
+
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:6px;">
+                  <span><b>Inter-Hospital Transfer &amp; ICU Escort</b> (RM350 Asas)</span>
+                  <span style="font-family:var(--font-mono); color:#38BDF8;">25%</span>
+                </div>
+                <div class="gauge-track"><div class="gauge-fill" style="width: 25%; background: linear-gradient(90deg, #0EA5E9, #38BDF8);"></div></div>
+              </div>
+
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:6px;">
+                  <span><b>Bukan Kecemasan / Discaj Wad</b></span>
+                  <span style="font-family:var(--font-mono); color:#34D399;">10%</span>
+                </div>
+                <div class="gauge-track"><div class="gauge-fill" style="width: 10%; background: linear-gradient(90deg, #10B981, #059669);"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="analytics-panel">
+            <div class="panel-title-bar">
+              <h3><span>🏛️</span> <span>Sumbangan Cawangan</span></h3>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-light); padding: 12px; border-radius: 8px;">
+                <div style="font-size: 0.82rem; font-weight: 700; color: #FFFFFF;">HQ Kok Lanas (Kelantan)</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Plat: VPQ 7606 • Abe Di</div>
+                <div style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 800; color: #34D399; margin-top: 6px;" id="revBranchKokLanas">RM 0.00</div>
+              </div>
+
+              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-light); padding: 12px; border-radius: 8px;">
+                <div style="font-size: 0.82rem; font-weight: 700; color: #FFFFFF;">Cawangan Raub (Pahang)</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Plat: DFG 7606 • Abe Din Estimos</div>
+                <div style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 800; color: #38BDF8; margin-top: 6px;" id="revBranchRaub">RM 0.00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ledger Data Table -->
+        <div class="data-table-container">
+          <div class="panel-title-bar">
+            <div>
+              <h3><span>📑</span> <span>Lejar Rekod Tempahan &amp; Invois Rasmi</span></h3>
+              <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Disegerakkan terus bersama Supabase Cloud</div>
+            </div>
+            <button class="btn-card-action" id="btnExportCsv" style="width: auto; padding: 6px 14px;">
+              <span>📥</span> <span>Eksport CSV</span>
+            </button>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="enterprise-table">
+              <thead>
+                <tr>
+                  <th>No. Invois</th>
+                  <th>Tarikh</th>
+                  <th>Cawangan</th>
+                  <th>Laluan (Dari ➔ Ke)</th>
+                  <th>Jarak</th>
+                  <th>Ambulans / Pemandu</th>
+                  <th>Jumlah (RM)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="revenueTableBody">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------------------
+           VIEW 4: FLEET & VEHICLE HEALTH MATRIX
+           ------------------------------------------------------------------- -->
+      <section class="view-section-pane" id="fleetView">
+        <div class="matrix-card-stack" id="mgmtFleetList">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------------------
+           VIEW 5: CREW & ROSTER
+           ------------------------------------------------------------------- -->
+      <section class="view-section-pane" id="crewView">
+        <div class="matrix-card-stack" id="mgmtStaffList">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       MODAL 1: QUICK DISPATCH LAUNCHER
+       ========================================================================= -->
+  <div class="portal-modal-backdrop" id="dispatchLauncherModal">
+    <div class="portal-modal-box">
+      <div class="modal-header-banner">
+        <h2><span>🚀</span> <span>Gerakkan Unit Ambulans (Rapid Dispatch)</span></h2>
+        <button class="modal-close-btn" id="closeDispatchModalBtn">&times;</button>
+      </div>
+
+      <form id="quickDispatchForm">
+        <div class="modal-body-scroll">
+          <div class="form-group">
+            <label class="form-label">Cawangan Pangkalan Bertolak</label>
+            <select class="form-select" id="dispatchHubSelect">
+              <option value="kok_lanas">HQ Kok Lanas (Kelantan) — VPQ 7606 (Abe Di)</option>
+              <option value="raub">Cawangan Raub (Pahang) — DFG 7606 (Abe Din)</option>
+            </select>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Lokasi Pengambilan Pesakit</label>
+              <input type="text" class="form-input" id="dispatchOriginInput" placeholder="Cth: Kediaman Bandar Kota Bharu" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hospital Tujuan</label>
+              <input type="text" class="form-input" id="dispatchDestInput" placeholder="Cth: Hospital Raja Perempuan Zainab II" required>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Anggaran Jarak (KM)</label>
+              <input type="number" class="form-input" id="dispatchDistanceKm" value="25" min="1" step="0.5" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Triage &amp; Nama Pesakit</label>
+              <input type="text" class="form-input" id="dispatchPatientInput" placeholder="Cth: En. Azman (Trauma Jantung)">
+            </div>
+          </div>
+
+          <!-- Official Calculated Fare Card -->
+          <div style="background: rgba(0, 168, 150, 0.12); border: 1px solid rgba(0, 168, 150, 0.3); border-radius: 10px; padding: 14px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Formula Rasmi AMC:</span>
+              <div style="font-size: 0.78rem; color: #FFFFFF; margin-top: 2px;">Asas RM250 + RM3.00/KM &gt;25KM + Caj Operasi</div>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 1.3rem; font-weight: 800; font-family: 'JetBrains Mono'; color: #34D399;" id="dispatchEstFare">RM 300.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer-actions">
+          <button type="button" class="btn-secondary" onclick="document.getElementById('dispatchLauncherModal').classList.remove('show')">Batal</button>
+          <button type="submit" class="btn-primary">Sahkan &amp; Buka WhatsApp Arahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 2: SUPABASE DATABASE CONFIGURATION
+       ========================================================================= -->
+  <div class="portal-modal-backdrop" id="portalSupabaseModal">
+    <div class="portal-modal-box" style="max-width: 500px;">
+      <div class="modal-header-banner">
+        <h2><span>⚡</span> <span>Pangkalan Data Supabase Cloud</span></h2>
+        <button class="modal-close-btn" id="closePortalSupabaseModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body-scroll">
+        <p style="font-size: 0.78rem; color: var(--text-muted);">
+          Masukkan Project URL dan Anon Key daripada Supabase Dashboard untuk mengaktifkan penyegerakan langsung dengan aplikasi pemandu.
+        </p>
+
+        <div class="form-group" style="margin-top: 10px;">
+          <label class="form-label">Project URL</label>
+          <input type="url" id="portalSupabaseUrlInput" class="form-input" placeholder="https://xyz.supabase.co">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Anon Public Key</label>
+          <input type="password" id="portalSupabaseKeyInput" class="form-input" placeholder="sb_publishable_... atau eyJhbGci...">
+        </div>
+
+        <div id="portalSupabaseTestResult" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.76rem; margin-top: 4px;"></div>
+      </div>
+
+      <div class="modal-footer-actions">
+        <button type="button" class="btn-secondary" id="portalTestSupabaseBtn">Uji Sambungan</button>
+        <button type="button" class="btn-primary" id="portalSaveSupabaseBtn">Simpan Kunci</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 3: USER AUTHENTICATION (LOG MASUK / DAFTAR AKAUN PENGURUS)
+       ========================================================================= -->
+  <div class="portal-modal-backdrop" id="portalAuthModal">
+    <div class="portal-modal-box" style="max-width: 480px;">
+      <div class="modal-header-banner">
+        <h2><span id="authModalHeaderIcon">🔐</span> <span id="authModalTitle">Akaun Pengurus Cawangan</span></h2>
+        <button class="modal-close-btn" id="closePortalAuthModalBtn">&times;</button>
+      </div>
+
+      <!-- Logged Out View: Form with Tabs -->
+      <div id="authFormViewContainer">
+        <!-- Segmented Tab Switch: Log Masuk vs Daftar -->
+        <div style="padding: 16px 24px 0 24px;">
+          <div class="auth-segmented-nav">
+            <button type="button" class="auth-seg-btn active" id="btnTabLogin">
+              <span>🔑</span> <span>Log Masuk</span>
+            </button>
+            <button type="button" class="auth-seg-btn" id="btnTabRegister">
+              <span>✍️</span> <span>Daftar Akaun</span>
+            </button>
+          </div>
+        </div>
+
+        <form id="portalAuthForm">
+          <div class="modal-body-scroll" style="padding-top: 14px; gap: 12px;">
+            <!-- Register Specific Fields -->
+            <div id="registerOnlyFields" style="display: none; flex-direction: column; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label">Nama Penuh</label>
+                <input type="text" class="form-input" id="authNameInput" placeholder="Cth: Abe Di / Syalihan">
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label">Cawangan</label>
+                  <select class="form-select" id="authBranchInput">
+                    <option value="kok_lanas">HQ Kok Lanas (Kelantan)</option>
+                    <option value="raub">Cawangan Raub (Pahang)</option>
+                    <option value="all">Ibu Pejabat Pusat</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Peranan</label>
+                  <select class="form-select" id="authRoleInput">
+                    <option value="branch_manager">Pengurus Cawangan</option>
+                    <option value="dispatcher">Pegawai Dispatch</option>
+                    <option value="driver">Pemandu / EMT</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Common Fields -->
+            <div class="form-group">
+              <label class="form-label">Alamat Emel</label>
+              <input type="email" class="form-input" id="authEmailInput" placeholder="pengurus@alfarhain.my" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Kata Laluan</label>
+              <input type="password" class="form-input" id="authPasswordInput" placeholder="Minimum 6 aksara" required minlength="6">
+            </div>
+
+            <!-- Error / Status Message Box -->
+            <div id="authStatusMessage" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.76rem;"></div>
+
+            <!-- Quick Demo Logins for Instant Testing -->
+            <div class="demo-login-box">
+              <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
+                ⚡ Log Masuk Pantas (Demo Bertugas):
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <button type="button" class="btn-demo-quick-auth" data-email="abedi@alfarhain.my" data-name="Abe Di / Syalihan" data-branch="kok_lanas" data-role="Pengurus HQ Kok Lanas">
+                  <span>🏛️</span> <span>Abe Di (Pengurus HQ Kok Lanas • Kelantan)</span>
+                </button>
+                <button type="button" class="btn-demo-quick-auth" data-email="abedin@alfarhain.my" data-name="Abe Din Estimos Sukrosa" data-branch="raub" data-role="Pengurus Cawangan Raub">
+                  <span>🏔️</span> <span>Abe Din Estimos (Pengurus Cawangan Raub • Pahang)</span>
+                </button>
+                <button type="button" class="btn-demo-quick-auth" data-email="director@alfarhain.my" data-name="Dr. Afiqah (Pengarah)" data-branch="all" data-role="Pengarah Operasi AMC">
+                  <span>🩺</span> <span>Dr. Afiqah (Pengarah Operasi Seluruh Malaysia)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer-actions">
+            <button type="button" class="btn-secondary" onclick="document.getElementById('portalAuthModal').classList.remove('show')">Batal</button>
+            <button type="submit" class="btn-primary" id="btnSubmitAuth">Log Masuk</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Logged In View: Profile Info & Sign Out -->
+      <div id="authProfileViewContainer" style="display: none;">
+        <div class="modal-body-scroll" style="text-align: center; padding: 30px 24px;">
+          <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #00A896, #028090); color: #FFF; font-weight: 800; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; box-shadow: 0 0 20px var(--amc-teal-glow);" id="profileAvatarBig">
+            AD
+          </div>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: #FFF;" id="profileNameBig">Abe Di / Syalihan</h3>
+          <div style="font-size: 0.8rem; color: var(--amc-teal); font-weight: 700; margin-top: 4px;" id="profileRoleBig">Pengurus HQ Kok Lanas</div>
+          <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;" id="profileEmailBig">abedi@alfarhain.my</div>
+
+          <div style="margin-top: 20px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-light); border-radius: 10px; padding: 14px; text-align: left; font-size: 0.76rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+              <span style="color: var(--text-muted);">Status Sesi:</span>
+              <strong style="color: #34D399;">🟢 Aktif &amp; Disahkan</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Pangkalan Ditetapkan:</span>
+              <strong id="profileBranchBig">HQ Kok Lanas</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer-actions">
+          <button type="button" class="btn-secondary" onclick="document.getElementById('portalAuthModal').classList.remove('show')">Tutup</button>
+          <button type="button" class="btn-secondary" id="btnSignOutPortal" style="border-color: #EF4444; color: #F87171;">
+            <span>🚪</span> <span>Log Keluar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Portal Desktop Logic Module -->
+  <script type="module" src="./src/portal/portal.js"></script>
+</body>
+</html>

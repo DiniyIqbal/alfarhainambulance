@@ -29,7 +29,11 @@ import {
   insertBookingToSupabase,
   fetchBookingsFromSupabase,
   updateBookingStatusInSupabase,
-  subscribeToRealtimeBookings
+  subscribeToRealtimeBookings,
+  signUpUser,
+  signInUser,
+  signOutUser,
+  getCurrentAuthUser
 } from './services/supabaseClient.js';
 
 import {
@@ -138,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCatalogSection();
   initActionModals();
   initSupabaseIntegration();
+  initMobileAuth();
 
   // Initial calculation and map render
   calculateAll();
@@ -2422,5 +2427,199 @@ function initSupabaseIntegration() {
       if (modal) modal.classList.remove('show');
       alert('Tetapan Supabase telah disimpan.');
     });
+  }
+}
+
+/* =========================================================================
+   20. MOBILE AUTHENTICATION & DRIVER SESSION (SIGN IN / SIGN UP)
+   ========================================================================= */
+async function initMobileAuth() {
+  const authBtn = document.getElementById('mobileAuthBtn');
+  const authIcon = document.getElementById('mobileAuthIcon');
+  const authLabel = document.getElementById('mobileAuthLabel');
+  const modal = document.getElementById('mobileAuthModal');
+  const closeBtn = document.getElementById('closeMobileAuthModalBtn');
+
+  const formView = document.getElementById('mobileAuthFormContainer');
+  const profileView = document.getElementById('mobileAuthProfileContainer');
+  const form = document.getElementById('mobileAuthForm');
+  const btnTabLogin = document.getElementById('btnMobileTabLogin');
+  const btnTabRegister = document.getElementById('btnMobileTabRegister');
+  const registerFields = document.getElementById('mobileRegisterFields');
+  const btnSubmit = document.getElementById('btnMobileSubmitAuth');
+  const statusMsg = document.getElementById('mobileAuthStatusMsg');
+  const btnSignOut = document.getElementById('btnMobileSignOut');
+
+  let authMode = 'login'; // 'login' | 'register'
+
+  // Update button label and icon on load
+  const currentUser = await getCurrentAuthUser();
+  updateMobileAuthUI(currentUser);
+
+  if (authBtn && modal) {
+    authBtn.addEventListener('click', () => {
+      playClickSound();
+      modal.classList.add('show');
+      const user = getStoredUserProfile();
+      if (user) {
+        if (formView) formView.style.display = 'none';
+        if (profileView) profileView.style.display = 'block';
+      } else {
+        if (formView) formView.style.display = 'block';
+        if (profileView) profileView.style.display = 'none';
+      }
+    });
+  }
+
+  if (closeBtn && modal) {
+    closeBtn.addEventListener('click', () => modal.classList.remove('show'));
+  }
+
+  if (btnTabLogin && btnTabRegister) {
+    btnTabLogin.addEventListener('click', () => {
+      playClickSound();
+      authMode = 'login';
+      btnTabLogin.classList.add('active');
+      btnTabRegister.classList.remove('active');
+      if (registerFields) registerFields.style.display = 'none';
+      if (btnSubmit) btnSubmit.textContent = 'Log Masuk';
+      if (statusMsg) statusMsg.style.display = 'none';
+    });
+
+    btnTabRegister.addEventListener('click', () => {
+      playClickSound();
+      authMode = 'register';
+      btnTabRegister.classList.add('active');
+      btnTabLogin.classList.remove('active');
+      if (registerFields) registerFields.style.display = 'flex';
+      if (btnSubmit) btnSubmit.textContent = 'Daftar Akaun';
+      if (statusMsg) statusMsg.style.display = 'none';
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('mobileAuthEmailInput').value.trim();
+      const password = document.getElementById('mobileAuthPasswordInput').value;
+      const name = document.getElementById('mobileAuthNameInput')?.value.trim() || email.split('@')[0];
+      const role = document.getElementById('mobileAuthRoleInput')?.value || 'driver';
+
+      if (statusMsg) {
+        statusMsg.style.display = 'block';
+        statusMsg.textContent = authMode === 'login' ? 'Mengesahkan log masuk...' : 'Mendaftar akaun baharu...';
+        statusMsg.style.background = '#E0F2FE';
+        statusMsg.style.color = '#0284C7';
+      }
+
+      let res = null;
+      if (authMode === 'login') {
+        res = await signInUser(email, password);
+      } else {
+        res = await signUpUser(email, password, {
+          name,
+          full_name: name,
+          role,
+          role_label: role === 'driver' ? 'Pemandu EMT Bertugas' : (role === 'paramedic' ? 'Penolong Pegawai Perubatan' : 'Pengguna Awam')
+        });
+      }
+
+      if (res.success) {
+        playSuccessChime();
+        const user = res.user || res.data?.user;
+        updateMobileAuthUI(user);
+
+        if (statusMsg) {
+          statusMsg.textContent = authMode === 'login' ? 'Log masuk berjaya!' : 'Akaun berjaya didaftarkan!';
+          statusMsg.style.background = '#DCFCE7';
+          statusMsg.style.color = '#15803D';
+        }
+
+        setTimeout(() => {
+          modal.classList.remove('show');
+          alert(`Selamat datang, ${user.user_metadata?.name || user.email}!`);
+        }, 800);
+      } else {
+        if (statusMsg) {
+          statusMsg.textContent = res.error || 'Ralat pengesahan akaun.';
+          statusMsg.style.background = '#FEE2E2';
+          statusMsg.style.color = '#B91C1C';
+        }
+      }
+    });
+  }
+
+  // Quick Demo Logins on Mobile
+  document.querySelectorAll('.btn-demo-quick-auth-mobile').forEach(btn => {
+    btn.addEventListener('click', () => {
+      playClickSound();
+      const email = btn.dataset.email;
+      const name = btn.dataset.name;
+      const plate = btn.dataset.plate;
+      const role = btn.dataset.role;
+
+      const mockUser = {
+        id: 'demo_' + Date.now(),
+        email: email,
+        user_metadata: {
+          name: name,
+          full_name: name,
+          assigned_plate: plate,
+          role: role,
+          role_label: role
+        }
+      };
+
+      saveStoredUserProfile(mockUser);
+      updateMobileAuthUI(mockUser);
+
+      // If Abe Di, switch branch to Kok Lanas; if Abe Din, switch to Raub!
+      if (email.includes('abedin')) {
+        switchBranch('raub');
+      } else {
+        switchBranch('kok_lanas');
+      }
+
+      playSuccessChime();
+      if (modal) modal.classList.remove('show');
+      alert(`Log Masuk Pantas: ${name} (${plate})`);
+    });
+  });
+
+  // Mobile Sign Out
+  if (btnSignOut) {
+    btnSignOut.addEventListener('click', async () => {
+      playClickSound();
+      await signOutUser();
+      updateMobileAuthUI(null);
+      if (modal) modal.classList.remove('show');
+      alert('Anda telah log keluar daripada akaun.');
+    });
+  }
+}
+
+function updateMobileAuthUI(user) {
+  const label = document.getElementById('mobileAuthLabel');
+  const icon = document.getElementById('mobileAuthIcon');
+  const bigName = document.getElementById('mobileUserNameBig');
+  const bigRole = document.getElementById('mobileUserRoleBig');
+  const bigEmail = document.getElementById('mobileUserEmailBig');
+  const bigAvatar = document.getElementById('mobileUserAvatarBig');
+
+  if (user) {
+    const name = user.user_metadata?.name || user.user_metadata?.full_name || user.email.split('@')[0];
+    const role = user.user_metadata?.role_label || 'Pemandu EMT';
+    const initials = name.slice(0, 2).toUpperCase();
+
+    if (label) label.textContent = name.split(' ')[0];
+    if (icon) icon.textContent = '🟢';
+
+    if (bigName) bigName.textContent = name;
+    if (bigRole) bigRole.textContent = role;
+    if (bigEmail) bigEmail.textContent = user.email;
+    if (bigAvatar) bigAvatar.textContent = initials;
+  } else {
+    if (label) label.textContent = 'Log Masuk';
+    if (icon) icon.textContent = '👤';
   }
 }

@@ -209,3 +209,121 @@ export function subscribeToRealtimeBookings(onNewBooking, onUpdateBooking) {
     return null;
   }
 }
+
+/* =========================================================================
+   Authentication Services (Supabase Auth & Session Management)
+   ========================================================================= */
+
+export async function signUpUser(email, password, metadata = {}) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    const mockUser = {
+      id: 'local_' + Date.now(),
+      email: email.trim(),
+      user_metadata: metadata
+    };
+    saveStoredUserProfile(mockUser);
+    return { success: true, user: mockUser, isLocal: true };
+  }
+
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        data: metadata
+      }
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    if (data?.user) {
+      saveStoredUserProfile(data.user);
+    }
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function signInUser(email, password) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    const mockUser = {
+      id: 'local_user',
+      email: email.trim(),
+      user_metadata: {
+        full_name: email.split('@')[0],
+        role: 'branch_manager'
+      }
+    };
+    saveStoredUserProfile(mockUser);
+    return { success: true, user: mockUser, isLocal: true };
+  }
+
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    if (data?.user) {
+      saveStoredUserProfile(data.user);
+    }
+    return { success: true, user: data.user, session: data.session };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function signOutUser() {
+  const supabase = getSupabaseClient();
+  try {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+  } catch (err) {
+    console.warn('Sign out error:', err);
+  }
+  localStorage.removeItem('amc_auth_user');
+  return { success: true };
+}
+
+export async function getCurrentAuthUser() {
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        saveStoredUserProfile(user);
+        return user;
+      }
+    } catch (err) {
+      console.warn('Get current user error:', err);
+    }
+  }
+  return getStoredUserProfile();
+}
+
+export function getStoredUserProfile() {
+  try {
+    const raw = localStorage.getItem('amc_auth_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveStoredUserProfile(user) {
+  try {
+    localStorage.setItem('amc_auth_user', JSON.stringify(user));
+  } catch (e) {
+    console.warn('Failed to save auth profile to local storage:', e);
+  }
+}

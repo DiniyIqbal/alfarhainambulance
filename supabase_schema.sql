@@ -105,33 +105,44 @@ VALUES
     ('EQP-IV', 'Pek Infusi Cecair IV & Drip (Normal Saline)', 'Ubatan', 25.00, 'RM25', 'Per Pek')
 ON CONFLICT (item_code) DO NOTHING;
 
--- 5. Enable Row Level Security (RLS) & Public Policies
+-- 5. Enable Row Level Security (RLS) & Public Policies (Idempotent / Safe to Re-run)
 ALTER TABLE public.ambulance_bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ambulance_fleet ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ambulance_drivers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.equipment_catalogue ENABLE ROW LEVEL SECURITY;
 
--- Allow anonymous and authenticated users to read and insert bookings
+-- Safely drop existing policies before re-creating to avoid 42710 already exists error
+DROP POLICY IF EXISTS "Allow public read ambulance_bookings" ON public.ambulance_bookings;
 CREATE POLICY "Allow public read ambulance_bookings" 
 ON public.ambulance_bookings FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Allow public insert ambulance_bookings" ON public.ambulance_bookings;
 CREATE POLICY "Allow public insert ambulance_bookings" 
 ON public.ambulance_bookings FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Allow public update ambulance_bookings" ON public.ambulance_bookings;
 CREATE POLICY "Allow public update ambulance_bookings" 
 ON public.ambulance_bookings FOR UPDATE USING (true);
 
+DROP POLICY IF EXISTS "Allow public read fleet" ON public.ambulance_fleet;
 CREATE POLICY "Allow public read fleet" 
 ON public.ambulance_fleet FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Allow public read drivers" ON public.ambulance_drivers;
 CREATE POLICY "Allow public read drivers" 
 ON public.ambulance_drivers FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Allow public read equipment" ON public.equipment_catalogue;
 CREATE POLICY "Allow public read equipment" 
 ON public.equipment_catalogue FOR SELECT USING (true);
 
--- 6. Enable Realtime Replication for Live Dispatch Tracking
-BEGIN;
-  DROP PUBLICATION IF EXISTS supabase_realtime;
-  CREATE PUBLICATION supabase_realtime FOR TABLE public.ambulance_bookings;
-COMMIT;
+-- 6. Enable Realtime Replication for Live Dispatch Tracking (Safe to Re-run)
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.ambulance_bookings;
+EXCEPTION
+  WHEN duplicate_object THEN
+    NULL; -- Already added, ignore
+  WHEN undefined_object THEN
+    CREATE PUBLICATION supabase_realtime FOR TABLE public.ambulance_bookings;
+END $$;
