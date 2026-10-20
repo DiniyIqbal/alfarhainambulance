@@ -3105,4 +3105,111 @@ html, body {
   color: var(--amc-teal-dark);
 }
 
+/* =========================================================================
+   MOBILE FULL-SCREEN SECURITY GATEKEEPER LANDING (FIRST PAGE)
+   ========================================================================= */
+.mobile-auth-gate-page {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: radial-gradient(circle at 50% 20%, #082926 0%, #031413 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.mobile-auth-gate-page.hidden {
+  display: none !important;
+}
+
+.mobile-app-shell.gate-locked {
+  display: none !important;
+}
+
+.mobile-gate-card {
+  width: 100%;
+  max-width: 440px;
+  background: #FFFFFF;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  border: 1px solid rgba(0, 168, 150, 0.25);
+  animation: fadeIn 0.25s ease-out;
+}
+
+.mobile-gate-header {
+  background: linear-gradient(135deg, #006C67 0%, #028090 100%);
+  color: #FFFFFF;
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.mobile-gate-emblem {
+  width: 52px;
+  height: 52px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border-radius: 14px;
+  margin: 0 auto 12px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.mobile-gate-emblem svg {
+  width: 28px;
+  height: 28px;
+  fill: #FFFFFF;
+}
+
+.mobile-gate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #E2E8F0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+}
+
+.mobile-gate-title {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.mobile-gate-subtitle {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.mobile-gate-body {
+  padding: 20px;
+}
+
+.utility-tool-logout {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #EF4444 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.utility-tool-logout:hover {
+  background: #EF4444 !important;
+  color: #FFFFFF !important;
+}
+
+
 

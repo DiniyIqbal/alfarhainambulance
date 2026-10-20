@@ -120,8 +120,27 @@ function initClock() {
 }
 
 /* -------------------------------------------------------------------------
-   1B. USER AUTHENTICATION & SESSION MANAGEMENT (PORTAL)
+   1B. USER AUTHENTICATION & SECURITY GATEKEEPER (PORTAL FIRST PAGE)
    ------------------------------------------------------------------------- */
+function setPortalGateLocked(isLocked) {
+  const gateEl = document.getElementById('portalAuthGate');
+  const shellEl = document.getElementById('portalAppShell');
+  if (gateEl) {
+    if (isLocked) gateEl.classList.remove('hidden');
+    else gateEl.classList.add('hidden');
+  }
+  if (shellEl) {
+    if (isLocked) shellEl.classList.add('gate-locked');
+    else {
+      shellEl.classList.remove('gate-locked');
+      // Invalidate Leaflet map size on unlock so tiles render cleanly
+      setTimeout(() => {
+        if (radarMap) radarMap.invalidateSize();
+      }, 250);
+    }
+  }
+}
+
 async function initPortalAuth() {
   const authBtn = document.getElementById('portalAuthBtn');
   const modal = document.getElementById('portalAuthModal');
@@ -135,15 +154,111 @@ async function initPortalAuth() {
   const formView = document.getElementById('authFormViewContainer');
   const profileView = document.getElementById('authProfileViewContainer');
   const btnSignOut = document.getElementById('btnSignOutPortal');
+  const topSignOutBtn = document.getElementById('portalTopSignOutBtn');
+
+  // Gatekeeper First Page Elements
+  const gateTabLogin = document.getElementById('gateBtnTabLogin');
+  const gateTabRegister = document.getElementById('gateBtnTabRegister');
+  const gateRegFields = document.getElementById('gateRegisterFields');
+  const gateForm = document.getElementById('portalGateAuthForm');
+  const gateSubmitLabel = document.getElementById('gateSubmitLabel');
+  const gateStatusMsg = document.getElementById('gateAuthStatusMsg');
 
   let authMode = 'login'; // 'login' | 'register'
+  let gateMode = 'login'; // 'login' | 'register'
 
-  // 1. Check existing session
+  // 1. Check existing session on first page load
   const currentUser = await getCurrentAuthUser();
   portalState.currentUser = currentUser;
   updateAuthUI(currentUser);
 
-  // 2. Open Modal
+  if (currentUser) {
+    setPortalGateLocked(false);
+  } else {
+    setPortalGateLocked(true);
+  }
+
+  // 2. Gatekeeper Landing Tabs
+  if (gateTabLogin && gateTabRegister) {
+    gateTabLogin.addEventListener('click', () => {
+      gateMode = 'login';
+      gateTabLogin.classList.add('active');
+      gateTabRegister.classList.remove('active');
+      if (gateRegFields) gateRegFields.style.display = 'none';
+      if (gateSubmitLabel) gateSubmitLabel.textContent = 'Log Masuk ke Bilik Gerakan';
+      if (gateStatusMsg) gateStatusMsg.style.display = 'none';
+    });
+
+    gateTabRegister.addEventListener('click', () => {
+      gateMode = 'register';
+      gateTabRegister.classList.add('active');
+      gateTabLogin.classList.remove('active');
+      if (gateRegFields) gateRegFields.style.display = 'flex';
+      if (gateSubmitLabel) gateSubmitLabel.textContent = 'Daftar Akaun Pegawai';
+      if (gateStatusMsg) gateStatusMsg.style.display = 'none';
+    });
+  }
+
+  // 3. Gatekeeper Landing Form Submit
+  if (gateForm) {
+    gateForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('gateAuthEmail').value.trim();
+      const password = document.getElementById('gateAuthPassword').value;
+      const name = document.getElementById('gateAuthName')?.value.trim() || email.split('@')[0];
+      const branch = document.getElementById('gateAuthBranch')?.value || 'kok_lanas';
+      const role = document.getElementById('gateAuthRole')?.value || 'branch_manager';
+
+      if (gateStatusMsg) {
+        gateStatusMsg.style.display = 'block';
+        gateStatusMsg.textContent = gateMode === 'login' ? 'Mengesahkan kelayakan akses...' : 'Mendaftar akaun pegawai...';
+        gateStatusMsg.style.background = 'rgba(14, 165, 233, 0.15)';
+        gateStatusMsg.style.color = '#38BDF8';
+        gateStatusMsg.style.border = '1px solid #0EA5E9';
+      }
+
+      let res = null;
+      if (gateMode === 'login') {
+        res = await signInUser(email, password);
+      } else {
+        res = await signUpUser(email, password, {
+          name,
+          full_name: name,
+          branch,
+          role,
+          role_label: role === 'branch_manager' ? 'Pengurus Cawangan' : (role === 'medical_officer' ? 'Pegawai Perubatan' : 'Pegawai Dispatch')
+        });
+      }
+
+      if (res.success) {
+        playSuccessChime();
+        const user = res.user || res.data?.user;
+        portalState.currentUser = user;
+        updateAuthUI(user);
+
+        if (gateStatusMsg) {
+          gateStatusMsg.textContent = gateMode === 'login' ? 'Akses disahkan! Membuka bilik gerakan...' : 'Akaun berjaya dicipta! Membuka bilik gerakan...';
+          gateStatusMsg.style.background = 'rgba(16, 185, 129, 0.15)';
+          gateStatusMsg.style.color = '#34D399';
+          gateStatusMsg.style.border = '1px solid #10B981';
+        }
+
+        setTimeout(() => {
+          setPortalGateLocked(false);
+          showNotificationToast(`Selamat bertugas, ${user.user_metadata?.name || user.email}!`);
+        }, 600);
+      } else {
+        if (gateStatusMsg) {
+          gateStatusMsg.textContent = res.error || 'Ralat pengesahan akaun pegawai.';
+          gateStatusMsg.style.background = 'rgba(239, 68, 68, 0.15)';
+          gateStatusMsg.style.color = '#F87171';
+          gateStatusMsg.style.border = '1px solid #EF4444';
+        }
+      }
+    });
+  }
+
+  // 4. Modal Open/Close & Tabs
   if (authBtn && modal) {
     authBtn.addEventListener('click', () => {
       playCalculateChime();
@@ -162,7 +277,6 @@ async function initPortalAuth() {
     closeBtn.addEventListener('click', () => modal.classList.remove('show'));
   }
 
-  // 3. Tab Switcher (Log Masuk vs Daftar)
   if (btnTabLogin && btnTabRegister) {
     btnTabLogin.addEventListener('click', () => {
       authMode = 'login';
@@ -183,7 +297,7 @@ async function initPortalAuth() {
     });
   }
 
-  // 4. Form Submit Handler
+  // 5. Modal Form Submit Handler
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -219,6 +333,7 @@ async function initPortalAuth() {
         const user = res.user || res.data?.user;
         portalState.currentUser = user;
         updateAuthUI(user);
+        setPortalGateLocked(false);
 
         if (statusMsg) {
           statusMsg.textContent = authMode === 'login' ? 'Log masuk berjaya!' : 'Akaun berjaya didaftarkan!';
@@ -230,7 +345,7 @@ async function initPortalAuth() {
         setTimeout(() => {
           modal.classList.remove('show');
           showNotificationToast(`Selamat bertugas, ${user.user_metadata?.name || user.email}!`);
-        }, 800);
+        }, 600);
       } else {
         if (statusMsg) {
           statusMsg.textContent = res.error || 'Ralat pengesahan akaun.';
@@ -242,7 +357,7 @@ async function initPortalAuth() {
     });
   }
 
-  // 5. Quick Demo Auth Logins
+  // 6. Quick Demo Auth Logins (Gatekeeper & Modal)
   document.querySelectorAll('.btn-demo-quick-auth').forEach(btn => {
     btn.addEventListener('click', async () => {
       playCalculateChime();
@@ -267,6 +382,7 @@ async function initPortalAuth() {
       portalState.currentUser = mockUser;
       localStorage.setItem('amc_auth_user', JSON.stringify(mockUser));
       updateAuthUI(mockUser);
+      setPortalGateLocked(false);
 
       // Auto switch branch selector to match user branch
       if (branch && branch !== 'all') {
@@ -283,16 +399,22 @@ async function initPortalAuth() {
     });
   });
 
-  // 6. Sign Out Handler
+  // 7. Sign Out Handlers (Topbar Button & Modal Button)
+  const handleSignOut = async () => {
+    playCalculateChime();
+    await signOutUser();
+    portalState.currentUser = null;
+    updateAuthUI(null);
+    setPortalGateLocked(true);
+    if (modal) modal.classList.remove('show');
+    showNotificationToast('Anda telah log keluar daripada sistem.');
+  };
+
   if (btnSignOut) {
-    btnSignOut.addEventListener('click', async () => {
-      playCalculateChime();
-      await signOutUser();
-      portalState.currentUser = null;
-      updateAuthUI(null);
-      if (modal) modal.classList.remove('show');
-      showNotificationToast('Anda telah log keluar daripada sistem.');
-    });
+    btnSignOut.addEventListener('click', handleSignOut);
+  }
+  if (topSignOutBtn) {
+    topSignOutBtn.addEventListener('click', handleSignOut);
   }
 }
 

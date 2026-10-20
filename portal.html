@@ -15,6 +15,119 @@
 <body>
 
   <!-- =========================================================================
+       0. FULL-SCREEN AUTHENTICATION GATEKEEPER (FIRST PAGE / SECURITY GATEWAY)
+       ========================================================================= -->
+  <div class="portal-auth-gate-page" id="portalAuthGate">
+    <div class="auth-gate-container">
+      <!-- Header Banner -->
+      <div class="auth-gate-header">
+        <div class="auth-gate-emblem">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
+          </svg>
+        </div>
+        <div class="auth-gate-security-badge">
+          <span>🛡️</span> <span>Kawalan Keselamatan Operasi Bilik Gerakan</span>
+        </div>
+        <h1 class="auth-gate-title">Al-Farhain AMC Portal</h1>
+        <p class="auth-gate-subtitle">Sila sahkan identiti pegawai bertugas sebelum mengakses sistem pemantauan radar taktikal, lejar hasil dan dispatch.</p>
+      </div>
+
+      <!-- Body / Form Area -->
+      <div class="auth-gate-body">
+        <!-- Segmented Tab Switcher -->
+        <div class="auth-segmented-nav" style="margin-bottom: 18px;">
+          <button type="button" class="auth-seg-btn active" id="gateBtnTabLogin">
+            <span>🔑</span> <span>Log Masuk Pegawai</span>
+          </button>
+          <button type="button" class="auth-seg-btn" id="gateBtnTabRegister">
+            <span>✍️</span> <span>Daftar Akaun Baharu</span>
+          </button>
+        </div>
+
+        <form id="portalGateAuthForm">
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Register Only Fields -->
+            <div id="gateRegisterFields" style="display: none; flex-direction: column; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label">Nama Penuh Pegawai</label>
+                <input type="text" class="form-input" id="gateAuthName" placeholder="Cth: Abe Din / Dr. Afiqah">
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label">Cawangan Bertugas</label>
+                  <select class="form-select" id="gateAuthBranch">
+                    <option value="kok_lanas">HQ Kok Lanas (Kelantan)</option>
+                    <option value="raub">Cawangan Raub (Pahang)</option>
+                    <option value="all">Ibu Pejabat Pusat (HQ)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Peranan / Jawatan</label>
+                  <select class="form-select" id="gateAuthRole">
+                    <option value="branch_manager">Pengurus Cawangan</option>
+                    <option value="dispatcher">Pegawai Dispatch</option>
+                    <option value="medical_officer">Pegawai Perubatan (MO)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Email & Password -->
+            <div class="form-group">
+              <label class="form-label">Alamat Emel Rasmi</label>
+              <input type="email" class="form-input" id="gateAuthEmail" placeholder="pengurus@alfarhain.my" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Kata Laluan</label>
+              <input type="password" class="form-input" id="gateAuthPassword" placeholder="Minimum 6 aksara" required minlength="6">
+            </div>
+
+            <!-- Error / Status Message Box -->
+            <div id="gateAuthStatusMsg" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.76rem;"></div>
+
+            <button type="submit" class="btn-primary" id="btnGateSubmit" style="padding: 12px; font-size: 0.88rem; width: 100%; justify-content: center; margin-top: 4px;">
+              <span>🚀</span> <span id="gateSubmitLabel">Log Masuk ke Bilik Gerakan</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Quick 1-Click Demo Login for Testing -->
+        <div class="demo-login-box" style="margin-top: 20px;">
+          <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
+            ⚡ Akses Pantas Pegawai Bertugas (1-Klik):
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <button type="button" class="btn-demo-quick-auth" data-email="abedi@alfarhain.my" data-name="Abe Di / Syalihan" data-branch="kok_lanas" data-role="Pengurus HQ Kok Lanas">
+              <span>🏛️</span> <span>Abe Di (Pengurus HQ Kok Lanas • Kelantan)</span>
+            </button>
+            <button type="button" class="btn-demo-quick-auth" data-email="abedin@alfarhain.my" data-name="Abe Din Estimos Sukrosa" data-branch="raub" data-role="Pengurus Cawangan Raub">
+              <span>🏔️</span> <span>Abe Din Estimos (Pengurus Cawangan Raub • Pahang)</span>
+            </button>
+            <button type="button" class="btn-demo-quick-auth" data-email="director@alfarhain.my" data-name="Dr. Afiqah (Pengarah)" data-branch="all" data-role="Pengarah Operasi AMC">
+              <span>🩺</span> <span>Dr. Afiqah (Pengarah Operasi Seluruh Malaysia)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cross Link to Mobile App -->
+        <div style="margin-top: 16px; text-align: center;">
+          <a href="/" class="btn-demo-quick-auth" style="justify-content: center; text-decoration: none; color: #38BDF8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.08);">
+            <span>📱</span> <span>Buka Aplikasi Ambulans Pemandu Lapangan (Mobile) ➔</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MAIN PORTAL APP SHELL (LOCKED BEHIND AUTHENTICATION FIRST PAGE)
+       ========================================================================= -->
+  <div class="portal-app-shell gate-locked" id="portalAppShell">
+
+  <!-- =========================================================================
        1. LEFT ENTERPRISE SIDEBAR
        ========================================================================= -->
   <aside class="portal-sidebar">
@@ -141,12 +254,18 @@
         </a>
 
         <!-- User Authentication & Account Pill -->
-        <button class="portal-user-pill" id="portalAuthBtn" title="Log Masuk / Akaun Pengurus">
+        <button class="portal-user-pill" id="portalAuthBtn" title="Akaun Pengurus Bertugas">
           <div class="user-avatar-mini" id="portalUserAvatar">👤</div>
           <div class="user-pill-texts">
-            <span class="user-pill-name" id="portalUserName">Log Masuk</span>
-            <span class="user-pill-role" id="portalUserRole">Akses Sistem</span>
+            <span class="user-pill-name" id="portalUserName">Abe Di</span>
+            <span class="user-pill-role" id="portalUserRole">Pengurus Cawangan</span>
           </div>
+        </button>
+
+        <!-- Direct Sign Out Button for Fast Exit -->
+        <button class="topbar-logout-btn" id="portalTopSignOutBtn" title="Log Keluar Sistem Bilik Gerakan">
+          <span>🚪</span>
+          <span>Log Keluar</span>
         </button>
 
         <button class="btn-primary-dispatch" id="openDispatchModalBtn">
@@ -408,6 +527,7 @@
 
     </div>
   </main>
+  </div> <!-- /#portalAppShell -->
 
   <!-- =========================================================================
        MODAL 1: QUICK DISPATCH LAUNCHER

@@ -33,7 +33,9 @@ import {
   signUpUser,
   signInUser,
   signOutUser,
-  getCurrentAuthUser
+  getCurrentAuthUser,
+  getStoredUserProfile,
+  saveStoredUserProfile
 } from './services/supabaseClient.js';
 
 import {
@@ -2431,12 +2433,30 @@ function initSupabaseIntegration() {
 }
 
 /* =========================================================================
-   20. MOBILE AUTHENTICATION & DRIVER SESSION (SIGN IN / SIGN UP)
+   20. MOBILE AUTHENTICATION & SECURITY GATEKEEPER (FIRST PAGE / DRIVER ACCESS)
    ========================================================================= */
+function setMobileGateLocked(isLocked) {
+  const gateEl = document.getElementById('mobileAuthGate');
+  const shellEl = document.getElementById('appShell');
+  if (gateEl) {
+    if (isLocked) gateEl.classList.remove('hidden');
+    else gateEl.classList.add('hidden');
+  }
+  if (shellEl) {
+    if (isLocked) shellEl.classList.add('gate-locked');
+    else {
+      shellEl.classList.remove('gate-locked');
+      // Invalidate Leaflet maps once viewport is visible
+      setTimeout(() => {
+        if (miniMap) miniMap.invalidateSize();
+        if (fullMap) fullMap.invalidateSize();
+      }, 300);
+    }
+  }
+}
+
 async function initMobileAuth() {
   const authBtn = document.getElementById('mobileAuthBtn');
-  const authIcon = document.getElementById('mobileAuthIcon');
-  const authLabel = document.getElementById('mobileAuthLabel');
   const modal = document.getElementById('mobileAuthModal');
   const closeBtn = document.getElementById('closeMobileAuthModalBtn');
 
@@ -2449,13 +2469,115 @@ async function initMobileAuth() {
   const btnSubmit = document.getElementById('btnMobileSubmitAuth');
   const statusMsg = document.getElementById('mobileAuthStatusMsg');
   const btnSignOut = document.getElementById('btnMobileSignOut');
+  const headerSignOutBtn = document.getElementById('mobileHeaderSignOutBtn');
+
+  // Gatekeeper First Page Elements
+  const gateTabLogin = document.getElementById('mobileGateBtnTabLogin');
+  const gateTabRegister = document.getElementById('mobileGateBtnTabRegister');
+  const gateRegFields = document.getElementById('mobileGateRegisterFields');
+  const gateForm = document.getElementById('mobileGateAuthForm');
+  const gateSubmitLabel = document.getElementById('mobileGateSubmitLabel');
+  const gateStatusMsg = document.getElementById('mobileGateStatusMsg');
 
   let authMode = 'login'; // 'login' | 'register'
+  let gateMode = 'login'; // 'login' | 'register'
 
-  // Update button label and icon on load
+  // 1. Check existing session on mobile load
   const currentUser = await getCurrentAuthUser();
   updateMobileAuthUI(currentUser);
 
+  if (currentUser) {
+    setMobileGateLocked(false);
+  } else {
+    setMobileGateLocked(true);
+  }
+
+  // 2. Gatekeeper Landing Tabs
+  if (gateTabLogin && gateTabRegister) {
+    gateTabLogin.addEventListener('click', () => {
+      playClickSound();
+      gateMode = 'login';
+      gateTabLogin.style.background = 'var(--amc-teal)';
+      gateTabLogin.style.color = '#FFFFFF';
+      gateTabRegister.style.background = 'transparent';
+      gateTabRegister.style.color = 'var(--text-muted)';
+      if (gateRegFields) gateRegFields.style.display = 'none';
+      if (gateSubmitLabel) gateSubmitLabel.textContent = 'Log Masuk ke Ambulans OS';
+      if (gateStatusMsg) gateStatusMsg.style.display = 'none';
+    });
+
+    gateTabRegister.addEventListener('click', () => {
+      playClickSound();
+      gateMode = 'register';
+      gateTabRegister.style.background = 'var(--amc-teal)';
+      gateTabRegister.style.color = '#FFFFFF';
+      gateTabLogin.style.background = 'transparent';
+      gateTabLogin.style.color = 'var(--text-muted)';
+      if (gateRegFields) gateRegFields.style.display = 'flex';
+      if (gateSubmitLabel) gateSubmitLabel.textContent = 'Daftar Pemandu & Buka Akses';
+      if (gateStatusMsg) gateStatusMsg.style.display = 'none';
+    });
+  }
+
+  // 3. Gatekeeper Landing Form Submit
+  if (gateForm) {
+    gateForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('mobileGateAuthEmail').value.trim();
+      const password = document.getElementById('mobileGateAuthPassword').value;
+      const name = document.getElementById('mobileGateAuthName')?.value.trim() || email.split('@')[0];
+      const branch = document.getElementById('mobileGateAuthBranch')?.value || 'kok_lanas';
+      const plate = document.getElementById('mobileGateAuthPlate')?.value || 'VPQ 7606';
+      const phone = document.getElementById('mobileGateAuthPhone')?.value.trim() || '';
+
+      if (gateStatusMsg) {
+        gateStatusMsg.style.display = 'block';
+        gateStatusMsg.textContent = gateMode === 'login' ? 'Mengesahkan pemandu...' : 'Mendaftar krew ambulans...';
+        gateStatusMsg.style.background = '#E0F2FE';
+        gateStatusMsg.style.color = '#0284C7';
+      }
+
+      let res = null;
+      if (gateMode === 'login') {
+        res = await signInUser(email, password);
+      } else {
+        res = await signUpUser(email, password, {
+          name,
+          full_name: name,
+          branch,
+          assigned_plate: plate,
+          phone,
+          role: 'driver',
+          role_label: 'Pemandu EMT Bertugas'
+        });
+      }
+
+      if (res.success) {
+        playSuccessChime();
+        const user = res.user || res.data?.user;
+        updateMobileAuthUI(user);
+        if (branch) switchBranch(branch);
+
+        if (gateStatusMsg) {
+          gateStatusMsg.textContent = gateMode === 'login' ? 'Log masuk berjaya! Membuka operasi...' : 'Pendaftaran berjaya! Membuka operasi...';
+          gateStatusMsg.style.background = '#DCFCE7';
+          gateStatusMsg.style.color = '#15803D';
+        }
+
+        setTimeout(() => {
+          setMobileGateLocked(false);
+        }, 500);
+      } else {
+        if (gateStatusMsg) {
+          gateStatusMsg.textContent = res.error || 'Ralat pengesahan pemandu.';
+          gateStatusMsg.style.background = '#FEE2E2';
+          gateStatusMsg.style.color = '#B91C1C';
+        }
+      }
+    });
+  }
+
+  // 4. Modal Open & Tabs
   if (authBtn && modal) {
     authBtn.addEventListener('click', () => {
       playClickSound();
@@ -2497,6 +2619,7 @@ async function initMobileAuth() {
     });
   }
 
+  // 5. Modal Form Submit Handler
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2528,6 +2651,7 @@ async function initMobileAuth() {
         playSuccessChime();
         const user = res.user || res.data?.user;
         updateMobileAuthUI(user);
+        setMobileGateLocked(false);
 
         if (statusMsg) {
           statusMsg.textContent = authMode === 'login' ? 'Log masuk berjaya!' : 'Akaun berjaya didaftarkan!';
@@ -2537,8 +2661,7 @@ async function initMobileAuth() {
 
         setTimeout(() => {
           modal.classList.remove('show');
-          alert(`Selamat datang, ${user.user_metadata?.name || user.email}!`);
-        }, 800);
+        }, 500);
       } else {
         if (statusMsg) {
           statusMsg.textContent = res.error || 'Ralat pengesahan akaun.';
@@ -2549,7 +2672,7 @@ async function initMobileAuth() {
     });
   }
 
-  // Quick Demo Logins on Mobile
+  // 6. Quick Demo Logins on Mobile (Both Gatekeeper & Modal)
   document.querySelectorAll('.btn-demo-quick-auth-mobile').forEach(btn => {
     btn.addEventListener('click', () => {
       playClickSound();
@@ -2557,6 +2680,7 @@ async function initMobileAuth() {
       const name = btn.dataset.name;
       const plate = btn.dataset.plate;
       const role = btn.dataset.role;
+      const hub = btn.dataset.hub || (email.includes('abedin') ? 'raub' : 'kok_lanas');
 
       const mockUser = {
         id: 'demo_' + Date.now(),
@@ -2565,6 +2689,7 @@ async function initMobileAuth() {
           name: name,
           full_name: name,
           assigned_plate: plate,
+          branch: hub,
           role: role,
           role_label: role
         }
@@ -2572,29 +2697,29 @@ async function initMobileAuth() {
 
       saveStoredUserProfile(mockUser);
       updateMobileAuthUI(mockUser);
+      setMobileGateLocked(false);
 
-      // If Abe Di, switch branch to Kok Lanas; if Abe Din, switch to Raub!
-      if (email.includes('abedin')) {
-        switchBranch('raub');
-      } else {
-        switchBranch('kok_lanas');
-      }
+      if (hub) switchBranch(hub);
 
       playSuccessChime();
       if (modal) modal.classList.remove('show');
-      alert(`Log Masuk Pantas: ${name} (${plate})`);
     });
   });
 
-  // Mobile Sign Out
+  // 7. Mobile Sign Out Handlers (Header Button & Modal Button)
+  const handleMobileSignOut = async () => {
+    playClickSound();
+    await signOutUser();
+    updateMobileAuthUI(null);
+    setMobileGateLocked(true);
+    if (modal) modal.classList.remove('show');
+  };
+
   if (btnSignOut) {
-    btnSignOut.addEventListener('click', async () => {
-      playClickSound();
-      await signOutUser();
-      updateMobileAuthUI(null);
-      if (modal) modal.classList.remove('show');
-      alert('Anda telah log keluar daripada akaun.');
-    });
+    btnSignOut.addEventListener('click', handleMobileSignOut);
+  }
+  if (headerSignOutBtn) {
+    headerSignOutBtn.addEventListener('click', handleMobileSignOut);
   }
 }
 

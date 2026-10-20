@@ -20,8 +20,119 @@
 </head>
 <body>
 
+  <!-- =========================================================================
+       0. FULL-SCREEN MOBILE AUTHENTICATION GATEKEEPER (FIRST PAGE / SECURITY GATEWAY)
+       ========================================================================= -->
+  <div class="mobile-auth-gate-page" id="mobileAuthGate">
+    <div class="mobile-gate-card">
+      <!-- Header -->
+      <div class="mobile-gate-header">
+        <div class="mobile-gate-emblem">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
+          </svg>
+        </div>
+        <div class="mobile-gate-badge">
+          <span>🛡️</span> <span>Kawalan Keselamatan Operasi Lapangan</span>
+        </div>
+        <h1 class="mobile-gate-title">Al-Farhain AMC Ambulans</h1>
+        <p class="mobile-gate-subtitle">Sila log masuk atau daftar pengenalan pemandu/krew sebelum mengakses kalkulator tambang &amp; dispatch lapangan.</p>
+      </div>
+
+      <!-- Body / Form Area -->
+      <div class="mobile-gate-body">
+        <!-- Segmented Tab Switcher -->
+        <div class="auth-segmented-nav" style="display: flex; background: #F1F5F9; border-radius: 8px; padding: 4px; gap: 4px; margin-bottom: 16px;">
+          <button type="button" class="auth-seg-btn active" id="mobileGateBtnTabLogin" style="flex: 1; padding: 8px; font-size: 0.76rem; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; background: var(--amc-teal); color: #FFF;">
+            <span>🔑</span> <span>Log Masuk</span>
+          </button>
+          <button type="button" class="auth-seg-btn" id="mobileGateBtnTabRegister" style="flex: 1; padding: 8px; font-size: 0.76rem; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; background: transparent; color: var(--text-muted);">
+            <span>✍️</span> <span>Daftar Pemandu</span>
+          </button>
+        </div>
+
+        <form id="mobileGateAuthForm">
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Register Only Fields -->
+            <div id="mobileGateRegisterFields" style="display: none; flex-direction: column; gap: 10px;">
+              <div>
+                <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Nama Penuh Pemandu / EMT</label>
+                <input type="text" id="mobileGateAuthName" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="Cth: Abe Di / Mohd Diniy">
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Cawangan</label>
+                  <select id="mobileGateAuthBranch" class="search-bar-box" style="width: 100%; margin-top: 4px;">
+                    <option value="kok_lanas">HQ Kok Lanas</option>
+                    <option value="raub">Cawangan Raub</option>
+                    <option value="jeli">Cawangan Jeli</option>
+                    <option value="machang">Cawangan Machang</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">No. Plat Van</label>
+                  <select id="mobileGateAuthPlate" class="search-bar-box" style="width: 100%; margin-top: 4px;">
+                    <option value="VPQ 7606">VPQ 7606 (Kelantan)</option>
+                    <option value="DFG 7606">DFG 7606 (Pahang)</option>
+                    <option value="AMC Regional">AMC Regional</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">No. Telefon Bertugas</label>
+                <input type="tel" id="mobileGateAuthPhone" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="01X-XXXXXXX">
+              </div>
+            </div>
+
+            <!-- Email & Password -->
+            <div>
+              <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Alamat Emel</label>
+              <input type="email" id="mobileGateAuthEmail" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="pemandu@alfarhain.my" required>
+            </div>
+
+            <div>
+              <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Kata Laluan</label>
+              <input type="password" id="mobileGateAuthPassword" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="Minimum 6 aksara" required minlength="6">
+            </div>
+
+            <!-- Error / Status Message Box -->
+            <div id="mobileGateStatusMsg" style="display: none; padding: 8px 12px; border-radius: 8px; font-size: 0.74rem;"></div>
+
+            <button type="submit" class="primary-action-btn" id="btnMobileGateSubmit" style="width: 100%; padding: 12px; font-size: 0.88rem; justify-content: center; margin-top: 4px;">
+              <span>🚀</span> <span id="mobileGateSubmitLabel">Log Masuk ke Ambulans OS</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Quick 1-Click Demo Login for Drivers -->
+        <div style="background: var(--bg-card); border: 1px dashed var(--border-light); border-radius: var(--radius-sm); padding: 10px; margin-top: 16px;">
+          <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
+            ⚡ Log Masuk Segera Pemandu (Demo Lapangan):
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <button type="button" class="btn-demo-quick-auth-mobile" data-email="abedi@alfarhain.my" data-name="Abe Di / Syalihan" data-plate="VPQ 7606" data-hub="kok_lanas" data-role="Pemandu EMT Kok Lanas">
+              <span>🚑</span> <span>Abe Di (Pemandu VPQ 7606 • Kelantan)</span>
+            </button>
+            <button type="button" class="btn-demo-quick-auth-mobile" data-email="abedin@alfarhain.my" data-name="Abe Din Estimos Sukrosa" data-plate="DFG 7606" data-hub="raub" data-role="Pemandu EMT Raub">
+              <span>🚐</span> <span>Abe Din Estimos (Pemandu DFG 7606 • Pahang)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cross Link to Portal -->
+        <div style="margin-top: 14px; text-align: center;">
+          <a href="/portal" style="display: block; font-size: 0.76rem; font-weight: 700; color: var(--amc-teal-dark); text-decoration: none; padding: 8px; border: 1px solid var(--border-light); border-radius: 8px; background: #F8FAFA;">
+            <span>💻</span> <span>Akses Portal Pengurus Cawangan (Bilik Gerakan) ➔</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Single Clean Mobile Frame Viewport (Clean, Uncluttered, Self-Contained) -->
-  <div class="mobile-app-shell" id="appShell">
+  <div class="mobile-app-shell gate-locked" id="appShell">
 
 
     <!-- 2. Integrated App Header (#006C67) -->
@@ -97,9 +208,13 @@
             <span>📲</span>
             <span>QR Kod</span>
           </button>
-          <button class="utility-tool-btn" id="mobileAuthBtn" title="Log Masuk / Akaun Pemandu & Staf">
+          <button class="utility-tool-btn" id="mobileAuthBtn" title="Akaun Pemandu Bertugas">
             <span id="mobileAuthIcon">👤</span>
-            <span id="mobileAuthLabel">Log Masuk</span>
+            <span id="mobileAuthLabel">Abe Di</span>
+          </button>
+          <button class="utility-tool-btn utility-tool-logout" id="mobileHeaderSignOutBtn" title="Log Keluar Sistem Pemandu">
+            <span>🚪</span>
+            <span>Keluar</span>
           </button>
         </div>
       </div>
