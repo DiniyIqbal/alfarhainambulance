@@ -359,6 +359,17 @@ export const PRESET_DESTINATIONS = [
   // 2. KELANTAN - KLINIK SWASTA & POLIKLINIK 24 JAM
   // ==========================================
   {
+    id: 'klinik_hijaz_kl',
+    name: 'Klinik Hijaz 24 Jam (Kok Lanas, Kota Bharu)',
+    shortName: 'Klinik Hijaz Kok Lanas',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 1.2,
+    coords: [5.9220, 102.2415],
+    estDurationMin: 3,
+    state: 'Kelantan'
+  },
+  {
     id: 'klinik_jega_kb',
     name: 'Klinik Jega, Bandar Kota Bharu',
     shortName: 'Klinik Jega Kota Bharu',
