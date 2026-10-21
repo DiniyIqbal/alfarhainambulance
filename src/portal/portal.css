@@ -139,6 +139,10 @@ body {
   object-fit: cover;
   object-position: center;
   display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: high-quality;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 /* RIGHT AUTH FORM PANE */
