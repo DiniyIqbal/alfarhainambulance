@@ -142,174 +142,30 @@ html, body {
 
 /* =====================================================================
    4. TOP APP HEADER WITH INTEGRATED UTILITIES (#006C67)
+/* =====================================================================
+   4. TOP APP HEADER WITH INTEGRATED NAVIGATION (#005047 - SPEC MATCH)
    ===================================================================== */
 .app-header {
-  background-color: var(--amc-teal-dark);
+  background: #005047;
+  background: linear-gradient(180deg, #00584F 0%, #004B43 100%);
   color: #FFFFFF;
-  padding: 6px 16px 10px;
+  padding: 10px 14px 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
   position: sticky;
   top: 0;
-  z-index: 40;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  z-index: 1000;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
+/* Row 1: Brand & Emergency SOS Capsule */
 .header-main-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-}
-
-.header-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.brand-cross-icon {
-  width: 30px;
-  height: 30px;
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  flex-shrink: 0;
-}
-
-.brand-cross-icon svg {
-  width: 20px;
-  height: 20px;
-  fill: var(--amc-teal);
-}
-
-.brand-titles {
-  display: flex;
-  flex-direction: column;
-}
-
-.brand-title-main {
-  font-family: var(--font-heading);
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  line-height: 1.1;
-  color: #FFFFFF;
-}
-
-.brand-title-sub {
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: #A6E3DF;
-  text-transform: uppercase;
-}
-
-.header-right-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.header-sos-capsule {
-  background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
-  border: 1px solid #F87171;
-  color: #FFFFFF;
-  padding: 5px 10px;
-  border-radius: var(--radius-full);
-  font-family: var(--font-heading);
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
-  transition: var(--transition);
-}
-
-.header-sos-capsule:hover {
-  transform: scale(1.04);
-  box-shadow: 0 3px 12px rgba(220, 38, 38, 0.45);
-}
-
-.sos-dot-pulse {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #FFFFFF;
-  animation: pulseSosDot 1.4s infinite;
-}
-
-@keyframes pulseSosDot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.35; transform: scale(0.75); }
-}
-
-/* Integrated Micro Utility Strip */
-.header-utility-strip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(0, 0, 0, 0.14);
-  border-radius: var(--radius-full);
-  padding: 3px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.utility-live-tag {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #A6E3DF;
-}
-
-.live-dot-pulse {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #10B981;
-  box-shadow: 0 0 6px #10B981;
-}
-
-.utility-actions-group {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.utility-tool-btn {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #FFFFFF;
-  padding: 3px 8px;
-  border-radius: var(--radius-full);
-  font-size: 0.68rem;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.utility-tool-btn:hover {
-  background: rgba(255, 255, 255, 0.22);
-}
-
-.status-indicator-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #10B981;
-  display: inline-block;
+  width: 100%;
 }
 
 .header-brand {
@@ -319,21 +175,21 @@ html, body {
 }
 
 .brand-cross-icon {
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   background-color: #FFFFFF;
-  border-radius: 9px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
   flex-shrink: 0;
 }
 
 .brand-cross-icon svg {
   width: 22px;
   height: 22px;
-  fill: var(--amc-teal);
+  fill: #005047;
 }
 
 .brand-titles {
@@ -343,63 +199,360 @@ html, body {
 
 .brand-title-main {
   font-family: var(--font-heading);
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: 0.04em;
-  line-height: 1.1;
+  line-height: 1.05;
   color: #FFFFFF;
 }
 
 .brand-title-sub {
   font-size: 0.68rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.08em;
-  color: #A6E3DF;
+  color: #80CBC4;
   text-transform: uppercase;
+  margin-top: 1px;
 }
 
-/* Branch Selector Dropdown Pill */
-.branch-dropdown-wrapper {
-  position: relative;
-}
-
-.branch-select-pill {
-  background: rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #FFFFFF;
-  padding: 6px 12px;
-  border-radius: var(--radius-full);
-  font-size: 0.78rem;
-  font-weight: 600;
+.header-right-actions {
   display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Vibrant Red SOS Pill Button */
+.header-sos-capsule {
+  background: #E53935;
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  border: none;
+  color: #FFFFFF;
+  padding: 7px 16px;
+  border-radius: 9999px;
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  transition: var(--transition);
+  box-shadow: 0 3px 10px rgba(220, 38, 38, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.branch-select-pill:hover {
-  background: rgba(255, 255, 255, 0.22);
+.header-sos-capsule:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.55);
 }
 
-.branch-select-pill .chevron-icon {
+.header-sos-capsule:active {
+  transform: scale(0.97);
+}
+
+.sos-phone-svg {
+  width: 16px;
+  height: 16px;
+  fill: #FFFFFF;
+  transform: rotate(-10deg);
+}
+
+/* Row 2: Subnav Control Bar */
+.header-subnav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Branch Pill (Crisp Solid White) */
+.branch-dropdown-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.branch-select-pill.white-pill {
+  background: #FFFFFF;
+  color: #0F172A;
+  border: none;
+  padding: 6px 14px 6px 12px;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.branch-select-pill.white-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+.branch-select-pill.white-pill:active {
+  transform: translateY(0);
+}
+
+.pillar-svg-icon {
+  width: 15px;
+  height: 15px;
+  fill: #475569;
+  flex-shrink: 0;
+}
+
+#activeBranchLabel {
+  color: #0F172A;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.chevron-down-svg {
+  width: 13px;
+  height: 13px;
+  fill: #0F172A;
+  flex-shrink: 0;
+}
+
+/* Subnav Controls Group on the Right */
+.header-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Status Pill (Dalam talian) */
+.header-status-pill {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  padding: 5px 12px;
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.header-status-pill:hover {
+  background: rgba(0, 0, 0, 0.35);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.status-dot-green {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #22C55E;
+  box-shadow: 0 0 6px #22C55E;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Circle Icon Buttons (Theme Moon & Scanner) */
+.header-circle-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.header-circle-btn:hover {
+  background: rgba(0, 0, 0, 0.38);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.header-circle-btn:active {
+  transform: scale(0.95);
+}
+
+/* Font Size / Account Pill with Teal 'A' badge */
+.header-font-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.header-font-pill {
+  height: 32px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px 2px 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.header-font-pill:hover {
+  background: rgba(0, 0, 0, 0.38);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.font-a-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #00A896;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* User Profile & Log Out popup dropdown menu (Right) */
+.header-font-menu, .header-profile-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: auto;
+  background: #FFFFFF;
+  color: var(--text-main);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-light);
+  min-width: 220px;
+  padding: 8px;
+  z-index: 1000;
+  display: none;
+  animation: fadeInDown 0.18s ease-out;
+}
+
+.header-font-menu.show, .header-profile-dropdown.show {
+  display: block;
+}
+
+.header-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.header-profile-card:hover {
+  background-color: #F1F5F9;
+}
+
+.header-profile-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #007D77 0%, #004D47 100%);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 108, 103, 0.3);
+}
+
+.header-profile-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-profile-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1.2;
+}
+
+.header-profile-role {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+.header-profile-status-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 0.65rem;
-  transition: transform 0.2s ease;
+  font-weight: 700;
+  color: #10B981;
+  margin-top: 2px;
+}
+
+.profile-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10B981;
+  box-shadow: 0 0 5px #10B981;
+}
+
+.header-logout-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: #DC2626;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.header-logout-item:hover {
+  background-color: #FEF2F2;
+  color: #B91C1C;
+}
+
+.font-menu-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 6px 0;
+}
+
+/* Branch Selector Dropdown Menu (Fixed left-alignment to eliminate cutoff error) */
+.branch-dropdown-wrapper {
+  position: relative;
 }
 
 .branch-dropdown-menu {
   position: absolute;
   top: calc(100% + 6px);
-  right: 0;
+  left: 0;
+  right: auto;
   background: #FFFFFF;
   color: var(--text-main);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-elevated);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
   border: 1px solid var(--border-light);
-  min-width: 210px;
+  min-width: 220px;
   padding: 6px;
-  z-index: 100;
+  z-index: 1000;
   display: none;
   animation: fadeInDown 0.18s ease-out;
 }
@@ -411,7 +564,7 @@ html, body {
 .branch-item {
   display: flex;
   flex-direction: column;
-  padding: 8px 12px;
+  padding: 9px 12px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: var(--transition);

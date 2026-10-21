@@ -131,6 +131,7 @@ let routeRequestId = 0;
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initBranchDropdown();
+  initFontDropdown();
   initNavigationTabs();
   initModeSegmentedSwitch();
   initDispatchStepper();
@@ -206,6 +207,37 @@ function initBranchDropdown() {
         switchBranch(hubKey);
       });
     });
+  }
+}
+
+function initFontDropdown() {
+  const btn = document.getElementById('fontSizeToggleBtn');
+  const menu = document.getElementById('headerFontMenu');
+  const profileCard = document.querySelector('.header-profile-card');
+  const signOutBtn = document.getElementById('mobileHeaderSignOutBtn');
+
+  if (btn && menu) {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      playClickSound();
+      menu.classList.toggle('show');
+    });
+
+    document.addEventListener('click', () => {
+      menu.classList.remove('show');
+    });
+
+    if (profileCard) {
+      profileCard.addEventListener('click', () => {
+        menu.classList.remove('show');
+      });
+    }
+
+    if (signOutBtn) {
+      signOutBtn.addEventListener('click', () => {
+        menu.classList.remove('show');
+      });
+    }
   }
 }
 
@@ -2804,6 +2836,10 @@ async function initMobileAuth() {
 function updateMobileAuthUI(user) {
   const label = document.getElementById('mobileAuthLabel');
   const icon = document.getElementById('mobileAuthIcon');
+  const roleEl = document.getElementById('mobileAuthRole');
+  const headerBadge = document.getElementById('headerProfileBadge');
+  const menuAvatar = document.getElementById('headerMenuAvatar');
+
   const bigName = document.getElementById('mobileUserNameBig');
   const bigRole = document.getElementById('mobileUserRoleBig');
   const bigEmail = document.getElementById('mobileUserEmailBig');
@@ -2811,11 +2847,15 @@ function updateMobileAuthUI(user) {
 
   if (user) {
     const name = user.user_metadata?.name || user.user_metadata?.full_name || user.email.split('@')[0];
-    const role = user.user_metadata?.role_label || 'Pemandu EMT';
+    const role = user.user_metadata?.role_label || 'Pemandu EMT Bertugas';
     const initials = name.slice(0, 2).toUpperCase();
+    const firstLetter = name.trim().slice(0, 1).toUpperCase() || 'A';
 
-    if (label) label.textContent = name.split(' ')[0];
+    if (label) label.textContent = name;
+    if (roleEl) roleEl.textContent = role;
     if (icon) icon.textContent = '🟢';
+    if (headerBadge) headerBadge.textContent = firstLetter;
+    if (menuAvatar) menuAvatar.textContent = initials;
 
     if (bigName) bigName.textContent = name;
     if (bigRole) bigRole.textContent = role;
@@ -2823,6 +2863,9 @@ function updateMobileAuthUI(user) {
     if (bigAvatar) bigAvatar.textContent = initials;
   } else {
     if (label) label.textContent = 'Log Masuk';
+    if (roleEl) roleEl.textContent = 'Pemandu / Krew';
     if (icon) icon.textContent = '👤';
+    if (headerBadge) headerBadge.textContent = '👤';
+    if (menuAvatar) menuAvatar.textContent = '👤';
   }
 }

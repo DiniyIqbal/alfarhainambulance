@@ -135,14 +135,13 @@
   <div class="mobile-app-shell gate-locked" id="appShell">
 
 
-    <!-- 2. Integrated App Header (#006C67) -->
+    <!-- 2. Integrated App Header (#005047 - Redesigned to Exact Specification) -->
     <header class="app-header">
-      <!-- Main Brand & Action Row -->
+      <!-- Row 1: Brand Logo & SOS Action Button -->
       <div class="header-main-row">
         <div class="header-brand">
           <div class="brand-cross-icon" title="Al-Farhain Medical Center">
-            <!-- Medical Cross SVG -->
-            <svg viewBox="0 0 24 24">
+            <svg viewBox="0 0 24 24" width="22" height="22">
               <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
             </svg>
           </div>
@@ -153,69 +152,98 @@
         </div>
 
         <div class="header-right-actions">
-          <!-- Cawangan Dropdown Pill -->
-          <div class="branch-dropdown-wrapper">
-            <button class="branch-select-pill" id="branchSelectBtn" aria-expanded="false" title="Pilih Cawangan">
-              <span style="font-size: 0.8rem;">🏛️</span>
-              <span id="activeBranchLabel">HQ Kok Lanas</span>
-              <span class="chevron-icon">▾</span>
-            </button>
-            <div class="branch-dropdown-menu" id="branchDropdownMenu">
-              <div class="branch-item active" data-hub="kok_lanas">
-                <span class="branch-item-name">HQ Kok Lanas</span>
-                <span class="branch-item-plate">VPQ 7606 (Kelantan)</span>
-              </div>
-              <div class="branch-item" data-hub="raub">
-                <span class="branch-item-name">Cawangan Raub</span>
-                <span class="branch-item-plate">DFG 7606 (Pahang)</span>
-              </div>
-              <div class="branch-item" data-hub="jeli">
-                <span class="branch-item-name">Cawangan Jeli</span>
-                <span class="branch-item-plate">AMC Regional (Kelantan)</span>
-              </div>
-              <div class="branch-item" data-hub="machang">
-                <span class="branch-item-name">Cawangan Machang</span>
-                <span class="branch-item-plate">AMC Fast Response</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Integrated Emergency SOS Button -->
+          <!-- Integrated Emergency SOS Button with Phone Receiver -->
           <button class="header-sos-capsule" id="sosEmergencyBtn" title="Kecemasan SOS 24 Jam">
-            <span class="sos-dot-pulse"></span>
+            <svg class="sos-phone-svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+            </svg>
             <span>SOS</span>
           </button>
         </div>
       </div>
 
-      <!-- Integrated Sleek Micro Utility Strip (Theme, Supabase Cloud, QR) -->
-      <div class="header-utility-strip">
-        <div class="utility-live-tag">
-          <span class="live-dot-pulse"></span>
-          <span>Operasi 24 Jam</span>
+      <!-- Row 2: Subnav Controls (Branch Pill on Left, Status + Theme + Scan + Font Pill on Right) -->
+      <div class="header-subnav-row">
+        <!-- Cawangan Dropdown Pill (Left) -->
+        <div class="branch-dropdown-wrapper">
+          <button class="branch-select-pill white-pill" id="branchSelectBtn" aria-expanded="false" title="Pilih Cawangan Pangkalan">
+            <svg class="pillar-svg-icon" viewBox="0 0 24 24" width="16" height="16" fill="#334155">
+              <path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm9.5-20.5L2 6v2h19V6l-9.5-4.5z"/>
+            </svg>
+            <span id="activeBranchLabel">Kok Lanas HQ</span>
+            <svg class="chevron-down-svg" viewBox="0 0 24 24" width="14" height="14" fill="#0F172A">
+              <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+            </svg>
+          </button>
+          <div class="branch-dropdown-menu" id="branchDropdownMenu">
+            <div class="branch-item active" data-hub="kok_lanas">
+              <span class="branch-item-name">Kok Lanas HQ</span>
+              <span class="branch-item-plate">VPQ 7606 (Kelantan)</span>
+            </div>
+            <div class="branch-item" data-hub="raub">
+              <span class="branch-item-name">Cawangan Raub</span>
+              <span class="branch-item-plate">DFG 7606 (Pahang)</span>
+            </div>
+          </div>
         </div>
 
-        <div class="utility-actions-group">
-          <button class="utility-tool-btn" id="themeToggleBtn" title="Tukar Tema Paparan">
-            <span id="themeToggleIcon">🌙</span>
-            <span>Tema</span>
+        <!-- Right Side Utility Controls Row -->
+        <div class="header-controls-group">
+          <!-- Dalam Talian Status Pill (Also opens Supabase connection status) -->
+          <button type="button" class="header-status-pill" id="supabaseConnectBtn" title="Status Operasi: Dalam Talian">
+            <span class="status-dot-green" id="supabaseDot"></span>
+            <span>Dalam talian</span>
           </button>
-          <button class="utility-tool-btn" id="supabaseConnectBtn" title="Status Pangkalan Data Supabase">
-            <span id="supabaseDot" class="status-indicator-dot"></span>
-            <span>Cloud</span>
+
+          <!-- Theme Toggle Circle (Moon Icon) -->
+          <button type="button" class="header-circle-btn" id="themeToggleBtn" title="Tukar Tema Paparan">
+            <svg id="themeToggleMoonSvg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <span id="themeToggleIcon" style="display:none;">🌙</span>
           </button>
-          <button class="utility-tool-btn" id="openMobileModalBtn" title="Buka di Telefon Pintar / Imbas QR">
-            <span>📲</span>
-            <span>QR Kod</span>
+
+          <!-- Fullscreen / Mobile QR Scanner Circle -->
+          <button type="button" class="header-circle-btn" id="openMobileModalBtn" title="Imbas QR / Skrin Penuh Lapangan">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"></path>
+              <rect x="7" y="7" width="10" height="10" rx="1.5" stroke-dasharray="2 2"></rect>
+            </svg>
           </button>
-          <button class="utility-tool-btn" id="mobileAuthBtn" title="Akaun Pemandu Bertugas">
-            <span id="mobileAuthIcon">👤</span>
-            <span id="mobileAuthLabel">Abe Di</span>
-          </button>
-          <button class="utility-tool-btn utility-tool-logout" id="mobileHeaderSignOutBtn" title="Log Keluar Sistem Pemandu">
-            <span>🚪</span>
-            <span>Keluar</span>
-          </button>
+
+          <!-- User Profile & Log Out Dropdown Pill -->
+          <div class="header-font-wrapper" style="position:relative;">
+            <button type="button" class="header-font-pill" id="fontSizeToggleBtn" title="Profil Pengguna & Log Keluar">
+              <span class="font-a-badge" id="headerProfileBadge">A</span>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                <path d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+            <div class="header-font-menu header-profile-dropdown" id="headerFontMenu">
+              <!-- User Profile Card -->
+              <div class="header-profile-card" id="mobileAuthBtn" title="Klik untuk lihat butiran akaun pemandu">
+                <div class="header-profile-avatar" id="headerMenuAvatar">👤</div>
+                <div class="header-profile-meta">
+                  <div class="header-profile-name" id="mobileAuthLabel">Abe Di</div>
+                  <div class="header-profile-role" id="mobileAuthRole">Pemandu EMT Bertugas</div>
+                  <div class="header-profile-status-line">
+                    <span class="profile-live-dot"></span>
+                    <span>Aktif Lapangan</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="font-menu-divider"></div>
+
+              <!-- Log Out Item -->
+              <div class="header-logout-item" id="mobileHeaderSignOutBtn" title="Log keluar dari sesi ini">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                  <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                </svg>
+                <span>Log Keluar</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </header>

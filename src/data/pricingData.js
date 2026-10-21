@@ -359,6 +359,17 @@ export const PRESET_DESTINATIONS = [
   // 2. KELANTAN - KLINIK SWASTA & POLIKLINIK 24 JAM
   // ==========================================
   {
+    id: 'klinik_jega_kb',
+    name: 'Klinik Jega, Bandar Kota Bharu',
+    shortName: 'Klinik Jega Kota Bharu',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 26.8,
+    coords: [6.1268, 102.2395],
+    estDurationMin: 32,
+    state: 'Kelantan'
+  },
+  {
     id: 'klinik_primer_cherang',
     name: 'Klinik Primer 24 Jam (Cherang, Kota Bharu)',
     shortName: 'Klinik Primer Cherang',
