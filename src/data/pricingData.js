@@ -220,7 +220,750 @@ export const PRESET_PICKUP_LOCATIONS = {
 
 export const PRESET_DESTINATIONS = [
   // ==========================================
-  // 1. KELANTAN - HOSPITAL KERAJAAN
+  // 1. RANGKAIAN POLIKLINIK AL-FARHAIN (AMC CLINICS)
+  // ==========================================
+  {
+    id: 'poliklinik_alfarhain_kl',
+    name: 'Poliklinik Al-Farhain 24 Jam (HQ Kok Lanas)',
+    shortName: 'Poliklinik Al-Farhain Kok Lanas',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 0.1,
+    coords: [5.9177, 102.2447],
+    estDurationMin: 1,
+    state: 'Kelantan'
+  },
+  {
+    id: 'poliklinik_alfarhain_raub',
+    name: 'Poliklinik Al-Farhain (Cawangan Bandar Raub)',
+    shortName: 'Poliklinik Al-Farhain Raub',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 365.0,
+    coords: [3.7899, 101.8570],
+    estDurationMin: 2,
+    state: 'Pahang'
+  },
+  {
+    id: 'poliklinik_alfarhain_tunjung',
+    name: 'Poliklinik Al-Farhain (Cawangan Bandar Baru Tunjung, Kota Bharu)',
+    shortName: 'Poliklinik Al-Farhain Tunjung',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 20.4,
+    coords: [6.0720, 102.2350],
+    estDurationMin: 22,
+    state: 'Kelantan'
+  },
+  {
+    id: 'poliklinik_alfarhain_kubangkerian',
+    name: 'Poliklinik Al-Farhain (Cawangan Kubang Kerian)',
+    shortName: 'Poliklinik Al-Farhain Kubang Kerian',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 24.8,
+    coords: [6.0965, 102.2815],
+    estDurationMin: 28,
+    state: 'Kelantan'
+  },
+  {
+    id: 'poliklinik_alfarhain_machang',
+    name: 'Poliklinik Al-Farhain (Cawangan Machang)',
+    shortName: 'Poliklinik Al-Farhain Machang',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 17.5,
+    coords: [5.7660, 102.2190],
+    estDurationMin: 20,
+    state: 'Kelantan'
+  },
+  {
+    id: 'poliklinik_alfarhain_jeli',
+    name: 'Poliklinik Al-Farhain (Cawangan Jeli)',
+    shortName: 'Poliklinik Al-Farhain Jeli',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 84.5,
+    coords: [5.6980, 101.8430],
+    estDurationMin: 85,
+    state: 'Kelantan'
+  },
+  {
+    id: 'poliklinik_alfarhain_kualakrai',
+    name: 'Poliklinik Al-Farhain (Cawangan Kuala Krai)',
+    shortName: 'Poliklinik Al-Farhain Kuala Krai',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 44.0,
+    coords: [5.5340, 102.2030],
+    estDurationMin: 45,
+    state: 'Kelantan'
+  },
+  {
+    id: 'poliklinik_alfarhain_tanahmerah',
+    name: 'Poliklinik Al-Farhain (Cawangan Tanah Merah)',
+    shortName: 'Poliklinik Al-Farhain Tanah Merah',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 30.5,
+    coords: [5.8090, 102.1460],
+    estDurationMin: 36,
+    state: 'Kelantan'
+  },
+  {
+    id: 'poliklinik_alfarhain_pasirputeh',
+    name: 'Poliklinik Al-Farhain (Cawangan Pasir Puteh)',
+    shortName: 'Poliklinik Al-Farhain Pasir Puteh',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 32.0,
+    coords: [5.8360, 102.4040],
+    estDurationMin: 38,
+    state: 'Kelantan'
+  },
+  {
+    id: 'poliklinik_alfarhain_wakafbharu',
+    name: 'Poliklinik Al-Farhain (Cawangan Wakaf Bharu / Tumpat)',
+    shortName: 'Poliklinik Al-Farhain Wakaf Bharu',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 30.0,
+    coords: [6.1205, 102.2055],
+    estDurationMin: 34,
+    state: 'Kelantan'
+  },
+  {
+    id: 'poliklinik_alfarhain_bentong',
+    name: 'Poliklinik Al-Farhain (Cawangan Bentong)',
+    shortName: 'Poliklinik Al-Farhain Bentong',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 392.0,
+    coords: [3.5210, 101.9065],
+    estDurationMin: 42,
+    state: 'Pahang'
+  },
+  {
+    id: 'poliklinik_alfarhain_lipis',
+    name: 'Poliklinik Al-Farhain (Cawangan Kuala Lipis)',
+    shortName: 'Poliklinik Al-Farhain Lipis',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 318.0,
+    coords: [4.1840, 102.0480],
+    estDurationMin: 46,
+    state: 'Pahang'
+  },
+
+  // ==========================================
+  // 2. KELANTAN - KLINIK SWASTA & POLIKLINIK 24 JAM
+  // ==========================================
+  {
+    id: 'klinik_primer_cherang',
+    name: 'Klinik Primer 24 Jam (Cherang, Kota Bharu)',
+    shortName: 'Klinik Primer Cherang',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 27.0,
+    coords: [6.1150, 102.2610],
+    estDurationMin: 32,
+    state: 'Kelantan'
+  },
+  {
+    id: 'klinik_primer_kubangkerian',
+    name: 'Klinik Primer 24 Jam (Kubang Kerian)',
+    shortName: 'Klinik Primer Kubang Kerian',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 25.2,
+    coords: [6.0950, 102.2780],
+    estDurationMin: 30,
+    state: 'Kelantan'
+  },
+  {
+    id: 'klinik_primer_wakafcheyeh',
+    name: 'Klinik Primer 24 Jam (Wakaf Che Yeh)',
+    shortName: 'Klinik Primer Wakaf Che Yeh',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 19.5,
+    coords: [6.0790, 102.2410],
+    estDurationMin: 24,
+    state: 'Kelantan'
+  },
+  {
+    id: 'klinik_primer_pengkalanchepa',
+    name: 'Klinik Primer 24 Jam (Pengkalan Chepa)',
+    shortName: 'Klinik Primer Pengkalan Chepa',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 31.5,
+    coords: [6.1680, 102.2890],
+    estDurationMin: 36,
+    state: 'Kelantan'
+  },
+  {
+    id: 'klinik_perdana_kb',
+    name: 'Klinik Perdana 24 Jam (Jalan Pengkalan Chepa, Kota Bharu)',
+    shortName: 'Klinik Perdana Kota Bharu',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 27.5,
+    coords: [6.1320, 102.2510],
+    estDurationMin: 33,
+    state: 'Kelantan'
+  },
+  {
+    id: 'poliklinik_penawar_kb',
+    name: 'Poliklinik Penawar 24 Jam (Kota Bharu)',
+    shortName: 'Poliklinik Penawar KB',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 26.8,
+    coords: [6.1240, 102.2460],
+    estDurationMin: 32,
+    state: 'Kelantan'
+  },
+  {
+    id: 'klinik_syifa_pasirtumboh',
+    name: 'Klinik Syifa 24 Jam (Pasir Tumboh)',
+    shortName: 'Klinik Syifa Pasir Tumboh',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 21.0,
+    coords: [6.0650, 102.2780],
+    estDurationMin: 25,
+    state: 'Kelantan'
+  },
+  {
+    id: 'klinik_syifa_peringat',
+    name: 'Klinik Syifa 24 Jam (Peringat)',
+    shortName: 'Klinik Syifa Peringat',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 16.5,
+    coords: [6.0250, 102.2750],
+    estDurationMin: 20,
+    state: 'Kelantan'
+  },
+  {
+    id: 'klinik_taqwa_lundang',
+    name: 'Klinik Taqwa 24 Jam (Lundang, Kota Bharu)',
+    shortName: 'Klinik Taqwa Lundang',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 24.5,
+    coords: [6.1080, 102.2580],
+    estDurationMin: 29,
+    state: 'Kelantan'
+  },
+  {
+    id: 'klinik_famili_dr_wan',
+    name: 'Klinik Famili Dr. Wan (Ketereh)',
+    shortName: 'Klinik Famili Dr. Wan Ketereh',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 5.2,
+    coords: [5.9590, 102.2520],
+    estDurationMin: 8,
+    state: 'Kelantan'
+  },
+  {
+    id: 'poliklinik_dr_murni_machang',
+    name: 'Poliklinik Dr. Murni (Bandar Machang)',
+    shortName: 'Poliklinik Dr. Murni Machang',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 18.2,
+    coords: [5.7675, 102.2170],
+    estDurationMin: 22,
+    state: 'Kelantan'
+  },
+  {
+    id: 'poliklinik_alhikmah_pasirmas',
+    name: 'Poliklinik Al-Hikmah 24 Jam (Pasir Mas)',
+    shortName: 'Poliklinik Al-Hikmah Pasir Mas',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 25.8,
+    coords: [6.0410, 102.1420],
+    estDurationMin: 32,
+    state: 'Kelantan'
+  },
+  {
+    id: 'klinik_harmoni_tanahmerah',
+    name: 'Klinik Harmoni 24 Jam (Tanah Merah)',
+    shortName: 'Klinik Harmoni Tanah Merah',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 30.2,
+    coords: [5.8075, 102.1480],
+    estDurationMin: 36,
+    state: 'Kelantan'
+  },
+  {
+    id: 'klinik_amal_kualakrai',
+    name: 'Klinik Amal 24 Jam (Kuala Krai)',
+    shortName: 'Klinik Amal Kuala Krai',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 44.5,
+    coords: [5.5310, 102.2010],
+    estDurationMin: 46,
+    state: 'Kelantan'
+  },
+  {
+    id: 'klinik_dr_najwa_kb',
+    name: 'Klinik Dr. Najwa 24 Jam (Kubang Kerian)',
+    shortName: 'Klinik Dr. Najwa Kubang Kerian',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 25.0,
+    coords: [6.0940, 102.2820],
+    estDurationMin: 29,
+    state: 'Kelantan'
+  },
+  {
+    id: 'klinik_mesra_guamusang',
+    name: 'Klinik Mesra 24 Jam (Gua Musang)',
+    shortName: 'Klinik Mesra Gua Musang',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 134.0,
+    coords: [4.8760, 101.9630],
+    estDurationMin: 118,
+    state: 'Kelantan'
+  },
+
+  // ==========================================
+  // 3. PAHANG - KLINIK SWASTA & POLIKLINIK 24 JAM
+  // ==========================================
+  {
+    id: 'klinik_dr_azhar_raub',
+    name: 'Poliklinik & Surgeri Dr. Azhar 24 Jam (Bandar Raub)',
+    shortName: 'Klinik Dr. Azhar Raub',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 365.2,
+    coords: [3.7910, 101.8560],
+    estDurationMin: 3,
+    state: 'Pahang'
+  },
+  {
+    id: 'klinik_keluarga_raub',
+    name: 'Klinik Keluarga Raub (Pusat Bandar Raub)',
+    shortName: 'Klinik Keluarga Raub',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 364.8,
+    coords: [3.7885, 101.8575],
+    estDurationMin: 3,
+    state: 'Pahang'
+  },
+  {
+    id: 'poliklinik_bentong_24jam',
+    name: 'Poliklinik Bentong 24 Jam (Bandar Bentong)',
+    shortName: 'Poliklinik Bentong 24 Jam',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 391.0,
+    coords: [3.5225, 101.9070],
+    estDurationMin: 40,
+    state: 'Pahang'
+  },
+  {
+    id: 'klinik_mediviron_mentakab',
+    name: 'Klinik Mediviron 24 Jam (Mentakab / Temerloh)',
+    shortName: 'Klinik Mediviron Mentakab',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 412.0,
+    coords: [3.4860, 102.3520],
+    estDurationMin: 65,
+    state: 'Pahang'
+  },
+  {
+    id: 'poliklinik_temerloh_24jam',
+    name: 'Poliklinik Temerloh 24 Jam (Bandar Temerloh)',
+    shortName: 'Poliklinik Temerloh 24 Jam',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 415.0,
+    coords: [3.4490, 102.4170],
+    estDurationMin: 68,
+    state: 'Pahang'
+  },
+  {
+    id: 'klinik_kuantan_24jam',
+    name: 'Klinik Kuantan 24 Jam (Jalan Beserah, Kuantan)',
+    shortName: 'Klinik Kuantan 24 Jam',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 342.0,
+    coords: [3.8210, 103.3310],
+    estDurationMin: 152,
+    state: 'Pahang'
+  },
+  {
+    id: 'klinik_utama_lipis',
+    name: 'Klinik Utama 24 Jam (Kuala Lipis)',
+    shortName: 'Klinik Utama Kuala Lipis',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 316.0,
+    coords: [4.1830, 102.0460],
+    estDurationMin: 44,
+    state: 'Pahang'
+  },
+  {
+    id: 'klinik_highlands_cameron',
+    name: 'Klinik Highlands (Tanah Rata, Cameron Highlands)',
+    shortName: 'Klinik Highlands Tanah Rata',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 278.0,
+    coords: [4.4710, 101.3780],
+    estDurationMin: 92,
+    state: 'Pahang'
+  },
+  {
+    id: 'klinik_jerantut_24jam',
+    name: 'Poliklinik Jerantut 24 Jam (Pusat Bandar Jerantut)',
+    shortName: 'Poliklinik Jerantut 24 Jam',
+    category: 'Klinik Swasta / Poliklinik',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 375.0,
+    coords: [3.9360, 102.3620],
+    estDurationMin: 80,
+    state: 'Pahang'
+  },
+
+  // ==========================================
+  // 4. KELANTAN & PAHANG - HOSPITAL SWASTA & PAKAR
+  // ==========================================
+  {
+    id: 'kpz_kb',
+    name: 'KPJ Perdana Specialist Hospital, Kota Bharu',
+    shortName: 'KPJ Perdana Kota Bharu',
+    category: 'Hospital Swasta',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 28.0,
+    coords: [6.1205, 102.2530],
+    estDurationMin: 33,
+    state: 'Kelantan'
+  },
+  {
+    id: 'kota_bharu_med',
+    name: 'Kota Bharu Medical Centre (KBMC)',
+    shortName: 'KBMC Kota Bharu',
+    category: 'Hospital Swasta',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 27.5,
+    coords: [6.1280, 102.2415],
+    estDurationMin: 32,
+    state: 'Kelantan'
+  },
+  {
+    id: 'putra_spec_kb',
+    name: 'Putra Specialist Hospital, Kota Bharu',
+    shortName: 'Putra Specialist KB',
+    category: 'Hospital Swasta',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 27.0,
+    coords: [6.1210, 102.2470],
+    estDurationMin: 32,
+    state: 'Kelantan'
+  },
+  {
+    id: 'annisa_spec_kb',
+    name: 'Hospital Pakar Perubatan An-Nisa, Kota Bharu',
+    shortName: 'Hospital Pakar An-Nisa',
+    category: 'Hospital Swasta',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 27.2,
+    coords: [6.1265, 102.2425],
+    estDurationMin: 32,
+    state: 'Kelantan'
+  },
+  {
+    id: 'kmc_kuantan',
+    name: 'Kuantan Medical Centre (KMC), Kuantan',
+    shortName: 'KMC Kuantan',
+    category: 'Hospital Swasta',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 345.0,
+    coords: [3.8260, 103.3370],
+    estDurationMin: 155,
+    state: 'Pahang'
+  },
+  {
+    id: 'kpj_pahang',
+    name: 'KPJ Pahang Specialist Hospital, Tanjung Lumpur',
+    shortName: 'KPJ Pahang Kuantan',
+    category: 'Hospital Swasta',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 348.0,
+    coords: [3.7980, 103.3440],
+    estDurationMin: 160,
+    state: 'Pahang'
+  },
+  {
+    id: 'prkmuip_kuantan',
+    name: 'Pusat Rawatan Keluarga MUIP (PRKMUIP), Kuantan',
+    shortName: 'Pusat Rawatan MUIP Kuantan',
+    category: 'Hospital Swasta',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 344.0,
+    coords: [3.8190, 103.3280],
+    estDurationMin: 153,
+    state: 'Pahang'
+  },
+
+  // ==========================================
+  // 5. PUSAT DIALISIS & RAWATAN HEMODIALISIS
+  // ==========================================
+  {
+    id: 'dialisis_alfarhain',
+    name: 'Pusat Hemodialisis Panel Al-Farhain AMC, Kok Lanas',
+    shortName: 'Hemodialisis Al-Farhain AMC Kok Lanas',
+    category: 'Pusat Dialisis',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 0.2,
+    coords: [5.9177, 102.2447],
+    estDurationMin: 2,
+    state: 'Kelantan'
+  },
+  {
+    id: 'dialisis_alfarhain_raub',
+    name: 'Pusat Hemodialisis Panel Al-Farhain AMC, Cawangan Raub',
+    shortName: 'Hemodialisis Al-Farhain AMC Raub',
+    category: 'Pusat Dialisis',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 365.1,
+    coords: [3.7905, 101.8565],
+    estDurationMin: 2,
+    state: 'Pahang'
+  },
+  {
+    id: 'dialisis_maik',
+    name: 'Pusat Hemodialisis MAIK (Majlis Agama Islam Kelantan)',
+    shortName: 'Hemodialisis MAIK Kota Bharu',
+    category: 'Pusat Dialisis',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 26.5,
+    coords: [6.1180, 102.2490],
+    estDurationMin: 32,
+    state: 'Kelantan'
+  },
+  {
+    id: 'dialisis_annur_kb',
+    name: 'Pusat Dialisis Waqaf An-Nur, Kubang Kerian',
+    shortName: 'Dialisis Waqaf An-Nur Kubang Kerian',
+    category: 'Pusat Dialisis',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 25.0,
+    coords: [6.0950, 102.2810],
+    estDurationMin: 30,
+    state: 'Kelantan'
+  },
+  {
+    id: 'dialisis_nkf_kb',
+    name: 'Pusat Dialisis NKF (National Kidney Foundation), Kota Bharu',
+    shortName: 'Dialisis NKF Kota Bharu',
+    category: 'Pusat Dialisis',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 26.2,
+    coords: [6.1215, 102.2450],
+    estDurationMin: 31,
+    state: 'Kelantan'
+  },
+  {
+    id: 'dialisis_raub',
+    name: 'Pusat Hemodialisis Majlis Perbandaran Raub',
+    shortName: 'Pusat Dialisis MP Raub',
+    category: 'Pusat Dialisis',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 366.0,
+    coords: [3.7920, 101.8580],
+    estDurationMin: 5,
+    state: 'Pahang'
+  },
+  {
+    id: 'dialisis_nkf_mentakab',
+    name: 'Pusat Dialisis NKF Mentakab (Pahang)',
+    shortName: 'Dialisis NKF Mentakab',
+    category: 'Pusat Dialisis',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 411.0,
+    coords: [3.4840, 102.3490],
+    estDurationMin: 66,
+    state: 'Pahang'
+  },
+  {
+    id: 'dialisis_rotari_kuantan',
+    name: 'Pusat Hemodialisis Rotari Kuantan',
+    shortName: 'Pusat Dialisis Rotari Kuantan',
+    category: 'Pusat Dialisis',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 343.0,
+    coords: [3.8180, 103.3260],
+    estDurationMin: 151,
+    state: 'Pahang'
+  },
+
+  // ==========================================
+  // 6. PUSAT BERSALIN & PAKAR WANITA / KANAK-KANAK
+  // ==========================================
+  {
+    id: 'bersalin_annisa_kb',
+    name: 'Rumah Bersalin & Pakar Wanita An-Nisa (Kota Bharu)',
+    shortName: 'Rumah Bersalin An-Nisa',
+    category: 'Pusat Bersalin & Pakar',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 27.2,
+    coords: [6.1265, 102.2425],
+    estDurationMin: 32,
+    state: 'Kelantan'
+  },
+  {
+    id: 'bersalin_siti_kb',
+    name: 'Pusat Bersalin & Rawatan Wanita Siti (Kota Bharu)',
+    shortName: 'Pusat Bersalin Siti Kota Bharu',
+    category: 'Pusat Bersalin & Pakar',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 26.0,
+    coords: [6.1190, 102.2465],
+    estDurationMin: 31,
+    state: 'Kelantan'
+  },
+  {
+    id: 'bersalin_sukhdev_kuantan',
+    name: 'Klinik Pakar Wanita & Rumah Bersalin Sukhdev (Kuantan)',
+    shortName: 'Klinik Bersalin Sukhdev Kuantan',
+    category: 'Pusat Bersalin & Pakar',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 343.5,
+    coords: [3.8160, 103.3290],
+    estDurationMin: 152,
+    state: 'Pahang'
+  },
+
+  // ==========================================
+  // 7. KLINIK KESIHATAN KERAJAAN (KKM)
+  // ==========================================
+  {
+    id: 'kk_koklanas',
+    name: 'Klinik Kesihatan Kok Lanas',
+    shortName: 'KK Kok Lanas',
+    category: 'Klinik Kesihatan',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 1.5,
+    coords: [5.9180, 102.2420],
+    estDurationMin: 5,
+    state: 'Kelantan'
+  },
+  {
+    id: 'kk_ketereh',
+    name: 'Klinik Kesihatan Ketereh',
+    shortName: 'KK Ketereh',
+    category: 'Klinik Kesihatan',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 4.8,
+    coords: [5.9580, 102.2510],
+    estDurationMin: 8,
+    state: 'Kelantan'
+  },
+  {
+    id: 'kk_bandar_kb',
+    name: 'Klinik Kesihatan Bandar Kota Bharu',
+    shortName: 'KK Bandar Kota Bharu',
+    category: 'Klinik Kesihatan',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 26.0,
+    coords: [6.1290, 102.2430],
+    estDurationMin: 30,
+    state: 'Kelantan'
+  },
+  {
+    id: 'kk_kubangkerian',
+    name: 'Klinik Kesihatan Kubang Kerian',
+    shortName: 'KK Kubang Kerian',
+    category: 'Klinik Kesihatan',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 24.5,
+    coords: [6.0920, 102.2740],
+    estDurationMin: 28,
+    state: 'Kelantan'
+  },
+  {
+    id: 'kk_wakafcheyeh',
+    name: 'Klinik Kesihatan Wakaf Che Yeh / Kadok',
+    shortName: 'KK Wakaf Che Yeh',
+    category: 'Klinik Kesihatan',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 18.0,
+    coords: [6.0680, 102.2420],
+    estDurationMin: 22,
+    state: 'Kelantan'
+  },
+  {
+    id: 'kk_pengkalanchepa',
+    name: 'Klinik Kesihatan Pengkalan Chepa',
+    shortName: 'KK Pengkalan Chepa',
+    category: 'Klinik Kesihatan',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 32.0,
+    coords: [6.1750, 102.2920],
+    estDurationMin: 38,
+    state: 'Kelantan'
+  },
+  {
+    id: 'kk_bandar_raub',
+    name: 'Klinik Kesihatan Bandar Raub',
+    shortName: 'KK Bandar Raub',
+    category: 'Klinik Kesihatan',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 366.0,
+    coords: [3.7950, 101.8620],
+    estDurationMin: 6,
+    state: 'Pahang'
+  },
+  {
+    id: 'kk_dong_raub',
+    name: 'Klinik Kesihatan Dong, Raub',
+    shortName: 'KK Dong Raub',
+    category: 'Klinik Kesihatan',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 350.0,
+    coords: [3.8500, 101.8800],
+    estDurationMin: 15,
+    state: 'Pahang'
+  },
+  {
+    id: 'kk_cheroh_raub',
+    name: 'Klinik Kesihatan Cheroh, Raub',
+    shortName: 'KK Cheroh Raub',
+    category: 'Klinik Kesihatan',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 358.0,
+    coords: [3.8950, 101.8480],
+    estDurationMin: 22,
+    state: 'Pahang'
+  },
+  {
+    id: 'kk_bandar_bentong',
+    name: 'Klinik Kesihatan Bandar Bentong',
+    shortName: 'KK Bandar Bentong',
+    category: 'Klinik Kesihatan',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 390.0,
+    coords: [3.5200, 101.9080],
+    estDurationMin: 41,
+    state: 'Pahang'
+  },
+
+  // ==========================================
+  // 8. KELANTAN - HOSPITAL KERAJAAN
   // ==========================================
   {
     id: 'hrpz',
@@ -300,6 +1043,17 @@ export const PRESET_DESTINATIONS = [
     state: 'Kelantan'
   },
   {
+    id: 'h_tengku_anis',
+    name: 'Hospital Tengku Anis, Pasir Puteh',
+    shortName: 'Hospital Tengku Anis',
+    category: 'Hospital Kerajaan',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 33.0,
+    coords: [5.8340, 102.4080],
+    estDurationMin: 39,
+    state: 'Kelantan'
+  },
+  {
     id: 'h_jeli',
     name: 'Hospital Jeli',
     shortName: 'Hospital Jeli',
@@ -323,173 +1077,7 @@ export const PRESET_DESTINATIONS = [
   },
 
   // ==========================================
-  // 2. KELANTAN - HOSPITAL SWASTA & PAKAR
-  // ==========================================
-  {
-    id: 'kpz_kb',
-    name: 'KPJ Perdana Specialist Hospital, Kota Bharu',
-    shortName: 'KPJ Perdana Kota Bharu',
-    category: 'Hospital Swasta',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 28.0,
-    coords: [6.1205, 102.2530],
-    estDurationMin: 33,
-    state: 'Kelantan'
-  },
-  {
-    id: 'kota_bharu_med',
-    name: 'Kota Bharu Medical Centre (KBMC)',
-    shortName: 'KBMC Kota Bharu',
-    category: 'Hospital Swasta',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 27.5,
-    coords: [6.1280, 102.2415],
-    estDurationMin: 32,
-    state: 'Kelantan'
-  },
-  {
-    id: 'putra_spec_kb',
-    name: 'Putra Specialist Hospital, Kota Bharu',
-    shortName: 'Putra Specialist KB',
-    category: 'Hospital Swasta',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 27.0,
-    coords: [6.1210, 102.2470],
-    estDurationMin: 32,
-    state: 'Kelantan'
-  },
-
-  // ==========================================
-  // 3. KELANTAN - KLINIK KESIHATAN (KK) KERAJAAN
-  // ==========================================
-  {
-    id: 'kk_koklanas',
-    name: 'Klinik Kesihatan Kok Lanas',
-    shortName: 'KK Kok Lanas',
-    category: 'Klinik Kesihatan',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 1.5,
-    coords: [5.9180, 102.2420],
-    estDurationMin: 5,
-    state: 'Kelantan'
-  },
-  {
-    id: 'kk_ketereh',
-    name: 'Klinik Kesihatan Ketereh',
-    shortName: 'KK Ketereh',
-    category: 'Klinik Kesihatan',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 4.8,
-    coords: [5.9580, 102.2510],
-    estDurationMin: 8,
-    state: 'Kelantan'
-  },
-  {
-    id: 'kk_bandar_kb',
-    name: 'Klinik Kesihatan Bandar Kota Bharu',
-    shortName: 'KK Bandar Kota Bharu',
-    category: 'Klinik Kesihatan',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 26.0,
-    coords: [6.1290, 102.2430],
-    estDurationMin: 30,
-    state: 'Kelantan'
-  },
-  {
-    id: 'kk_kubangkerian',
-    name: 'Klinik Kesihatan Kubang Kerian',
-    shortName: 'KK Kubang Kerian',
-    category: 'Klinik Kesihatan',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 24.5,
-    coords: [6.0920, 102.2740],
-    estDurationMin: 28,
-    state: 'Kelantan'
-  },
-  {
-    id: 'kk_wakafcheyeh',
-    name: 'Klinik Kesihatan Wakaf Che Yeh / Kadok',
-    shortName: 'KK Wakaf Che Yeh',
-    category: 'Klinik Kesihatan',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 18.0,
-    coords: [6.0680, 102.2420],
-    estDurationMin: 22,
-    state: 'Kelantan'
-  },
-  {
-    id: 'kk_pengkalanchepa',
-    name: 'Klinik Kesihatan Pengkalan Chepa',
-    shortName: 'KK Pengkalan Chepa',
-    category: 'Klinik Kesihatan',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 32.0,
-    coords: [6.1750, 102.2920],
-    estDurationMin: 38,
-    state: 'Kelantan'
-  },
-
-  // ==========================================
-  // 4. KELANTAN - PUSAT DIALISIS & RAWATAN KHAS
-  // ==========================================
-  {
-    id: 'dialisis_alfarhain',
-    name: 'Pusat Hemodialisis Panel Al-Farhain AMC, Kok Lanas',
-    shortName: 'Hemodialisis Al-Farhain AMC',
-    category: 'Pusat Dialisis',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 0.2,
-    coords: [5.9177, 102.2447],
-    estDurationMin: 2,
-    state: 'Kelantan'
-  },
-  {
-    id: 'dialisis_maik',
-    name: 'Pusat Hemodialisis MAIK (Majlis Agama Islam Kelantan)',
-    shortName: 'Hemodialisis MAIK KB',
-    category: 'Pusat Dialisis',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 26.5,
-    coords: [6.1180, 102.2490],
-    estDurationMin: 32,
-    state: 'Kelantan'
-  },
-  {
-    id: 'dialisis_annur_kb',
-    name: 'Pusat Dialisis Waqaf An-Nur, Kubang Kerian',
-    shortName: 'Dialisis Waqaf An-Nur',
-    category: 'Pusat Dialisis',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 25.0,
-    coords: [6.0950, 102.2810],
-    estDurationMin: 30,
-    state: 'Kelantan'
-  },
-  {
-    id: 'poliklinik_alfarhain_kl',
-    name: 'Poliklinik Al-Farhain 24 Jam (HQ Kok Lanas)',
-    shortName: 'Poliklinik Al-Farhain Kok Lanas',
-    category: 'Klinik Swasta / Poliklinik',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 0.1,
-    coords: [5.9177, 102.2447],
-    estDurationMin: 1,
-    state: 'Kelantan'
-  },
-  {
-    id: 'klinik_primer_cherang',
-    name: 'Klinik Primer 24 Jam, Cherang Kota Bharu',
-    shortName: 'Klinik Primer Cherang',
-    category: 'Klinik Swasta / Poliklinik',
-    hubAffinity: 'kok_lanas',
-    distanceFromKokLanas: 27.0,
-    coords: [6.1150, 102.2610],
-    estDurationMin: 32,
-    state: 'Kelantan'
-  },
-
-  // ==========================================
-  // 5. PAHANG - HOSPITAL KERAJAAN
+  // 9. PAHANG - HOSPITAL KERAJAAN
   // ==========================================
   {
     id: 'h_raub',
@@ -579,79 +1167,138 @@ export const PRESET_DESTINATIONS = [
     estDurationMin: 90,
     state: 'Pahang'
   },
-
-  // ==========================================
-  // 6. PAHANG - KLINIK, SWASTA & DIALISIS
-  // ==========================================
   {
-    id: 'kmc_kuantan',
-    name: 'Kuantan Medical Centre (KMC), Kuantan',
-    shortName: 'KMC Kuantan',
-    category: 'Hospital Swasta',
+    id: 'h_jerantut',
+    name: 'Hospital Jerantut, Pahang',
+    shortName: 'Hospital Jerantut',
+    category: 'Hospital Kerajaan',
     hubAffinity: 'raub',
-    distanceFromKokLanas: 345.0,
-    coords: [3.8260, 103.3370],
-    estDurationMin: 155,
-    state: 'Pahang'
-  },
-  {
-    id: 'kpj_pahang',
-    name: 'KPJ Pahang Specialist Hospital, Tanjung Lumpur',
-    shortName: 'KPJ Pahang Kuantan',
-    category: 'Hospital Swasta',
-    hubAffinity: 'raub',
-    distanceFromKokLanas: 348.0,
-    coords: [3.7980, 103.3440],
-    estDurationMin: 160,
-    state: 'Pahang'
-  },
-  {
-    id: 'poliklinik_alfarhain_raub',
-    name: 'Poliklinik Al-Farhain (Cawangan Bandar Raub)',
-    shortName: 'Poliklinik Al-Farhain Raub',
-    category: 'Klinik Swasta / Poliklinik',
-    hubAffinity: 'raub',
-    distanceFromKokLanas: 365.0,
-    coords: [3.7899, 101.8570],
-    estDurationMin: 2,
-    state: 'Pahang'
-  },
-  {
-    id: 'kk_bandar_raub',
-    name: 'Klinik Kesihatan Bandar Raub',
-    shortName: 'KK Bandar Raub',
-    category: 'Klinik Kesihatan',
-    hubAffinity: 'raub',
-    distanceFromKokLanas: 366.0,
-    coords: [3.7950, 101.8620],
-    estDurationMin: 6,
-    state: 'Pahang'
-  },
-  {
-    id: 'kk_dong_raub',
-    name: 'Klinik Kesihatan Dong, Raub',
-    shortName: 'KK Dong Raub',
-    category: 'Klinik Kesihatan',
-    hubAffinity: 'raub',
-    distanceFromKokLanas: 350.0,
-    coords: [3.8500, 101.8800],
-    estDurationMin: 15,
-    state: 'Pahang'
-  },
-  {
-    id: 'dialisis_raub',
-    name: 'Pusat Hemodialisis Majlis Perbandaran Raub',
-    shortName: 'Pusat Dialisis Raub',
-    category: 'Pusat Dialisis',
-    hubAffinity: 'raub',
-    distanceFromKokLanas: 366.0,
-    coords: [3.7920, 101.8580],
-    estDurationMin: 5,
+    distanceFromKokLanas: 376.0,
+    coords: [3.9380, 102.3680],
+    estDurationMin: 82,
     state: 'Pahang'
   },
 
   // ==========================================
-  // 7. LEMBAH KLANG & RUJUKAN KEBANGSAAN
+  // 10. TERENGGANU - HOSPITAL RUJUKAN
+  // ==========================================
+  {
+    id: 'h_besut',
+    name: 'Hospital Besut, Terengganu',
+    shortName: 'Hospital Besut',
+    category: 'Hospital Kerajaan',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 58.0,
+    coords: [5.7620, 102.5530],
+    estDurationMin: 55,
+    state: 'Terengganu'
+  },
+  {
+    id: 'hsnz_trg',
+    name: 'Hospital Sultanah Nur Zahirah (HSNZ), Kuala Terengganu',
+    shortName: 'HSNZ Kuala Terengganu',
+    category: 'Hospital Kerajaan',
+    hubAffinity: 'kok_lanas',
+    distanceFromKokLanas: 145.0,
+    coords: [5.3350, 103.1480],
+    estDurationMin: 130,
+    state: 'Terengganu'
+  },
+
+  // ==========================================
+  // 11. LEMBAH KLANG & SELANGOR - HOSPITAL SWASTA TERKEMUKA
+  // ==========================================
+  {
+    id: 'sunway_med_centre',
+    name: 'Sunway Medical Centre, Bandar Sunway (Subang)',
+    shortName: 'Sunway Medical Centre',
+    category: 'Hospital Swasta',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 452.0,
+    coords: [3.0670, 101.6105],
+    estDurationMin: 105,
+    state: 'Selangor'
+  },
+  {
+    id: 'sjmc_subang',
+    name: 'Subang Jaya Medical Centre (SJMC), Subang Jaya',
+    shortName: 'SJMC Subang Jaya',
+    category: 'Hospital Swasta',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 450.0,
+    coords: [3.0805, 101.5930],
+    estDurationMin: 102,
+    state: 'Selangor'
+  },
+  {
+    id: 'gleneagles_kl',
+    name: 'Gleneagles Hospital Kuala Lumpur, Jalan Ampang',
+    shortName: 'Gleneagles Hospital KL',
+    category: 'Hospital Swasta',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 442.0,
+    coords: [3.1590, 101.7370],
+    estDurationMin: 92,
+    state: 'Kuala Lumpur'
+  },
+  {
+    id: 'pantai_bangsar',
+    name: 'Pantai Hospital Kuala Lumpur, Bangsar',
+    shortName: 'Pantai Hospital Bangsar',
+    category: 'Hospital Swasta',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 448.0,
+    coords: [3.1220, 101.6690],
+    estDurationMin: 98,
+    state: 'Kuala Lumpur'
+  },
+  {
+    id: 'prince_court_kl',
+    name: 'Prince Court Medical Centre, Kia Peng Kuala Lumpur',
+    shortName: 'Prince Court Medical Centre',
+    category: 'Hospital Swasta',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 443.0,
+    coords: [3.1490, 101.7215],
+    estDurationMin: 95,
+    state: 'Kuala Lumpur'
+  },
+  {
+    id: 'thomson_hospital',
+    name: 'Thomson Hospital Kota Damansara (TMC)',
+    shortName: 'Thomson Hospital Damansara',
+    category: 'Hospital Swasta',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 435.0,
+    coords: [3.1530, 101.5790],
+    estDurationMin: 90,
+    state: 'Selangor'
+  },
+  {
+    id: 'kpj_damansara',
+    name: 'KPJ Damansara Specialist Hospital, Petaling Jaya',
+    shortName: 'KPJ Damansara Specialist',
+    category: 'Hospital Swasta',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 438.0,
+    coords: [3.1360, 101.6280],
+    estDurationMin: 92,
+    state: 'Selangor'
+  },
+  {
+    id: 'kpj_ampang_puteri',
+    name: 'KPJ Ampang Puteri Specialist Hospital, Ampang',
+    shortName: 'KPJ Ampang Puteri',
+    category: 'Hospital Swasta',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 442.0,
+    coords: [3.1610, 101.7520],
+    estDurationMin: 94,
+    state: 'Selangor'
+  },
+
+  // ==========================================
+  // 12. LEMBAH KLANG - HOSPITAL KERAJAAN & RUJUKAN KEBANGSAAN
   // ==========================================
   {
     id: 'hkl',
@@ -676,6 +1323,17 @@ export const PRESET_DESTINATIONS = [
     state: 'Kuala Lumpur'
   },
   {
+    id: 'ppum',
+    name: 'Pusat Perubatan Universiti Malaya (PPUM), Petaling Jaya',
+    shortName: 'PPUM Petaling Jaya',
+    category: 'Hospital Kerajaan',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 450.0,
+    coords: [3.1120, 101.6540],
+    estDurationMin: 100,
+    state: 'Selangor'
+  },
+  {
     id: 'h_selayang',
     name: 'Hospital Selayang (Selangor / KL)',
     shortName: 'Hospital Selayang',
@@ -698,14 +1356,36 @@ export const PRESET_DESTINATIONS = [
     state: 'Putrajaya'
   },
   {
-    id: 'ppum',
-    name: 'Pusat Perubatan Universiti Malaya (PPUM), Petaling Jaya',
-    shortName: 'PPUM Petaling Jaya',
+    id: 'h_serdang',
+    name: 'Hospital Sultan Idris Shah (Hospital Serdang)',
+    shortName: 'Hospital Serdang',
     category: 'Hospital Kerajaan',
     hubAffinity: 'raub',
-    distanceFromKokLanas: 450.0,
-    coords: [3.1120, 101.6540],
-    estDurationMin: 100,
+    distanceFromKokLanas: 462.0,
+    coords: [2.9770, 101.7210],
+    estDurationMin: 108,
+    state: 'Selangor'
+  },
+  {
+    id: 'h_sungai_buloh',
+    name: 'Hospital Sungai Buloh (Pusat Trauma & Rawatan Khas)',
+    shortName: 'Hospital Sungai Buloh',
+    category: 'Hospital Kerajaan',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 428.0,
+    coords: [3.2200, 101.5830],
+    estDurationMin: 84,
+    state: 'Selangor'
+  },
+  {
+    id: 'htar_klang',
+    name: 'Hospital Tengku Ampuan Rahimah (HTAR Klang)',
+    shortName: 'HTAR Klang',
+    category: 'Hospital Kerajaan',
+    hubAffinity: 'raub',
+    distanceFromKokLanas: 460.0,
+    coords: [3.0190, 101.4420],
+    estDurationMin: 115,
     state: 'Selangor'
   }
 ];

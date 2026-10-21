@@ -1687,9 +1687,33 @@ function setDestinationLocation(destId, name, coords, category = '') {
   state.destinationName = name;
   state.destinationAddress = name;
   state.destinationCoords = coords;
+  state.destinationCategory = category;
 
   const displayEl = document.getElementById('displayDestName');
   if (displayEl) displayEl.textContent = state.destinationName;
+
+  const iconEl = document.getElementById('stopDestIcon');
+  if (iconEl) {
+    if (category.includes('Klinik') || category.includes('Poliklinik')) iconEl.textContent = '💊';
+    else if (category.includes('Dialisis')) iconEl.textContent = '🩸';
+    else if (category.includes('Bersalin')) iconEl.textContent = '👶';
+    else if (category.includes('Kesihatan')) iconEl.textContent = '🩺';
+    else if (category.includes('Swasta')) iconEl.textContent = '🏨';
+    else iconEl.textContent = '🏥';
+  }
+
+  const labelEl = document.getElementById('labelDest1');
+  if (labelEl) {
+    if (category.includes('Klinik') || category.includes('Poliklinik')) {
+      labelEl.textContent = 'Klinik / Poliklinik Tujuan';
+    } else if (category.includes('Dialisis')) {
+      labelEl.textContent = 'Pusat Dialisis Tujuan';
+    } else if (category.includes('Bersalin')) {
+      labelEl.textContent = 'Pusat Bersalin Tujuan';
+    } else {
+      labelEl.textContent = 'Pusat Perubatan Tujuan';
+    }
+  }
 
   calculateMultiLegRoute(true);
 }
@@ -1697,6 +1721,7 @@ function setDestinationLocation(destId, name, coords, category = '') {
 function setStop4ReturnLocation(name, address, coords) {
   state.hasStop4 = true;
   state.stop4Type = 'return';
+  state.stop4Category = 'Kediaman';
   state.returnName = name;
   state.returnAddress = address || name;
   state.returnCoords = coords;
@@ -1708,6 +1733,7 @@ function setStop4ReturnLocation(name, address, coords) {
 function setStop4SecondDestLocation(destId, name, coords, category = '', address = '') {
   state.hasStop4 = true;
   state.stop4Type = 'second_dest';
+  state.stop4Category = category;
   state.returnName = name;
   state.returnAddress = address || name;
   state.returnCoords = coords;
@@ -1727,9 +1753,40 @@ function syncStop4UI() {
   if (addActions) addActions.style.display = state.hasStop4 ? 'none' : 'flex';
 
   if (state.hasStop4) {
-    if (label) label.textContent = state.stop4Type === 'return' ? 'Hantar Pulang (Kediaman)' : 'Pusat Perubatan Ke-2';
+    if (label) {
+      if (state.stop4Type === 'return') {
+        label.textContent = 'Hantar Pulang (Kediaman)';
+      } else {
+        const cat = state.stop4Category || '';
+        if (cat.includes('Klinik') || cat.includes('Poliklinik')) {
+          label.textContent = 'Destinasi Ke-2 (Klinik / Poliklinik)';
+        } else if (cat.includes('Dialisis')) {
+          label.textContent = 'Destinasi Ke-2 (Pusat Dialisis)';
+        } else if (cat.includes('Bersalin')) {
+          label.textContent = 'Destinasi Ke-2 (Pusat Bersalin)';
+        } else if (cat.includes('Swasta')) {
+          label.textContent = 'Destinasi Ke-2 (Hospital Swasta)';
+        } else if (cat.includes('Kerajaan')) {
+          label.textContent = 'Destinasi Ke-2 (Hospital Kerajaan)';
+        } else {
+          label.textContent = 'Pusat Perubatan Ke-2';
+        }
+      }
+    }
     if (nameEl) nameEl.textContent = state.returnName;
-    if (iconEl) iconEl.textContent = state.stop4Type === 'return' ? '🔄' : '🏥';
+    if (iconEl) {
+      if (state.stop4Type === 'return') {
+        iconEl.textContent = '🔄';
+      } else {
+        const cat = state.stop4Category || '';
+        if (cat.includes('Klinik') || cat.includes('Poliklinik')) iconEl.textContent = '💊';
+        else if (cat.includes('Dialisis')) iconEl.textContent = '🩸';
+        else if (cat.includes('Bersalin')) iconEl.textContent = '👶';
+        else if (cat.includes('Kesihatan')) iconEl.textContent = '🩺';
+        else if (cat.includes('Swasta')) iconEl.textContent = '🏨';
+        else iconEl.textContent = '🏥';
+      }
+    }
   }
 }
 
@@ -2064,11 +2121,12 @@ function openMedicalCenterModal(target = 'dest') {
     <!-- Category Filter Pills -->
     <div class="dest-cat-pills-row" id="destCatPillsContainer">
       <button type="button" class="dest-cat-pill active" data-cat="all">Semua</button>
-      <button type="button" class="dest-cat-pill" data-cat="Hospital Kerajaan">🏥 Hospital Kerajaan</button>
+      <button type="button" class="dest-cat-pill" data-cat="Klinik Swasta / Poliklinik">💊 Poliklinik & Klinik Swasta</button>
       <button type="button" class="dest-cat-pill" data-cat="Hospital Swasta">🏨 Hospital Swasta</button>
-      <button type="button" class="dest-cat-pill" data-cat="Klinik Kesihatan">🩺 Klinik Kesihatan</button>
       <button type="button" class="dest-cat-pill" data-cat="Pusat Dialisis">🩸 Pusat Dialisis</button>
-      <button type="button" class="dest-cat-pill" data-cat="Klinik Swasta / Poliklinik">💊 Poliklinik / Swasta</button>
+      <button type="button" class="dest-cat-pill" data-cat="Pusat Bersalin & Pakar">👶 Pusat Bersalin & Pakar</button>
+      <button type="button" class="dest-cat-pill" data-cat="Hospital Kerajaan">🏥 Hospital Kerajaan</button>
+      <button type="button" class="dest-cat-pill" data-cat="Klinik Kesihatan">🩺 Klinik Kesihatan</button>
       <button type="button" class="dest-cat-pill" data-cat="custom" style="border-color:#007D77; color:#007D77;">✍️ Alamat Tersuai</button>
     </div>
 
@@ -2350,9 +2408,19 @@ function renderPresetDestCards(dests, target = 'dest') {
   const categoryIcons = {
     'Hospital Kerajaan': '🏥',
     'Hospital Swasta': '🏨',
-    'Klinik Kesihatan': '🩺',
+    'Klinik Swasta / Poliklinik': '💊',
     'Pusat Dialisis': '🩸',
-    'Klinik Swasta / Poliklinik': '💊'
+    'Pusat Bersalin & Pakar': '👶',
+    'Klinik Kesihatan': '🩺'
+  };
+
+  const categoryColors = {
+    'Hospital Kerajaan': '#0284C7',
+    'Hospital Swasta': '#7C3AED',
+    'Klinik Swasta / Poliklinik': '#059669',
+    'Pusat Dialisis': '#DC2626',
+    'Pusat Bersalin & Pakar': '#DB2777',
+    'Klinik Kesihatan': '#D97706'
   };
 
   return dests.map(d => {
@@ -2363,14 +2431,24 @@ function renderPresetDestCards(dests, target = 'dest') {
     const estDist = d.coords ? haversineKm(refCoords, d.coords, 1.28) : 0;
     const estMin = estimateDurationMin(estDist);
     const icon = categoryIcons[d.category] || '🏥';
+    const tagColor = categoryColors[d.category] || 'var(--amc-teal-dark)';
+
+    const isAlFarhain = d.name.toLowerCase().includes('al-farhain');
 
     return `
-      <div class="service-card ${isCurrent ? 'selected' : ''}" data-dest-id="${d.id}">
+      <div class="service-card ${isCurrent ? 'selected' : ''}" data-dest-id="${d.id}" style="${isAlFarhain ? 'border-color: rgba(0, 168, 150, 0.4); background: linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%);' : ''}">
         <div class="service-card-left">
-          <span style="font-size:1.3rem;">${icon}</span>
-          <div class="service-texts">
-            <span class="service-name">${escapeHtml(d.name)}</span>
-            <span class="service-desc">${escapeHtml(d.category)} • ${escapeHtml(d.state)}</span>
+          <span style="font-size:1.35rem; display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:10px; background:rgba(0,0,0,0.03); flex-shrink:0;">${icon}</span>
+          <div class="service-texts" style="flex:1;">
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <span class="service-name" style="margin-bottom:0;">${escapeHtml(d.name)}</span>
+              ${isAlFarhain ? '<span style="font-size:0.62rem; font-weight:800; padding:1px 6px; border-radius:6px; background:#007D77; color:#fff; letter-spacing:0.3px;">AMC CAWANGAN</span>' : ''}
+            </div>
+            <span class="service-desc" style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+              <span style="display:inline-block; font-size:0.68rem; font-weight:700; color:${tagColor};">${escapeHtml(d.category)}</span>
+              <span style="color:var(--text-muted); font-size:0.68rem;">•</span>
+              <span style="font-size:0.68rem; color:var(--text-muted);">${escapeHtml(d.state)}</span>
+            </span>
           </div>
         </div>
         <div class="service-price-col">
