@@ -3,750 +3,1912 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Al-Farhain AMC | Portal Pengurus Cawangan &amp; Bilik Gerakan</title>
-  <meta name="description" content="Sistem Bilik Gerakan &amp; Portal Pengurus Cawangan Al-Farhain Medical Center (AMC). Pemantauan Radar, Dispatch Ambulans, Analisis Hasil &amp; Armada.">
+  <title>Al-Farhain AMC | Portal Operasi Ambulans</title>
+  <meta name="description" content="Portal Operasi Al-Farhain Medical Center (AMC). Pengurusan Dispatch, Rekod Perjalanan, Armada & Cawangan 24 Jam.">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 
-  <!-- Leaflet CSS for Radar Map -->
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS for Maps -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <!-- Enterprise UI/UX Portal Stylesheet -->
   <link rel="stylesheet" href="./src/portal/portal.css">
 </head>
-<body>
+<body data-theme="light">
 
   <!-- =========================================================================
-       0. FULL-SCREEN AUTHENTICATION GATEKEEPER (FIRST PAGE / SECURITY GATEWAY)
+       0. FULL-SCREEN AUTHENTICATION GATE (DESIGNED BASED ON SCREENSHOT 5)
        ========================================================================= -->
   <div class="portal-auth-gate-page" id="portalAuthGate">
-    <div class="auth-gate-container">
-      <!-- Header Banner -->
-      <div class="auth-gate-header">
-        <div class="auth-gate-emblem">
-          <svg viewBox="0 0 24 24">
-            <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
-          </svg>
-        </div>
-        <div class="auth-gate-security-badge">
-          <span>🛡️</span> <span>Kawalan Keselamatan Operasi Bilik Gerakan</span>
-        </div>
-        <h1 class="auth-gate-title">Al-Farhain AMC Portal</h1>
-        <p class="auth-gate-subtitle">Sila sahkan identiti pegawai bertugas sebelum mengakses sistem pemantauan radar taktikal, lejar hasil dan dispatch.</p>
+    <div class="auth-split-wrapper">
+      
+      <!-- LEFT HERO COLUMN (OFFICIAL AMC BRANDED TOYOTA HIACE & CYBER HIGHWAY ARTWORK) -->
+      <div class="auth-hero-pane">
+        <img src="/amc_login_left_hero.png" alt="AMC Portal Operasi - Satu pusat. Operasi lebih tersusun." class="auth-hero-full-artwork">
       </div>
 
-      <!-- Body / Form Area -->
-      <div class="auth-gate-body">
-        <!-- Segmented Tab Switcher -->
-        <div class="auth-segmented-nav" style="margin-bottom: 18px;">
-          <button type="button" class="auth-seg-btn active" id="gateBtnTabLogin">
-            <span>🔑</span> <span>Log Masuk Pegawai</span>
-          </button>
-          <button type="button" class="auth-seg-btn" id="gateBtnTabRegister">
-            <span>✍️</span> <span>Daftar Akaun Baharu</span>
-          </button>
-        </div>
+      <!-- RIGHT LOGIN FORM PANE (CLEAN WHITE CARD WITH CURVED ACCENT) -->
+      <div class="auth-form-pane">
+        <div class="auth-card-inner">
 
-        <form id="portalGateAuthForm">
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <!-- Register Only Fields -->
-            <div id="gateRegisterFields" style="display: none; flex-direction: column; gap: 12px;">
-              <div class="form-group">
-                <label class="form-label">Nama Penuh Pegawai</label>
-                <input type="text" class="form-input" id="gateAuthName" placeholder="Cth: Abe Din / Dr. Afiqah">
-              </div>
+          <!-- Logo Brand Header -->
+          <div class="auth-brand-head">
+            <img src="/amc_logo.svg" alt="Poliklinik Al-Farhain 24 Jam" class="auth-brand-logo">
+            <div class="auth-portal-tag">PORTAL PENGURUS &amp; BILIK GERAKAN</div>
+          </div>
 
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label class="form-label">Cawangan Bertugas</label>
-                  <select class="form-select" id="gateAuthBranch">
-                    <option value="kok_lanas">HQ Kok Lanas (Kelantan)</option>
-                    <option value="raub">Cawangan Raub (Pahang)</option>
-                    <option value="all">Ibu Pejabat Pusat (HQ)</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Peranan / Jawatan</label>
-                  <select class="form-select" id="gateAuthRole">
-                    <option value="branch_manager">Pengurus Cawangan</option>
-                    <option value="dispatcher">Pegawai Dispatch</option>
-                    <option value="medical_officer">Pegawai Perubatan (MO)</option>
-                  </select>
+          <!-- Welcome Texts -->
+          <div class="auth-heading-group">
+            <h2 class="auth-main-title">Selamat datang kembali</h2>
+            <p class="auth-main-subtitle">Log masuk untuk meneruskan operasi anda.</p>
+          </div>
+
+          <!-- Authentication Form -->
+          <form id="portalGateAuthForm">
+            <div class="auth-fields-stack">
+              
+              <!-- Emel Rasmi -->
+              <div class="auth-input-group">
+                <label class="auth-field-label">Emel rasmi</label>
+                <div class="auth-input-wrap">
+                  <span class="auth-input-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#526966" stroke-width="2">
+                      <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                    </svg>
+                  </span>
+                  <input type="email" id="gateAuthEmail" class="auth-input-box" placeholder="Masukkan emel rasmi" value="pengurus@alfarhain.my" required>
                 </div>
               </div>
+
+              <!-- Kata Laluan -->
+              <div class="auth-input-group">
+                <label class="auth-field-label">Kata laluan</label>
+                <div class="auth-input-wrap">
+                  <span class="auth-input-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#526966" stroke-width="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  </span>
+                  <input type="password" id="gateAuthPassword" class="auth-input-box" placeholder="Masukkan kata laluan" value="demo123456" required>
+                  <button type="button" class="auth-toggle-pwd-btn" id="toggleGatePasswordBtn" title="Tunjuk/Sembunyi kata laluan">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#526966" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Checkbox & Forgot Password -->
+              <div class="auth-options-row">
+                <label class="auth-remember-check">
+                  <input type="checkbox" id="gateRememberMe" checked>
+                  <span class="custom-checkbox-marker"></span>
+                  <span>Ingat saya</span>
+                </label>
+                <a href="#" class="auth-forgot-link" onclick="alert('Sila hubungi Pegawai Teknikal / HQ Kok Lanas (013-914 7606) untuk penetapan semula kata laluan.'); return false;">Lupa kata laluan?</a>
+              </div>
+
+              <!-- Status Message -->
+              <div id="gateAuthStatusMsg" class="auth-status-alert" style="display: none;"></div>
+
+              <!-- Primary Submit Button -->
+              <button type="submit" class="auth-submit-btn" id="btnGateSubmit">
+                <span>Log Masuk</span>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4">
+                  <path d="M5 12h14M12 5l7 7-7 7"></path>
+                </svg>
+              </button>
+
+              <!-- Divider -->
+              <div class="auth-divider-text">
+                <span>Perlukan akses? Hubungi pentadbir.</span>
+              </div>
+
+              <!-- Secondary Mobile App Button -->
+              <a href="/" class="auth-mobile-app-btn">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                  <path d="M12 18h.01"></path>
+                </svg>
+                <span>Buka Aplikasi Pemandu</span>
+              </a>
+
+              <!-- Quick Demo Selector -->
+              <div class="auth-demo-picker-card">
+                <div class="demo-picker-title">⚡ Log Masuk Pantas Pegawai Bertugas (1-Klik):</div>
+                <div class="demo-buttons-grid">
+                  <button type="button" class="btn-demo-quick-auth active" data-email="abedi@alfarhain.my" data-name="Pegawai Operasi" data-branch="kok_lanas" data-role="Pentadbir HQ">
+                    <span>🏛️</span> <span>Abe Di (HQ Kok Lanas)</span>
+                  </button>
+                  <button type="button" class="btn-demo-quick-auth" data-email="abedin@alfarhain.my" data-name="Abe Din Estimos" data-branch="raub" data-role="Pengurus Raub">
+                    <span>🏔️</span> <span>Abe Din (Cawangan Raub)</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Security Notice -->
+              <div class="auth-lock-footer-text">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#526966" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <span>Portal ini terhad kepada pegawai yang diberi akses.</span>
+              </div>
+
             </div>
+          </form>
 
-            <!-- Email & Password -->
-            <div class="form-group">
-              <label class="form-label">Alamat Emel Rasmi</label>
-              <input type="email" class="form-input" id="gateAuthEmail" placeholder="pengurus@alfarhain.my" required>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Kata Laluan</label>
-              <input type="password" class="form-input" id="gateAuthPassword" placeholder="Minimum 6 aksara" required minlength="6">
-            </div>
-
-            <!-- Error / Status Message Box -->
-            <div id="gateAuthStatusMsg" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.76rem;"></div>
-
-            <button type="submit" class="btn-primary" id="btnGateSubmit" style="padding: 12px; font-size: 0.88rem; width: 100%; justify-content: center; margin-top: 4px;">
-              <span>🚀</span> <span id="gateSubmitLabel">Log Masuk ke Bilik Gerakan</span>
-            </button>
+          <div class="auth-copyright-watermark">
+            Al-Farhain AMC · Portal Operasi
           </div>
-        </form>
-
-        <!-- Quick 1-Click Demo Login for Testing -->
-        <div class="demo-login-box" style="margin-top: 20px;">
-          <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
-            ⚡ Akses Pantas Pegawai Bertugas (1-Klik):
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 6px;">
-            <button type="button" class="btn-demo-quick-auth" data-email="abedi@alfarhain.my" data-name="Abe Di / Syalihan" data-branch="kok_lanas" data-role="Pengurus HQ Kok Lanas">
-              <span>🏛️</span> <span>Abe Di (Pengurus HQ Kok Lanas • Kelantan)</span>
-            </button>
-            <button type="button" class="btn-demo-quick-auth" data-email="abedin@alfarhain.my" data-name="Abe Din Estimos Sukrosa" data-branch="raub" data-role="Pengurus Cawangan Raub">
-              <span>🏔️</span> <span>Abe Din Estimos (Pengurus Cawangan Raub • Pahang)</span>
-            </button>
-            <button type="button" class="btn-demo-quick-auth" data-email="director@alfarhain.my" data-name="Dr. Afiqah (Pengarah)" data-branch="all" data-role="Pengarah Operasi AMC">
-              <span>🩺</span> <span>Dr. Afiqah (Pengarah Operasi Seluruh Malaysia)</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Cross Link to Mobile App -->
-        <div style="margin-top: 16px; text-align: center;">
-          <a href="/" class="btn-demo-quick-auth" style="justify-content: center; text-decoration: none; color: #38BDF8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.08);">
-            <span>📱</span> <span>Buka Aplikasi Ambulans Pemandu Lapangan (Mobile) ➔</span>
-          </a>
         </div>
       </div>
+
     </div>
   </div>
 
   <!-- =========================================================================
-       MAIN PORTAL APP SHELL (LOCKED BEHIND AUTHENTICATION FIRST PAGE)
+       MAIN PORTAL APP SHELL (LOCKED/UNLOCKED BY AUTHENTICATION GATE)
        ========================================================================= -->
   <div class="portal-app-shell gate-locked" id="portalAppShell">
 
-  <!-- =========================================================================
-       1. LEFT ENTERPRISE SIDEBAR
-       ========================================================================= -->
-  <aside class="portal-sidebar">
-    <!-- Brand Header -->
-    <div class="sidebar-header">
-      <div class="brand-wrapper">
-        <div class="brand-icon-emblem" title="Al-Farhain Medical Center">
-          <svg viewBox="0 0 24 24">
-            <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
-          </svg>
+    <!-- =======================================================================
+         1. LEFT ENTERPRISE SIDEBAR
+         ======================================================================= -->
+    <aside class="portal-sidebar" id="portalSidebar">
+      
+      <!-- Brand Logo Header -->
+      <div class="sidebar-header-box">
+        <div class="sidebar-logo-card">
+          <img src="/amc_logo.svg" alt="Poliklinik Al-Farhain 24 Jam" class="sidebar-logo-img">
         </div>
-        <div class="brand-meta">
-          <span class="brand-name">AL-FARHAIN</span>
-          <span class="brand-sub">AMC AMBULANS</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Branch Quick Switcher -->
-    <div class="sidebar-branch-box">
-      <div class="branch-select-pill-group">
-        <span style="font-size: 0.9rem;">🏛️</span>
-        <select id="portalBranchSelect" title="Tukar Cawangan Pengurus">
-          <option value="kok_lanas">HQ Kok Lanas (Kelantan)</option>
-          <option value="raub">Cawangan Raub (Pahang)</option>
-          <option value="all">Semua Cawangan (Overview)</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Navigation Menu Items -->
-    <nav class="sidebar-nav-list">
-      <div class="nav-section-label">Operasi Utama</div>
-
-      <button class="sidebar-nav-item active" data-target="radarView">
-        <div class="nav-item-left">
-          <span class="nav-icon">🛰️</span>
-          <span>Bilik Gerakan Radar</span>
-        </div>
-        <span class="nav-badge-pill">LIVE</span>
-      </button>
-
-      <button class="sidebar-nav-item" data-target="dispatchView">
-        <div class="nav-item-left">
-          <span class="nav-icon">⚡</span>
-          <span>Pipeline Dispatch</span>
-        </div>
-        <span class="nav-badge-pill" id="badgeActiveMissionsCount">2 Aktif</span>
-      </button>
-
-      <div class="nav-section-label" style="margin-top: 10px;">Pengurusan &amp; Kewangan</div>
-
-      <button class="sidebar-nav-item" data-target="revenueView">
-        <div class="nav-item-left">
-          <span class="nav-icon">📈</span>
-          <span>Analisis Hasil &amp; Lejar</span>
-        </div>
-      </button>
-
-      <button class="sidebar-nav-item" data-target="fleetView">
-        <div class="nav-item-left">
-          <span class="nav-icon">🚑</span>
-          <span>Armada &amp; Kesihatan Van</span>
-        </div>
-        <span class="nav-badge-pill">2 Unit</span>
-      </button>
-
-      <button class="sidebar-nav-item" data-target="crewView">
-        <div class="nav-item-left">
-          <span class="nav-icon">👥</span>
-          <span>Jadual Krew &amp; Syif</span>
-        </div>
-      </button>
-    </nav>
-
-    <!-- Sidebar Footer -->
-    <div class="sidebar-footer">
-      <div class="cloud-status-badge" id="portalCloudBtn" title="Tetapan Sambungan Supabase">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span class="cloud-indicator-dot" id="portalCloudDot"></span>
-          <span id="portalCloudStatusText" style="font-weight: 600;">Supabase Sync</span>
-        </div>
-        <span style="color: var(--text-muted); font-size: 0.7rem;">⚙️</span>
+        <div class="sidebar-tag-amc">PORTAL OPERASI AMC</div>
       </div>
 
-      <div class="operator-profile-card">
-        <div class="operator-info">
-          <div class="operator-avatar">AMC</div>
-          <div>
-            <div class="operator-text-title" id="activeOperatorTitle">Pengurus Cawangan</div>
-            <div class="operator-text-sub">Talian: 013-914 7606</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </aside>
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav-container">
+        <div class="nav-group-label">PEMANTAUAN</div>
 
-  <!-- =========================================================================
-       2. MAIN COMMAND AREA (RIGHT)
-       ========================================================================= -->
-  <main class="portal-main-area">
-
-    <!-- Top Command Bar -->
-    <header class="portal-topbar">
-      <!-- Universal Search -->
-      <div class="topbar-search-box">
-        <span class="search-icon-fixed">🔍</span>
-        <input type="text" id="portalGlobalSearchInput" class="topbar-search-input" placeholder="Cari pesakit, no. invois, pemandu, atau no. plat...">
-        <span class="search-shortcut-pill">/</span>
-      </div>
-
-      <!-- Right Action Tools -->
-      <div class="topbar-actions-cluster">
-        <div class="live-clock-badge" id="liveClockText">--:--:-- MYT</div>
-
-        <button class="sound-toggle-btn" id="portalSoundToggleBtn" title="Tukar Bunyi Siren &amp; Alert">
-          <span id="soundToggleIcon">🔊</span>
-          <span>Audio Alert</span>
+        <button class="nav-item-btn" data-target="dashboardView">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </span>
+          <span class="nav-item-label">Dashboard</span>
         </button>
 
-        <a href="/" target="_blank" class="btn-open-mobile-view" title="Buka Aplikasi Telefon / Pemandu">
-          <span>📱</span>
-          <span>App Telefon</span>
-        </a>
+        <button class="nav-item-btn" data-target="petaFleetView">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+              <line x1="8" y1="2" x2="8" y2="18"></line>
+              <line x1="16" y1="6" x2="16" y2="22"></line>
+            </svg>
+          </span>
+          <span class="nav-item-label">Peta &amp; Fleet</span>
+        </button>
 
-        <!-- User Authentication & Account Pill -->
-        <button class="portal-user-pill" id="portalAuthBtn" title="Akaun Pengurus Bertugas">
-          <div class="user-avatar-mini" id="portalUserAvatar">👤</div>
-          <div class="user-pill-texts">
-            <span class="user-pill-name" id="portalUserName">Abe Di</span>
-            <span class="user-pill-role" id="portalUserRole">Pengurus Cawangan</span>
+        <button class="nav-item-btn" data-target="dispatchView">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </span>
+          <span class="nav-item-label">Dispatch</span>
+        </button>
+
+        <button class="nav-item-btn active" data-target="rekodPerjalananView">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </span>
+          <span class="nav-item-label">Rekod Perjalanan</span>
+        </button>
+
+        <button class="nav-item-btn" data-target="hasilInvoisView">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+          </span>
+          <span class="nav-item-label">Hasil &amp; Invois</span>
+        </button>
+
+        <button class="nav-item-btn" data-target="cawanganView">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 21h18"></path>
+              <path d="M5 21V7l8-4v18"></path>
+              <path d="M19 21V11l-6-4"></path>
+              <path d="M9 9h1"></path>
+              <path d="M9 13h1"></path>
+              <path d="M9 17h1"></path>
+            </svg>
+          </span>
+          <span class="nav-item-label">Cawangan</span>
+        </button>
+
+        <button class="nav-item-btn" data-target="tetapanView">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </span>
+          <span class="nav-item-label">Tetapan</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar Bottom Profile Card -->
+      <div class="sidebar-user-bottom-box">
+        <div class="operator-profile-flex">
+          <div class="operator-avatar-circle" id="sidebarAvatarCircle">PO</div>
+          <div class="operator-text-group">
+            <div class="operator-name" id="sidebarOperatorName">Pegawai Operasi</div>
+            <div class="operator-role" id="sidebarOperatorRole">Pentadbir HQ</div>
           </div>
-        </button>
-
-        <!-- Direct Sign Out Button for Fast Exit -->
-        <button class="topbar-logout-btn" id="portalTopSignOutBtn" title="Log Keluar Sistem Bilik Gerakan">
-          <span>🚪</span>
-          <span>Log Keluar</span>
-        </button>
-
-        <button class="btn-primary-dispatch" id="openDispatchModalBtn">
-          <span>🚀</span>
-          <span>+ Gerakkan Unit Baharu</span>
-        </button>
+        </div>
+        <div class="operator-live-status">
+          <span class="live-dot-green"></span>
+          <span>Pusat Kawalan Ambulans</span>
+        </div>
       </div>
-    </header>
+    </aside>
 
-    <!-- Canvas Views Container -->
-    <div class="views-canvas-container">
+    <!-- =======================================================================
+         2. MAIN VIEWPORT & TOPBAR
+         ======================================================================= -->
+    <main class="portal-main-area">
 
-      <!-- -------------------------------------------------------------------
-           VIEW 1: TACTICAL RADAR DECK
-           ------------------------------------------------------------------- -->
-      <section class="view-section-pane active" id="radarView">
-        <div class="radar-map-viewport">
-          <div id="portalRadarMap"></div>
-
-          <!-- Floating Map Quick Jump Controls -->
-          <div class="map-floating-quick-controls">
-            <button class="map-control-pill active" id="btnMapFocusBranch">
-              <span>🎯</span> <span id="mapFocusBranchLabel">HQ Kok Lanas</span>
-            </button>
-            <button class="map-control-pill" id="btnMapFocusRaub">
-              <span>🏛️</span> <span>Cawangan Raub</span>
-            </button>
-            <button class="map-control-pill" id="btnMapFocusAll">
-              <span>🇲🇾</span> <span>Seluruh Semenanjung</span>
-            </button>
+      <!-- Topbar Header -->
+      <header class="portal-topbar">
+        <div class="topbar-left-meta">
+          <div class="topbar-breadcrumb" id="topbarBreadcrumb">
+            <span class="crumb-parent">Portal Operasi</span>
+            <span class="crumb-divider">/</span>
+            <span class="crumb-current" id="crumbCurrentView">Tetapan</span>
           </div>
         </div>
 
-        <!-- Telemetry Sidebar -->
-        <aside class="radar-telemetry-panel">
-          <div class="telemetry-panel-header">
-            <h3 class="telemetry-panel-title">
-              <span>🚑</span> <span>Armada &amp; Telemetri Unit</span>
-            </h3>
-            <span style="font-size: 0.72rem; color: var(--amc-emerald); font-weight: 700;">● MASA NYATA</span>
+        <div class="topbar-right-controls">
+          <!-- Universal Search Input -->
+          <div class="topbar-search-wrapper">
+            <span class="search-input-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#526966" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input type="text" id="portalGlobalSearchInput" class="topbar-search-field" placeholder="Cari trip atau ambulans...">
           </div>
 
-          <div class="telemetry-scroll-area" id="telemetryUnitsList">
-            <!-- Rendered dynamically -->
-          </div>
-        </aside>
-      </section>
+          <!-- Notification Bell with Red Badge -->
+          <button class="topbar-bell-btn" id="portalNotificationBtn" title="Pemberitahuan Sistem">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#526966" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span class="bell-badge-count">2</span>
+          </button>
 
-      <!-- -------------------------------------------------------------------
-           VIEW 2: DISPATCH PIPELINE (KANBAN BOARD)
-           ------------------------------------------------------------------- -->
-      <section class="view-section-pane" id="dispatchView">
-        <div class="kanban-viewport">
-          <!-- Col 1: Digerakkan -->
-          <div class="kanban-column-container">
-            <div class="kanban-column-header">
-              <div class="kanban-header-title">
-                <span style="color: #FBBF24;">●</span> <span>Digerakkan (En Route)</span>
-              </div>
-              <span class="nav-badge-pill" id="badgeCount-Dispatched">0</span>
-            </div>
-            <div class="kanban-items-stack" id="kanbanCol-Dispatched"></div>
-          </div>
-
-          <!-- Col 2: On Scene -->
-          <div class="kanban-column-container">
-            <div class="kanban-column-header">
-              <div class="kanban-header-title">
-                <span style="color: #38BDF8;">●</span> <span>Di Lokasi Pesakit</span>
-              </div>
-              <span class="nav-badge-pill" id="badgeCount-OnScene">0</span>
-            </div>
-            <div class="kanban-items-stack" id="kanbanCol-OnScene"></div>
-          </div>
-
-          <!-- Col 3: In Transit -->
-          <div class="kanban-column-container">
-            <div class="kanban-column-header">
-              <div class="kanban-header-title">
-                <span style="color: #818CF8;">●</span> <span>Dalam Transit Hospital</span>
-              </div>
-              <span class="nav-badge-pill" id="badgeCount-InTransit">0</span>
-            </div>
-            <div class="kanban-items-stack" id="kanbanCol-InTransit"></div>
-          </div>
-
-          <!-- Col 4: Selesai -->
-          <div class="kanban-column-container">
-            <div class="kanban-column-header">
-              <div class="kanban-header-title">
-                <span style="color: #34D399;">●</span> <span>Misi Selesai / Discaj</span>
-              </div>
-              <span class="nav-badge-pill" id="badgeCount-Selesai">0</span>
-            </div>
-            <div class="kanban-items-stack" id="kanbanCol-Selesai"></div>
-          </div>
+          <!-- User Circle Avatar -->
+          <button class="topbar-avatar-pill" id="portalAuthBtn" title="Profil Pegawai">
+            <span class="avatar-pill-circle" id="topbarUserAvatar">PO</span>
+          </button>
         </div>
-      </section>
+      </header>
 
-      <!-- -------------------------------------------------------------------
-           VIEW 3: REVENUE ANALYTICS DECK
-           ------------------------------------------------------------------- -->
-      <section class="view-section-pane" id="revenueView">
-        <!-- Top KPI Cards -->
-        <div class="metrics-quad-grid">
-          <div class="kpi-metric-card">
-            <div class="kpi-title-row">
-              <span>Jumlah Hasil Bulan Semasa</span>
-              <span>💵</span>
-            </div>
-            <div class="kpi-hero-num" id="revMetricTotal">RM 0.00</div>
+      <!-- Views Canvas Container -->
+      <div class="portal-views-canvas">
+
+        <!-- ===================================================================
+             VIEW 1: TETAPAN PORTAL (SCREENSHOT 1)
+             =================================================================== -->
+        <section class="portal-view-section" id="tetapanView">
+          
+          <!-- View Title Header -->
+          <div class="view-header-row">
             <div>
-              <span class="kpi-trend-tag">▲ +14.2%</span>
-              <span style="font-size: 0.72rem; color: var(--text-muted); margin-left: 6px;">vs bulan lepas</span>
+              <div class="view-title-wrap">
+                <h2 class="view-main-title">Tetapan Portal</h2>
+                <span class="badge-data-contoh">DATA CONTOH</span>
+              </div>
+              <p class="view-subtitle">Urus paparan, notifikasi dan pilihan operasi.</p>
             </div>
+            <div class="view-header-code">08 · Tetapan</div>
           </div>
 
-          <div class="kpi-metric-card">
-            <div class="kpi-title-row">
-              <span>Jumlah Misi Berjaya</span>
-              <span>🚑</span>
-            </div>
-            <div class="kpi-hero-num" id="revMetricTrips">0</div>
-            <div>
-              <span class="kpi-trend-tag">100% Selesai</span>
-              <span style="font-size: 0.72rem; color: var(--text-muted); margin-left: 6px;">Tiada pembatalan</span>
-            </div>
+          <!-- Settings Tab Navigation -->
+          <div class="settings-tabs-bar">
+            <button class="set-tab-btn active" data-tab="umum">Umum</button>
+            <button class="set-tab-btn" data-tab="notifikasi">Notifikasi</button>
+            <button class="set-tab-btn" data-tab="pengguna">Pengguna &amp; Peranan</button>
+            <button class="set-tab-btn" data-tab="log">Log Aktiviti</button>
           </div>
 
-          <div class="kpi-metric-card">
-            <div class="kpi-title-row">
-              <span>Jumlah Jarak Tempuh</span>
-              <span>🛣️</span>
-            </div>
-            <div class="kpi-hero-num" id="revMetricKm">0.0 KM</div>
-            <div>
-              <span style="font-size: 0.72rem; color: var(--text-muted);">Surcaj KM &amp; Diesel Aktif</span>
-            </div>
-          </div>
+          <!-- Settings Grid: Left 2/3, Right 1/3 -->
+          <div class="settings-main-grid">
 
-          <div class="kpi-metric-card">
-            <div class="kpi-title-row">
-              <span>Purata Tambang Misi</span>
-              <span>🏷️</span>
-            </div>
-            <div class="kpi-hero-num" id="revMetricAvgFare">RM 0.00</div>
-            <div>
-              <span style="font-size: 0.72rem; color: var(--text-muted);">Formula Asas RM250 + KM</span>
-            </div>
-          </div>
-        </div>
+            <!-- LEFT COLUMN -->
+            <div class="settings-left-col">
+              
+              <!-- Card 1: Profil Organisasi -->
+              <div class="portal-card">
+                <h3 class="card-heading">Profil Organisasi</h3>
+                <p class="card-subheading">Maklumat asas paparan dalam portal operasi.</p>
 
-        <!-- Middle Analytics Deck: Categories & Branch Breakdown -->
-        <div class="analytics-double-deck">
-          <div class="analytics-panel">
-            <div class="panel-title-bar">
-              <h3><span>📊</span> <span>Pecahan Hasil Mengikut Kategori Misi</span></h3>
-              <span style="font-size: 0.74rem; color: var(--text-muted);">Kecemasan vs Discaj vs Inter-Hospital</span>
-            </div>
+                <div class="org-profile-fields-grid">
+                  <!-- Logo / Identiti -->
+                  <div class="form-group-block">
+                    <label class="form-item-label">Logo / Identiti</label>
+                    <div class="logo-preview-card">
+                      <img src="/amc_logo.svg" alt="Al-Farhain AMC Logo" class="preview-logo-img">
+                    </div>
+                  </div>
 
-            <div style="display: flex; flex-direction: column; gap: 14px;">
-              <div>
-                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:6px;">
-                  <span><b>Kecemasan Standard &amp; Trauma</b> (RM250 Asas)</span>
-                  <span style="font-family:var(--font-mono); color:#FBBF24;">65%</span>
+                  <!-- Nama Organisasi & Cawangan Utama -->
+                  <div class="form-row-pair">
+                    <div class="form-group-block">
+                      <label class="form-item-label">Nama Organisasi</label>
+                      <input type="text" class="form-input-element" id="cfgOrgName" value="Al-Farhain AMC">
+                    </div>
+                    <div class="form-group-block">
+                      <label class="form-item-label">Cawangan Utama (Default)</label>
+                      <div class="select-wrapper-custom">
+                        <select class="form-select-element" id="cfgDefaultBranch">
+                          <option value="kok_lanas" selected>Kok Lanas HQ</option>
+                          <option value="raub">Cawangan Raub</option>
+                          <option value="all">Semua Cawangan</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Bahasa & Zon Waktu -->
+                  <div class="form-row-pair">
+                    <div class="form-group-block">
+                      <label class="form-item-label">Bahasa Antaramuka</label>
+                      <div class="select-wrapper-custom">
+                        <select class="form-select-element" id="cfgLanguage">
+                          <option value="ms" selected>Bahasa Melayu</option>
+                          <option value="en">English (UK)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group-block">
+                      <label class="form-item-label">Zon Waktu</label>
+                      <div class="select-wrapper-custom">
+                        <select class="form-select-element" id="cfgTimezone">
+                          <option value="Asia/Kuala_Lumpur" selected>Asia/Kuala_Lumpur</option>
+                          <option value="UTC">UTC</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="gauge-track"><div class="gauge-fill" style="width: 65%;"></div></div>
               </div>
 
-              <div>
-                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:6px;">
-                  <span><b>Inter-Hospital Transfer &amp; ICU Escort</b> (RM350 Asas)</span>
-                  <span style="font-family:var(--font-mono); color:#38BDF8;">25%</span>
+              <!-- Card 2: Paparan (Theme & Animation) -->
+              <div class="portal-card">
+                <h3 class="card-heading">Paparan</h3>
+                <p class="card-subheading">Pilih tema paparan dan tetapan visual.</p>
+
+                <div class="appearance-controls-grid">
+                  <!-- Radio Card: Terang (Light) -->
+                  <label class="theme-picker-card active" id="themePickerLight">
+                    <div class="theme-card-top">
+                      <div class="custom-radio-circle checked"></div>
+                      <div class="theme-name-group">
+                        <span class="theme-name">Terang</span>
+                        <span class="theme-desc">Tema cerah untuk kegunaan harian.</span>
+                      </div>
+                    </div>
+                    <div class="theme-preview-box light-preview">
+                      <div class="prev-sidebar"></div>
+                      <div class="prev-body">
+                        <div class="prev-bar"></div>
+                        <div class="prev-row">
+                          <div class="prev-box"></div>
+                          <div class="prev-box"></div>
+                          <div class="prev-box"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+
+                  <!-- Radio Card: Gelap (Dark) -->
+                  <label class="theme-picker-card" id="themePickerDark">
+                    <div class="theme-card-top">
+                      <div class="custom-radio-circle"></div>
+                      <div class="theme-name-group">
+                        <span class="theme-name">Gelap</span>
+                        <span class="theme-desc">Tema gelap untuk persekitaran malap.</span>
+                      </div>
+                    </div>
+                    <div class="theme-preview-box dark-preview">
+                      <div class="prev-sidebar-dark"></div>
+                      <div class="prev-body-dark">
+                        <div class="prev-bar-dark"></div>
+                        <div class="prev-row">
+                          <div class="prev-box-dark"></div>
+                          <div class="prev-box-dark"></div>
+                          <div class="prev-box-dark"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+
+                  <!-- Toggle: Kurangkan Animasi -->
+                  <div class="animation-switch-box">
+                    <div class="anim-text-group">
+                      <span class="anim-title">Kurangkan animasi</span>
+                      <span class="anim-sub">Mengurangkan kesan animasi dalam antara muka untuk pengalaman yang lebih ringkas.</span>
+                    </div>
+                    <label class="switch-toggle-btn">
+                      <input type="checkbox" id="cfgReduceMotion">
+                      <span class="slider-round"></span>
+                    </label>
+                  </div>
                 </div>
-                <div class="gauge-track"><div class="gauge-fill" style="width: 25%; background: linear-gradient(90deg, #0EA5E9, #38BDF8);"></div></div>
               </div>
 
-              <div>
-                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:6px;">
-                  <span><b>Bukan Kecemasan / Discaj Wad</b></span>
-                  <span style="font-family:var(--font-mono); color:#34D399;">10%</span>
+              <!-- Card 3: Notifikasi Operasi -->
+              <div class="portal-card">
+                <h3 class="card-heading">Notifikasi Operasi</h3>
+                <p class="card-subheading">Pilih jenis pemberitahuan yang ingin diterima dalam portal.</p>
+
+                <div class="notif-toggles-list">
+                  <!-- Toggle 1: Trip Baharu -->
+                  <div class="notif-row-item">
+                    <div class="notif-icon-circle">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#007D77" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                      </svg>
+                    </div>
+                    <div class="notif-info-wrap">
+                      <span class="notif-item-title">Trip baharu</span>
+                      <span class="notif-item-desc">Terima notifikasi apabila trip baharu ditugaskan.</span>
+                    </div>
+                    <label class="switch-toggle-btn">
+                      <input type="checkbox" id="cfgNotifNewTrip" checked>
+                      <span class="slider-round"></span>
+                    </label>
+                  </div>
+
+                  <!-- Toggle 2: Perubahan Status Misi -->
+                  <div class="notif-row-item">
+                    <div class="notif-icon-circle">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#007D77" stroke-width="2">
+                        <circle cx="6" cy="18" r="3"></circle>
+                        <circle cx="18" cy="6" r="3"></circle>
+                        <path d="M18 9v6a2 2 0 0 1-2 2H8"></path>
+                      </svg>
+                    </div>
+                    <div class="notif-info-wrap">
+                      <span class="notif-item-title">Perubahan status misi</span>
+                      <span class="notif-item-desc">Terima notifikasi apabila status misi dikemas kini.</span>
+                    </div>
+                    <label class="switch-toggle-btn">
+                      <input type="checkbox" id="cfgNotifStatusChange" checked>
+                      <span class="slider-round"></span>
+                    </label>
+                  </div>
+
+                  <!-- Toggle 3: Peringatan Invois -->
+                  <div class="notif-row-item">
+                    <div class="notif-icon-circle">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#007D77" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                      </svg>
+                    </div>
+                    <div class="notif-info-wrap">
+                      <span class="notif-item-title">Peringatan invois</span>
+                      <span class="notif-item-desc">Terima peringatan untuk invois yang hampir tamat tempoh.</span>
+                    </div>
+                    <label class="switch-toggle-btn">
+                      <input type="checkbox" id="cfgNotifInvoice" checked>
+                      <span class="slider-round"></span>
+                    </label>
+                  </div>
                 </div>
-                <div class="gauge-track"><div class="gauge-fill" style="width: 10%; background: linear-gradient(90deg, #10B981, #059669);"></div></div>
               </div>
+
             </div>
+
+            <!-- RIGHT COLUMN -->
+            <div class="settings-right-col">
+              
+              <!-- Card: Rujukan Kadar -->
+              <div class="portal-card">
+                <h3 class="card-heading">Rujukan Kadar</h3>
+                <p class="card-subheading">Kadar asas penggunaan untuk rujukan dalaman.</p>
+
+                <div class="rates-reference-stack">
+                  <!-- Item 1: Asas (<= 25km) -->
+                  <div class="rate-stat-card">
+                    <div class="rate-icon-badge">
+                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#007D77" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                      </svg>
+                    </div>
+                    <div class="rate-stat-info">
+                      <span class="rate-label">Asas (≤ 25km)</span>
+                      <span class="rate-value">RM250</span>
+                    </div>
+                  </div>
+
+                  <!-- Item 2: Tambahan selepas 25km -->
+                  <div class="rate-stat-card">
+                    <div class="rate-icon-badge">
+                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#007D77" stroke-width="2">
+                        <circle cx="6" cy="19" r="3"></circle>
+                        <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"></path>
+                        <circle cx="18" cy="5" r="3"></circle>
+                      </svg>
+                    </div>
+                    <div class="rate-stat-info">
+                      <span class="rate-label">Tambahan selepas 25km</span>
+                      <span class="rate-value">RM3/km</span>
+                    </div>
+                  </div>
+
+                  <!-- Notice Box -->
+                  <div class="rate-info-alert-box">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0EA5E9" stroke-width="2" class="alert-info-icon">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <span>Paparan rujukan; perubahan kadar melalui pentadbir yang diberi kuasa.</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card: Reka Bentuk (Brand Color Swatches) -->
+              <div class="portal-card">
+                <h3 class="card-heading">Reka Bentuk</h3>
+                <p class="card-subheading">Warna jenama yang digunakan dalam portal.</p>
+
+                <div class="brand-swatches-grid">
+                  <div class="swatch-item">
+                    <div class="swatch-color" style="background-color: #006C67;"></div>
+                    <span class="swatch-hex">#006C67</span>
+                    <span class="swatch-name">Utama</span>
+                  </div>
+
+                  <div class="swatch-item">
+                    <div class="swatch-color" style="background-color: #007D77;"></div>
+                    <span class="swatch-hex">#007D77</span>
+                    <span class="swatch-name">Butang</span>
+                  </div>
+
+                  <div class="swatch-item">
+                    <div class="swatch-color" style="background-color: #23CCC5;"></div>
+                    <span class="swatch-hex">#23CCC5</span>
+                    <span class="swatch-name">Aksen</span>
+                  </div>
+
+                  <div class="swatch-item">
+                    <div class="swatch-color" style="background-color: #F3FAF9; border: 1px solid #E2EFEB;"></div>
+                    <span class="swatch-hex">#F3FAF9</span>
+                    <span class="swatch-name">Latar</span>
+                  </div>
+
+                  <div class="swatch-item">
+                    <div class="swatch-color" style="background-color: #173D3B;"></div>
+                    <span class="swatch-hex">#173D3B</span>
+                    <span class="swatch-name">Teks</span>
+                  </div>
+
+                  <div class="swatch-item">
+                    <div class="swatch-color" style="background-color: #526966;"></div>
+                    <span class="swatch-hex">#526966</span>
+                    <span class="swatch-name">Label</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
           </div>
 
-          <div class="analytics-panel">
-            <div class="panel-title-bar">
-              <h3><span>🏛️</span> <span>Sumbangan Cawangan</span></h3>
+          <!-- Bottom Actions Bar -->
+          <div class="settings-bottom-bar">
+            <div class="bottom-actions-group">
+              <button type="button" class="btn-cancel-flat" id="btnCancelSettings">Batal</button>
+              <button type="button" class="btn-save-teal" id="btnSaveSettings">Simpan Perubahan</button>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 14px;">
-              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-light); padding: 12px; border-radius: 8px;">
-                <div style="font-size: 0.82rem; font-weight: 700; color: #FFFFFF;">HQ Kok Lanas (Kelantan)</div>
-                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Plat: VPQ 7606 • Abe Di</div>
-                <div style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 800; color: #34D399; margin-top: 6px;" id="revBranchKokLanas">RM 0.00</div>
-              </div>
-
-              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-light); padding: 12px; border-radius: 8px;">
-                <div style="font-size: 0.82rem; font-weight: 700; color: #FFFFFF;">Cawangan Raub (Pahang)</div>
-                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Plat: DFG 7606 • Abe Din Estimos</div>
-                <div style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 800; color: #38BDF8; margin-top: 6px;" id="revBranchRaub">RM 0.00</div>
-              </div>
-            </div>
+            <div class="bottom-footer-note">Konsep UI/UX · Data contoh</div>
           </div>
-        </div>
 
-        <!-- Ledger Data Table -->
-        <div class="data-table-container">
-          <div class="panel-title-bar">
+        </section>
+
+        <!-- ===================================================================
+             VIEW 2: PENGURUSAN DISPATCH (SCREENSHOT 2)
+             =================================================================== -->
+        <section class="portal-view-section" id="dispatchView">
+          
+          <!-- View Title Header -->
+          <div class="view-header-row">
             <div>
-              <h3><span>📑</span> <span>Lejar Rekod Tempahan &amp; Invois Rasmi</span></h3>
-              <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Disegerakkan terus bersama Supabase Cloud</div>
+              <div class="view-title-wrap">
+                <h2 class="view-main-title">Pengurusan Dispatch</h2>
+                <span class="badge-data-contoh">DATA CONTOH</span>
+              </div>
+              <p class="view-subtitle">Sediakan tugasan dan semak sumber sebelum penghantaran.</p>
             </div>
-            <button class="btn-card-action" id="btnExportCsv" style="width: auto; padding: 6px 14px;">
-              <span>📥</span> <span>Eksport CSV</span>
-            </button>
+            <div class="view-header-actions-right">
+              <button type="button" class="btn-draft-action" id="btnSaveDraftDispatch">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                  <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                <span>Simpan Draf</span>
+              </button>
+              <div class="view-header-code">04 · Dispatch</div>
+            </div>
           </div>
 
-          <div style="overflow-x: auto;">
-            <table class="enterprise-table">
-              <thead>
-                <tr>
-                  <th>No. Invois</th>
-                  <th>Tarikh</th>
-                  <th>Cawangan</th>
-                  <th>Laluan (Dari ➔ Ke)</th>
-                  <th>Jarak</th>
-                  <th>Ambulans / Pemandu</th>
-                  <th>Jumlah (RM)</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="revenueTableBody">
-                <!-- Rendered dynamically -->
-              </tbody>
-            </table>
+          <!-- Horizontal 5-Step Stepper -->
+          <div class="dispatch-stepper-bar">
+            <div class="stepper-step active" data-step="1">
+              <span class="step-num-circle">1</span>
+              <span class="step-label">Lokasi</span>
+            </div>
+            <div class="stepper-line"></div>
+            <div class="stepper-step" data-step="2">
+              <span class="step-num-circle">2</span>
+              <span class="step-label">Kategori</span>
+            </div>
+            <div class="stepper-line"></div>
+            <div class="stepper-step" data-step="3">
+              <span class="step-num-circle">3</span>
+              <span class="step-label">Staf</span>
+            </div>
+            <div class="stepper-line"></div>
+            <div class="stepper-step" data-step="4">
+              <span class="step-num-circle">4</span>
+              <span class="step-label">Alatan</span>
+            </div>
+            <div class="stepper-line"></div>
+            <div class="stepper-step" data-step="5">
+              <span class="step-num-circle">5</span>
+              <span class="step-label">Semakan</span>
+            </div>
           </div>
-        </div>
-      </section>
 
-      <!-- -------------------------------------------------------------------
-           VIEW 4: FLEET & VEHICLE HEALTH MATRIX
-           ------------------------------------------------------------------- -->
-      <section class="view-section-pane" id="fleetView">
-        <div class="matrix-card-stack" id="mgmtFleetList">
-          <!-- Rendered dynamically -->
-        </div>
-      </section>
+          <!-- Dispatch Main Grid: Left 2/3, Right 1/3 -->
+          <div class="dispatch-main-grid">
+            
+            <!-- LEFT COLUMN: 01 Lokasi & Jadual -->
+            <div class="dispatch-left-col">
+              <div class="portal-card">
+                <div class="card-step-badge">01 Lokasi &amp; Jadual</div>
+                <p class="card-subheading" style="margin-top: 4px;">Tentukan cawangan, masa dan laluan perjalanan.</p>
 
-      <!-- -------------------------------------------------------------------
-           VIEW 5: CREW & ROSTER
-           ------------------------------------------------------------------- -->
-      <section class="view-section-pane" id="crewView">
-        <div class="matrix-card-stack" id="mgmtStaffList">
-          <!-- Rendered dynamically -->
-        </div>
-      </section>
+                <!-- Branch & Timing Row -->
+                <div class="dispatch-timing-row">
+                  <div class="form-group-block">
+                    <label class="form-item-label">Cawangan bertugas</label>
+                    <div class="input-with-icon-wrap">
+                      <span class="inner-icon">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#007D77" stroke-width="2">
+                          <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"></path>
+                        </svg>
+                      </span>
+                      <select class="form-select-element icon-padded" id="dispatchCawanganBertugas">
+                        <option value="kok_lanas" selected>Kok Lanas HQ</option>
+                        <option value="raub">Cawangan Raub</option>
+                      </select>
+                    </div>
+                  </div>
 
-    </div>
-  </main>
+                  <div class="form-group-block">
+                    <label class="form-item-label">Tarikh bertolak</label>
+                    <div class="input-with-icon-wrap">
+                      <span class="inner-icon">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#007D77" stroke-width="2">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                          <line x1="16" y1="2" x2="16" y2="6"></line>
+                          <line x1="8" y1="2" x2="8" y2="6"></line>
+                          <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                      </span>
+                      <input type="text" class="form-input-element icon-padded" id="dispatchTarikh" value="20 Okt 2026">
+                    </div>
+                  </div>
+
+                  <div class="form-group-block">
+                    <label class="form-item-label">Masa bertolak</label>
+                    <div class="input-with-icon-wrap">
+                      <span class="inner-icon">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#007D77" stroke-width="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                      </span>
+                      <input type="text" class="form-input-element icon-padded" id="dispatchMasa" value="16:00">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Stops List with Connector Line -->
+                <div class="dispatch-stops-stack">
+                  <!-- Stop 1: Pangkalan (Mula) -->
+                  <div class="stop-item-card">
+                    <div class="stop-marker-num">1</div>
+                    <div class="stop-tag-pill">Pangkalan (Mula)</div>
+                    <div class="stop-icon-box">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#007D77" stroke-width="2.5">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                      </svg>
+                    </div>
+                    <div class="stop-details">
+                      <div class="stop-name">Kok Lanas HQ</div>
+                      <div class="stop-address">Kok Lanas, 16450 Kota Bharu, Kelantan</div>
+                    </div>
+                    <button type="button" class="stop-remove-btn" title="Padam Lokasi">&times;</button>
+                  </div>
+
+                  <!-- Stop 2: Lokasi Pengambilan -->
+                  <div class="stop-item-card">
+                    <div class="stop-marker-num">2</div>
+                    <div class="stop-tag-pill">Lokasi pengambilan</div>
+                    <div class="stop-icon-box">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#007D77" stroke-width="2.5">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                      </svg>
+                    </div>
+                    <div class="stop-details">
+                      <div class="stop-name">Bandar Kota Bharu</div>
+                      <div class="stop-address">Kota Bharu, 15000 Kota Bharu, Kelantan</div>
+                    </div>
+                    <button type="button" class="stop-remove-btn" title="Padam Lokasi">&times;</button>
+                  </div>
+
+                  <!-- Stop 3: Destinasi -->
+                  <div class="stop-item-card">
+                    <div class="stop-marker-num">3</div>
+                    <div class="stop-tag-pill">Destinasi</div>
+                    <div class="stop-icon-box">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#007D77" stroke-width="2.5">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                      </svg>
+                    </div>
+                    <div class="stop-details">
+                      <div class="stop-name">Hospital Raja Perempuan Zainab II</div>
+                      <div class="stop-address">Tanjung Lumpur, 16150 Kota Bharu, Kelantan</div>
+                    </div>
+                    <button type="button" class="stop-remove-btn" title="Padam Lokasi">&times;</button>
+                  </div>
+                </div>
+
+                <!-- Ilustrasi Laluan & Jarak Perjalanan -->
+                <div class="route-map-and-distance-row">
+                  
+                  <!-- Map Section -->
+                  <div class="route-map-container">
+                    <div class="map-label-header">Ilustrasi Laluan</div>
+                    <div class="dispatch-map-frame" id="dispatchRouteMapFrame">
+                      <div id="dispatchLeafletMap"></div>
+                      
+                      <!-- Waypoint Legend Overlay -->
+                      <div class="map-waypoints-legend">
+                        <div class="legend-point">
+                          <span class="legend-dot green"></span>
+                          <span>Kok Lanas HQ (Pangkalan)</span>
+                        </div>
+                        <div class="legend-point">
+                          <span class="legend-dot cyan"></span>
+                          <span>Bandar Kota Bharu (Pengambilan)</span>
+                        </div>
+                        <div class="legend-point">
+                          <span class="legend-dot navy"></span>
+                          <span>Hospital Raja Perempuan Zainab II (Destinasi)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Jarak Perjalanan Card -->
+                  <div class="distance-summary-panel">
+                    <div class="dist-panel-head">
+                      <span class="dist-panel-title">Jarak Perjalanan</span>
+                      <a href="#" class="dist-edit-link" onclick="alert('Ubah jarak manual'); return false;">Edit</a>
+                    </div>
+
+                    <div class="dist-calc-rows">
+                      <div class="dist-row">
+                        <span class="dist-label">Jarak pilihan laluan</span>
+                        <span class="dist-val" id="dispDistDirect">25.2 km</span>
+                      </div>
+                      <div class="dist-row">
+                        <span class="dist-label">Jarak tambahan</span>
+                        <span class="dist-val" id="dispDistExtra">+1.1 km</span>
+                      </div>
+                    </div>
+
+                    <div class="dist-total-block">
+                      <span class="dist-total-label">Jumlah jarak</span>
+                      <span class="dist-total-hero" id="dispDistTotal">26.3 km</span>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Step CTA -->
+                <button type="button" class="btn-continue-step" id="btnContinueToCategory">
+                  <span>Teruskan ke Kategori</span>
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4">
+                    <path d="M5 12h14M12 5l7 7-7 7"></path>
+                  </svg>
+                </button>
+
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Ringkasan Tugasan -->
+            <div class="dispatch-right-col">
+              <div class="portal-card task-summary-card">
+                
+                <div class="summary-card-head">
+                  <h3 class="card-heading">Ringkasan Tugasan</h3>
+                  <span class="badge-draft-pill">Draf</span>
+                </div>
+
+                <!-- Block: Lokasi & Jadual -->
+                <div class="summary-section-block">
+                  <div class="summary-block-head">
+                    <span class="summary-block-title">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#007D77" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                      </svg>
+                      <span>Lokasi &amp; Jadual</span>
+                    </span>
+                    <a href="#" class="summary-edit-link">Edit</a>
+                  </div>
+                  <div class="summary-waypoints-track">
+                    <div class="track-node">
+                      <span class="node-dot start"></span>
+                      <span>Kok Lanas HQ</span>
+                    </div>
+                    <div class="track-node">
+                      <span class="node-dot mid"></span>
+                      <span>Bandar Kota Bharu</span>
+                    </div>
+                    <div class="track-node">
+                      <span class="node-dot end"></span>
+                      <span>Hospital Raja Perempuan Zainab II</span>
+                    </div>
+                  </div>
+                  <div class="summary-date-time-line">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#526966" stroke-width="2">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                    </svg>
+                    <span>20 Okt 2026 · 16:00</span>
+                  </div>
+                </div>
+
+                <!-- Block: Ambulans -->
+                <div class="summary-section-block">
+                  <div class="summary-block-head">
+                    <span class="summary-block-title">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#007D77" stroke-width="2">
+                        <rect x="2" y="7" width="15" height="11" rx="2"></rect>
+                        <circle cx="6" cy="18" r="2"></circle>
+                        <circle cx="13" cy="18" r="2"></circle>
+                      </svg>
+                      <span>Ambulans</span>
+                    </span>
+                    <a href="#" class="summary-edit-link">Edit</a>
+                  </div>
+                  <div class="ambulance-select-box-preview">
+                    <div class="amb-radio-indicator"></div>
+                    <div class="amb-select-texts">
+                      <div class="amb-main-txt">Belum dipilih</div>
+                      <div class="amb-sub-txt">Pilih ambulans yang tersedia</div>
+                    </div>
+                    <span class="amb-arrow-ico">&rsaquo;</span>
+                  </div>
+                </div>
+
+                <!-- Block: Kategori Tugasan -->
+                <div class="summary-section-block">
+                  <div class="summary-block-head">
+                    <span class="summary-block-title">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#007D77" stroke-width="2">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                      </svg>
+                      <span>Kategori Tugasan</span>
+                    </span>
+                    <a href="#" class="summary-edit-link">Edit</a>
+                  </div>
+                  <div class="summary-value-txt">Kecemasan standard</div>
+                </div>
+
+                <!-- Block: Kru -->
+                <div class="summary-section-block">
+                  <div class="summary-block-head">
+                    <span class="summary-block-title">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#007D77" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                      </svg>
+                      <span>Kru</span>
+                    </span>
+                    <a href="#" class="summary-edit-link">Edit</a>
+                  </div>
+                  <div class="summary-value-txt">Kru EMT asas</div>
+                </div>
+
+                <!-- Block: Alatan Tambahan -->
+                <div class="summary-section-block">
+                  <div class="summary-block-head">
+                    <span class="summary-block-title">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#007D77" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                      </svg>
+                      <span>Alatan Tambahan</span>
+                    </span>
+                    <a href="#" class="summary-edit-link">Edit</a>
+                  </div>
+                  <div class="summary-value-txt">Tiada tambahan</div>
+                </div>
+
+                <!-- Block: Anggaran Kos -->
+                <div class="summary-section-block">
+                  <div class="summary-block-head">
+                    <span class="summary-block-title">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#007D77" stroke-width="2">
+                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                        <line x1="6" y1="12" x2="18" y2="12"></line>
+                      </svg>
+                      <span>Anggaran Kos</span>
+                    </span>
+                  </div>
+
+                  <div class="cost-breakdown-table">
+                    <div class="cost-row">
+                      <span>Kadar asas (sehingga 25 km)</span>
+                      <span>RM250.00</span>
+                    </div>
+                    <div class="cost-row">
+                      <span>Jarak tambahan 1.3km × RM3.00</span>
+                      <span>RM3.90</span>
+                    </div>
+                    <div class="cost-total-row">
+                      <span class="cost-total-title">Anggaran Jumlah</span>
+                      <span class="cost-total-price">RM253.90</span>
+                    </div>
+                  </div>
+
+                  <div class="cost-alert-note">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#0EA5E9" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <span>25 km pertama termasuk dalam kadar asas.</span>
+                  </div>
+                </div>
+
+                <!-- Block: Armada Tersedia di Cawangan -->
+                <div class="summary-section-block">
+                  <div class="summary-block-head">
+                    <span class="summary-sub-title">Armada tersedia di cawangan</span>
+                    <a href="#" class="summary-view-all-link">Lihat semua</a>
+                  </div>
+                  
+                  <div class="fleet-available-card">
+                    <div class="fleet-avail-icon">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#007D77" stroke-width="2">
+                        <rect x="2" y="7" width="15" height="11" rx="2"></rect>
+                        <circle cx="6" cy="18" r="2"></circle>
+                        <circle cx="13" cy="18" r="2"></circle>
+                        <path d="M17 11h4l2 3v4h-6v-7z"></path>
+                      </svg>
+                    </div>
+                    <div class="fleet-avail-info">
+                      <div class="fleet-avail-plate">DFG 7606</div>
+                      <div class="fleet-avail-branch">Raub</div>
+                    </div>
+                    <div class="fleet-avail-status-badge">
+                      <span class="status-dot green"></span>
+                      <span>Bersedia</span>
+                    </div>
+                    <span class="amb-arrow-ico">&rsaquo;</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ===================================================================
+             VIEW 3: REKOD PERJALANAN (SCREENSHOT 3)
+             =================================================================== -->
+        <section class="portal-view-section active" id="rekodPerjalananView">
+          
+          <!-- View Title Header -->
+          <div class="view-header-row">
+            <div>
+              <div class="view-title-wrap">
+                <h2 class="view-main-title">Rekod Perjalanan</h2>
+                <span class="badge-data-contoh">DATA CONTOH</span>
+              </div>
+              <p class="view-subtitle">Semak sejarah, status dan butiran setiap tugasan.</p>
+            </div>
+            
+            <!-- Filter Bar Right -->
+            <div class="records-filter-controls-right">
+              <div class="select-wrapper-custom">
+                <select class="form-select-element mini" id="filterRecordBranch">
+                  <option value="all" selected>Semua cawangan</option>
+                  <option value="kok_lanas">Kok Lanas HQ</option>
+                  <option value="raub">Cawangan Raub</option>
+                  <option value="jeli">Jeli</option>
+                  <option value="machang">Machang</option>
+                </select>
+              </div>
+
+              <div class="date-range-pill-filter">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#526966" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                </svg>
+                <span>1 – 20 Okt 2026</span>
+              </div>
+
+              <button type="button" class="btn-export-records" id="btnExportRecordsCsv">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Eksport</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 KPI Stat Cards Row -->
+          <div class="records-kpi-quad-grid">
+            
+            <!-- Card 1: Jumlah Rekod -->
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round teal">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#007D77" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+              </div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Jumlah rekod</span>
+                <span class="kpi-metric-hero" id="kpiCountTotal">24</span>
+                <span class="kpi-metric-sub">Dalam tempoh dipilih</span>
+              </div>
+            </div>
+
+            <!-- Card 2: Selesai -->
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round green">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#10B981" stroke-width="2.2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Selesai</span>
+                <span class="kpi-metric-hero" id="kpiCountSelesai">20</span>
+                <span class="kpi-metric-sub">83% daripada jumlah</span>
+              </div>
+            </div>
+
+            <!-- Card 3: Aktif -->
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round cyan">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0EA5E9" stroke-width="2.2">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Aktif</span>
+                <span class="kpi-metric-hero" id="kpiCountAktif">1</span>
+                <span class="kpi-metric-sub">4% daripada jumlah</span>
+              </div>
+            </div>
+
+            <!-- Card 4: 3 rekod lain -->
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round slate">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#526966" stroke-width="2">
+                  <circle cx="12" cy="12" r="1"></circle>
+                  <circle cx="19" cy="12" r="1"></circle>
+                  <circle cx="5" cy="12" r="1"></circle>
+                </svg>
+              </div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">3 rekod lain</span>
+                <span class="kpi-metric-hero" id="kpiCountOther">3</span>
+                <span class="kpi-metric-sub">Draf 2 · Dibatalkan 1</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Main Content Grid: Records Table + Right Summary Drawer -->
+          <div class="records-content-split-grid">
+            
+            <!-- Left Main Table Card -->
+            <div class="records-table-card portal-card">
+              
+              <!-- Card Header & Status Pills -->
+              <div class="table-card-top-bar">
+                <h3 class="card-heading">Senarai Rekod Perjalanan</h3>
+                <div class="table-card-actions">
+                  <div class="table-search-box">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#526966" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="recordSearchFilterInput" placeholder="Cari rujukan atau nombor plat...">
+                  </div>
+
+                  <div class="status-segmented-filters">
+                    <button class="status-seg-btn active" data-status="all">Semua 24</button>
+                    <button class="status-seg-btn" data-status="aktif">Aktif 1</button>
+                    <button class="status-seg-btn" data-status="selesai">Selesai 20</button>
+                    <button class="status-seg-btn" data-status="draf">Draf 2</button>
+                    <button class="status-seg-btn" data-status="dibatalkan">Dibatalkan 1</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Data Table -->
+              <div class="records-table-scroll-container">
+                <table class="amc-data-table">
+                  <thead>
+                    <tr>
+                      <th class="sortable">Rujukan <span class="sort-arrows">↕</span></th>
+                      <th class="sortable">Tarikh <span class="sort-arrows">↕</span></th>
+                      <th class="sortable">Cawangan <span class="sort-arrows">↕</span></th>
+                      <th>Laluan</th>
+                      <th class="sortable">Ambulans <span class="sort-arrows">↕</span></th>
+                      <th class="sortable">Status <span class="sort-arrows">↕</span></th>
+                      <th>Jumlah</th>
+                      <th>Tindakan</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recordsTableBody">
+                    <!-- Populated dynamically via portal.js -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination Footer -->
+              <div class="table-pagination-footer">
+                <span class="pagination-count-label" id="paginationCountLabel">1 – 8 daripada 24 rekod</span>
+                <div class="pagination-controls-row">
+                  <button class="page-arrow-btn" id="btnPagePrev" disabled>&lsaquo;</button>
+                  <button class="page-num-btn active">1</button>
+                  <button class="page-num-btn">2</button>
+                  <button class="page-num-btn">3</button>
+                  <button class="page-arrow-btn" id="btnPageNext">&rsaquo;</button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right Detail Drawer: Ringkasan AMC-1043 -->
+            <div class="records-drawer-card portal-card" id="recordDrawerCard">
+              <div class="drawer-header-row">
+                <h3 class="card-heading" id="drawerRefTitle">Ringkasan AMC-1043</h3>
+                <button type="button" class="drawer-close-btn" id="closeRecordDrawerBtn">&times;</button>
+              </div>
+
+              <div class="drawer-status-badge-row">
+                <span class="badge-status-pill amber" id="drawerStatusBadge">● Menuju lokasi</span>
+                <span class="drawer-timestamp-txt" id="drawerTimestamp">20 Okt 2026, 10:24</span>
+              </div>
+
+              <!-- Key Meta Items -->
+              <div class="drawer-meta-list">
+                <div class="drawer-meta-item">
+                  <span class="meta-label">Ambulans</span>
+                  <span class="meta-val bold" id="drawerAmbulancePlate">VPQ 7606</span>
+                </div>
+                <div class="drawer-meta-item">
+                  <span class="meta-label">Cawangan</span>
+                  <span class="meta-val" id="drawerBranch">Kok Lanas HQ</span>
+                </div>
+                <div class="drawer-meta-item">
+                  <span class="meta-label">Laluan</span>
+                  <span class="meta-val" id="drawerRoute">Kota Bharu &rarr; HRPZ II</span>
+                </div>
+              </div>
+
+              <!-- Garis Masa Tugasan -->
+              <div class="drawer-section-block">
+                <h4 class="drawer-block-title">Garis Masa Tugasan</h4>
+                <div class="drawer-timeline-stack">
+                  <div class="timeline-step completed">
+                    <span class="timeline-bullet"></span>
+                    <div class="timeline-texts">
+                      <span class="step-title">Tugasan diterima</span>
+                      <span class="step-time" id="tlTimeReceived">20 Okt 2026, 10:24</span>
+                    </div>
+                  </div>
+                  <div class="timeline-step active">
+                    <span class="timeline-bullet"></span>
+                    <div class="timeline-texts">
+                      <span class="step-title">Menuju lokasi</span>
+                      <span class="step-time" id="tlTimeEnRoute">20 Okt 2026, 10:28</span>
+                    </div>
+                  </div>
+                  <div class="timeline-step pending">
+                    <span class="timeline-bullet"></span>
+                    <div class="timeline-texts">
+                      <span class="step-title">Di lokasi</span>
+                      <span class="step-time">—</span>
+                    </div>
+                  </div>
+                  <div class="timeline-step pending">
+                    <span class="timeline-bullet"></span>
+                    <div class="timeline-texts">
+                      <span class="step-title">Selesai</span>
+                      <span class="step-time">—</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Anggaran Perbelanjaan -->
+              <div class="drawer-section-block">
+                <h4 class="drawer-block-title">Anggaran Perbelanjaan</h4>
+                <div class="drawer-cost-list">
+                  <div class="cost-item">
+                    <span>Kadar asas</span>
+                    <span id="drawerCostBase">RM250.00</span>
+                  </div>
+                  <div class="cost-item">
+                    <span>Lebihan jarak (1.3 km × RM3)</span>
+                    <span id="drawerCostKm">RM3.90</span>
+                  </div>
+                  <div class="cost-item">
+                    <span>Pakej PPP</span>
+                    <span id="drawerCostPackage">RM200.00</span>
+                  </div>
+                  <div class="cost-item">
+                    <span>Tangki oksigen × 1</span>
+                    <span id="drawerCostEquipment">RM50.00</span>
+                  </div>
+                  <div class="drawer-cost-divider"></div>
+                  <div class="cost-total-row">
+                    <span class="total-title">Jumlah (Anggaran)</span>
+                    <span class="total-price" id="drawerCostTotal">RM503.90</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Full Details Button -->
+              <button type="button" class="btn-drawer-full-action" id="btnOpenFullBookingModal">
+                <span>Lihat Butiran Penuh</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+              </button>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ===================================================================
+             VIEW 4: PENGURUSAN CAWANGAN (SCREENSHOT 4)
+             =================================================================== -->
+        <section class="portal-view-section" id="cawanganView">
+          
+          <!-- View Title Header -->
+          <div class="view-header-row">
+            <div>
+              <div class="view-title-wrap">
+                <h2 class="view-main-title">Pengurusan Cawangan</h2>
+                <span class="badge-data-contoh">DATA CONTOH</span>
+              </div>
+              <p class="view-subtitle">Gambaran operasi mengikut pusat dan kawasan.</p>
+            </div>
+
+            <!-- Controls Right -->
+            <div class="records-filter-controls-right">
+              <div class="select-wrapper-custom">
+                <select class="form-select-element mini" id="filterBranchState">
+                  <option value="all" selected>Semua negeri</option>
+                  <option value="kelantan">Kelantan</option>
+                  <option value="pahang">Pahang</option>
+                </select>
+              </div>
+
+              <div class="table-search-box">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#526966" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="branchSearchInput" placeholder="Cari cawangan...">
+              </div>
+
+              <button type="button" class="btn-draft-action" id="btnBranchDetailsSummary">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <span>Butiran Cawangan</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3 KPI Stat Cards Row -->
+          <div class="branch-kpi-triple-grid">
+            
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round cyan">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#0EA5E9" stroke-width="2">
+                  <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"></path>
+                </svg>
+              </div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-hero">2 <span class="hero-unit">cawangan contoh</span></span>
+                <span class="kpi-metric-sub">Dua cawangan dipaparkan sebagai contoh reka bentuk.</span>
+              </div>
+            </div>
+
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round teal">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#007D77" stroke-width="2">
+                  <rect x="2" y="7" width="15" height="11" rx="2"></rect>
+                  <circle cx="6" cy="18" r="2"></circle>
+                  <circle cx="13" cy="18" r="2"></circle>
+                  <path d="M17 11h4l2 3v4h-6v-7z"></path>
+                </svg>
+              </div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-hero">2 <span class="hero-unit">ambulans</span></span>
+                <span class="kpi-metric-sub">Jumlah ambulans di cawangan contoh.</span>
+              </div>
+            </div>
+
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round green">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#10B981" stroke-width="2.2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-hero">1 <span class="hero-unit">unit bersedia</span></span>
+                <span class="kpi-metric-sub">Dalam keadaan sedia ditugaskan.</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 2 Branch Showcase Cards Side-by-Side -->
+          <div class="branches-cards-twin-grid">
+            
+            <!-- Branch 1: Kok Lanas HQ -->
+            <div class="branch-showcase-card portal-card">
+              <div class="branch-card-header">
+                <div class="branch-header-left">
+                  <span class="branch-icon-box">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#007D77" stroke-width="2">
+                      <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"></path>
+                    </svg>
+                  </span>
+                  <span class="branch-title-text">Kok Lanas HQ</span>
+                  <span class="badge-hub-utama">Hub utama</span>
+                </div>
+                <button type="button" class="btn-lihat-butiran-branch" data-branch="kok_lanas">
+                  <span>Lihat Butiran</span>
+                  <span class="arrow">&rarr;</span>
+                </button>
+              </div>
+
+              <div class="branch-state-label">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#007D77" stroke-width="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <span>Kelantan</span>
+              </div>
+
+              <!-- Map Visual Box -->
+              <div class="branch-map-box">
+                <div class="branch-map-render" id="branchMapKokLanas"></div>
+                <div class="branch-map-watermark-sea">Laut China Selatan</div>
+                <div class="branch-map-watermark-state">KELANTAN</div>
+                <div class="branch-map-pin-label">
+                  <span class="pin-badge-icon">🏛️</span>
+                  <span>Kok Lanas HQ</span>
+                </div>
+                <div class="branch-map-caption-note">Ilustrasi peta - bukan penjejakan GPS sebenar</div>
+              </div>
+
+              <!-- 4 Metrics Under Map -->
+              <div class="branch-metrics-quad-row">
+                <div class="branch-quad-item">
+                  <div class="quad-item-top">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#007D77" stroke-width="2">
+                      <rect x="2" y="7" width="15" height="11" rx="2"></rect>
+                      <circle cx="6" cy="18" r="2"></circle>
+                      <circle cx="13" cy="18" r="2"></circle>
+                    </svg>
+                    <span class="quad-main-val">VPQ 7606</span>
+                  </div>
+                  <span class="quad-sub-label">Kenderaan utama</span>
+                </div>
+
+                <div class="branch-quad-item">
+                  <div class="quad-item-top">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#007D77" stroke-width="2">
+                      <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                      <circle cx="8" cy="16" r="1.5"></circle>
+                      <circle cx="16" cy="16" r="1.5"></circle>
+                    </svg>
+                    <span class="quad-main-val">1</span>
+                  </div>
+                  <span class="quad-sub-label">Jumlah unit</span>
+                </div>
+
+                <div class="branch-quad-item">
+                  <div class="quad-item-top">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0EA5E9" stroke-width="2">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    <span class="quad-main-val">1</span>
+                  </div>
+                  <span class="quad-sub-label">Misi aktif</span>
+                </div>
+
+                <div class="branch-quad-item">
+                  <div class="quad-item-top">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#526966" stroke-width="2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <span class="quad-main-val">0</span>
+                  </div>
+                  <span class="quad-sub-label">Bersedia</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Branch 2: Cawangan Raub -->
+            <div class="branch-showcase-card portal-card">
+              <div class="branch-card-header">
+                <div class="branch-header-left">
+                  <span class="branch-icon-box">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#007D77" stroke-width="2">
+                      <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"></path>
+                    </svg>
+                  </span>
+                  <span class="branch-title-text">Cawangan Raub</span>
+                </div>
+                <button type="button" class="btn-lihat-butiran-branch" data-branch="raub">
+                  <span>Lihat Butiran</span>
+                  <span class="arrow">&rarr;</span>
+                </button>
+              </div>
+
+              <div class="branch-state-label">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#007D77" stroke-width="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <span>Pahang</span>
+              </div>
+
+              <!-- Map Visual Box -->
+              <div class="branch-map-box">
+                <div class="branch-map-render" id="branchMapRaub"></div>
+                <div class="branch-map-watermark-state" style="left: 60px; top: 70px;">PAHANG</div>
+                <div class="branch-map-pin-label" style="left: 62%; top: 48%;">
+                  <span class="pin-badge-icon">🏛️</span>
+                  <span>Cawangan Raub</span>
+                </div>
+                <div class="branch-map-caption-note">Ilustrasi peta - bukan penjejakan GPS sebenar</div>
+              </div>
+
+              <!-- 4 Metrics Under Map -->
+              <div class="branch-metrics-quad-row">
+                <div class="branch-quad-item">
+                  <div class="quad-item-top">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#007D77" stroke-width="2">
+                      <rect x="2" y="7" width="15" height="11" rx="2"></rect>
+                      <circle cx="6" cy="18" r="2"></circle>
+                      <circle cx="13" cy="18" r="2"></circle>
+                    </svg>
+                    <span class="quad-main-val">DFG 7606</span>
+                  </div>
+                  <span class="quad-sub-label">Kenderaan utama</span>
+                </div>
+
+                <div class="branch-quad-item">
+                  <div class="quad-item-top">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#007D77" stroke-width="2">
+                      <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                      <circle cx="8" cy="16" r="1.5"></circle>
+                      <circle cx="16" cy="16" r="1.5"></circle>
+                    </svg>
+                    <span class="quad-main-val">1</span>
+                  </div>
+                  <span class="quad-sub-label">Jumlah unit</span>
+                </div>
+
+                <div class="branch-quad-item">
+                  <div class="quad-item-top">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#526966" stroke-width="2">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    <span class="quad-main-val">0</span>
+                  </div>
+                  <span class="quad-sub-label">Misi aktif</span>
+                </div>
+
+                <div class="branch-quad-item">
+                  <div class="quad-item-top">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#10B981" stroke-width="2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <span class="quad-main-val">1</span>
+                  </div>
+                  <span class="quad-sub-label">Bersedia</span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Bottom Section: Summary Table + Recent Activity -->
+          <div class="branch-bottom-split-grid">
+            
+            <!-- Left: Ringkasan Operasi Cawangan -->
+            <div class="portal-card branch-summary-table-panel">
+              <div class="table-card-top-bar">
+                <h3 class="card-heading">Ringkasan Operasi Cawangan</h3>
+                <span class="view-header-code">07 · Cawangan</span>
+              </div>
+
+              <div class="records-table-scroll-container">
+                <table class="amc-data-table">
+                  <thead>
+                    <tr>
+                      <th>Cawangan</th>
+                      <th>Negeri</th>
+                      <th>Jumlah Unit</th>
+                      <th>Bersedia</th>
+                      <th>Misi Aktif</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="bold">Kok Lanas HQ</td>
+                      <td>Kelantan</td>
+                      <td>1</td>
+                      <td>0</td>
+                      <td><span class="badge-status-pill amber">1</span></td>
+                    </tr>
+                    <tr>
+                      <td class="bold">Cawangan Raub</td>
+                      <td>Pahang</td>
+                      <td>1</td>
+                      <td><span class="badge-status-pill green">1</span></td>
+                      <td>0</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Aktiviti Terkini -->
+            <div class="portal-card branch-activity-panel">
+              <div class="table-card-top-bar">
+                <h3 class="card-heading">Aktiviti Terkini</h3>
+                <a href="#" class="summary-view-all-link">Lihat semua &rarr;</a>
+              </div>
+
+              <div class="activity-timeline-list">
+                <div class="activity-timeline-item">
+                  <div class="act-time">10:24</div>
+                  <div class="act-icon-dot cyan">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#0EA5E9" stroke-width="2">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  </div>
+                  <div class="act-texts">
+                    <div class="act-title">Misi baharu diterima</div>
+                    <div class="act-sub">Kok Lanas HQ · VPQ 7606</div>
+                  </div>
+                </div>
+
+                <div class="activity-timeline-item">
+                  <div class="act-time">08:17</div>
+                  <div class="act-icon-dot green">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#10B981" stroke-width="2.2">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <div class="act-texts">
+                    <div class="act-title">Misi selesai</div>
+                    <div class="act-sub">Cawangan Raub · DFG 7606</div>
+                  </div>
+                </div>
+
+                <div class="activity-timeline-item">
+                  <div class="act-time">06:39</div>
+                  <div class="act-icon-dot teal">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#007D77" stroke-width="2">
+                      <rect x="2" y="7" width="15" height="11" rx="2"></rect>
+                      <circle cx="6" cy="18" r="2"></circle>
+                      <circle cx="13" cy="18" r="2"></circle>
+                    </svg>
+                  </div>
+                  <div class="act-texts">
+                    <div class="act-title">Unit kembali ke cawangan</div>
+                    <div class="act-sub">Cawangan Raub · DFG 7606</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="bottom-footer-note" style="text-align: right; margin-top: 14px;">Konsep UI/UX · Data contoh</div>
+
+        </section>
+
+        <!-- ===================================================================
+             VIEW 5: DASHBOARD
+             =================================================================== -->
+        <section class="portal-view-section" id="dashboardView">
+          <div class="view-header-row">
+            <div>
+              <div class="view-title-wrap">
+                <h2 class="view-main-title">Dashboard Operasi</h2>
+                <span class="badge-data-contoh">MASA NYATA</span>
+              </div>
+              <p class="view-subtitle">Ringkasan status misi harian, armada bersedia dan metrik operasi Al-Farhain AMC.</p>
+            </div>
+            <div class="view-header-code">01 · Dashboard</div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="dashboard-hero-action-bar">
+            <div class="quick-kpi-pill">
+              <span class="live-dot-green"></span>
+              <span>2 Cawangan Beroperasi (24 Jam)</span>
+            </div>
+            <div class="dashboard-actions-cluster">
+              <button class="btn-primary-dispatch" id="btnDashboardNewDispatch">
+                <span>⚡</span> <span>+ Dispatch Baharu</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 Summary KPI Cards -->
+          <div class="records-kpi-quad-grid" style="margin-top: 16px;">
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round teal">🚑</div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Unit Armada Aktif</span>
+                <span class="kpi-metric-hero">2 Unit</span>
+                <span class="kpi-metric-sub">VPQ 7606 (Kelantan) &amp; DFG 7606 (Pahang)</span>
+              </div>
+            </div>
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round cyan">⚡</div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Misi Aktif Hari Ini</span>
+                <span class="kpi-metric-hero">1 Trip</span>
+                <span class="kpi-metric-sub">Menuju Hospital Raja Perempuan Zainab II</span>
+              </div>
+            </div>
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round green">💵</div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Hasil Bulan Ini</span>
+                <span class="kpi-metric-hero">RM 7,850</span>
+                <span class="kpi-metric-sub">24 rekod tempahan disegerakkan</span>
+              </div>
+            </div>
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round slate">🛣️</div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Jumlah Jarak Tempuh</span>
+                <span class="kpi-metric-hero">1,420 km</span>
+                <span class="kpi-metric-sub">Purata respons 12 minit</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Fleet Matrix -->
+          <div class="portal-card" style="margin-top: 18px;">
+            <h3 class="card-heading">Status Unit Ambulans AMC</h3>
+            <p class="card-subheading">Pemantauan status kenderaan, tekanan tangki oksigen dan kesiapsiagaan krew.</p>
+            <div class="matrix-card-stack" id="dashboardFleetList">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 6: PETA & FLEET (TACTICAL RADAR)
+             =================================================================== -->
+        <section class="portal-view-section" id="petaFleetView">
+          <div class="view-header-row">
+            <div>
+              <div class="view-title-wrap">
+                <h2 class="view-main-title">Peta Radar &amp; Telemetri Armada</h2>
+                <span class="badge-data-contoh">GPS RADAR</span>
+              </div>
+              <p class="view-subtitle">Penjejakan langsung posisi kenderaan dan status pergerakan ambulans.</p>
+            </div>
+            <div class="view-header-code">02 · Peta &amp; Fleet</div>
+          </div>
+
+          <div class="radar-map-viewport">
+            <div id="portalRadarMap"></div>
+            <div class="map-floating-quick-controls">
+              <button class="map-control-pill active" id="btnMapFocusBranch">HQ Kok Lanas</button>
+              <button class="map-control-pill" id="btnMapFocusRaub">Cawangan Raub</button>
+              <button class="map-control-pill" id="btnMapFocusAll">Seluruh Semenanjung</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 7: HASIL & INVOIS
+             =================================================================== -->
+        <section class="portal-view-section" id="hasilInvoisView">
+          <div class="view-header-row">
+            <div>
+              <div class="view-title-wrap">
+                <h2 class="view-main-title">Hasil &amp; Invois Rasmi</h2>
+                <span class="badge-data-contoh">KEWANGAN</span>
+              </div>
+              <p class="view-subtitle">Analisis hasil tambang ambulans, pecahan kategori dan lejar invois perubatan.</p>
+            </div>
+            <div class="view-header-code">05 · Hasil &amp; Invois</div>
+          </div>
+
+          <div class="records-kpi-quad-grid">
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round green">💵</div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Jumlah Hasil Bulan Ini</span>
+                <span class="kpi-metric-hero" id="revMetricTotal">RM 7,850.40</span>
+                <span class="kpi-metric-sub">▲ +14.2% vs bulan lepas</span>
+              </div>
+            </div>
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round teal">🚑</div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Jumlah Misi Berjaya</span>
+                <span class="kpi-metric-hero" id="revMetricTrips">20 Selesai</span>
+                <span class="kpi-metric-sub">Kadar kejayaan 100%</span>
+              </div>
+            </div>
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round cyan">🏷️</div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Purata Tambang Misi</span>
+                <span class="kpi-metric-hero" id="revMetricAvgFare">RM 392.50</span>
+                <span class="kpi-metric-sub">Formula Asas RM250 + RM3/km</span>
+              </div>
+            </div>
+            <div class="kpi-card-metric">
+              <div class="kpi-icon-round slate">🛣️</div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Jumlah Jarak Tempuh</span>
+                <span class="kpi-metric-hero" id="revMetricKm">1,420 KM</span>
+                <span class="kpi-metric-sub">Termasuk surcaj luar kawasan</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="portal-card" style="margin-top: 18px;">
+            <div class="table-card-top-bar">
+              <h3 class="card-heading">Lejar Rekod Tempahan &amp; Invois Rasmi</h3>
+              <button class="btn-draft-action" id="btnExportLedgerCsv">📥 Eksport CSV</button>
+            </div>
+            <div class="records-table-scroll-container">
+              <table class="amc-data-table">
+                <thead>
+                  <tr>
+                    <th>No. Invois</th>
+                    <th>Tarikh</th>
+                    <th>Cawangan</th>
+                    <th>Laluan (Dari &rarr; Ke)</th>
+                    <th>Jarak</th>
+                    <th>Ambulans</th>
+                    <th>Jumlah (RM)</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="revenueTableBody">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
   </div> <!-- /#portalAppShell -->
 
   <!-- =========================================================================
-       MODAL 1: QUICK DISPATCH LAUNCHER
+       MODAL: FULL BOOKING DETAILS MODAL (FOR "Lihat Butiran Penuh")
        ========================================================================= -->
-  <div class="portal-modal-backdrop" id="dispatchLauncherModal">
+  <div class="portal-modal-backdrop" id="bookingDetailModal">
     <div class="portal-modal-box">
       <div class="modal-header-banner">
-        <h2><span>🚀</span> <span>Gerakkan Unit Ambulans (Rapid Dispatch)</span></h2>
-        <button class="modal-close-btn" id="closeDispatchModalBtn">&times;</button>
+        <h2><span>📋</span> <span id="fullModalRef">Butiran Penuh Trip AMC-1043</span></h2>
+        <button class="modal-close-btn" id="closeBookingDetailModalBtn">&times;</button>
       </div>
-
-      <form id="quickDispatchForm">
-        <div class="modal-body-scroll">
-          <div class="form-group">
-            <label class="form-label">Cawangan Pangkalan Bertolak</label>
-            <select class="form-select" id="dispatchHubSelect">
-              <option value="kok_lanas">HQ Kok Lanas (Kelantan) — VPQ 7606 (Abe Di)</option>
-              <option value="raub">Cawangan Raub (Pahang) — DFG 7606 (Abe Din)</option>
-            </select>
-          </div>
-
-          <div class="form-row-2">
-            <div class="form-group">
-              <label class="form-label">Lokasi Pengambilan Pesakit</label>
-              <input type="text" class="form-input" id="dispatchOriginInput" placeholder="Cth: Kediaman Bandar Kota Bharu" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Hospital Tujuan</label>
-              <input type="text" class="form-input" id="dispatchDestInput" placeholder="Cth: Hospital Raja Perempuan Zainab II" required>
-            </div>
-          </div>
-
-          <div class="form-row-2">
-            <div class="form-group">
-              <label class="form-label">Anggaran Jarak (KM)</label>
-              <input type="number" class="form-input" id="dispatchDistanceKm" value="25" min="1" step="0.5" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Triage &amp; Nama Pesakit</label>
-              <input type="text" class="form-input" id="dispatchPatientInput" placeholder="Cth: En. Azman (Trauma Jantung)">
-            </div>
-          </div>
-
-          <!-- Official Calculated Fare Card -->
-          <div style="background: rgba(0, 168, 150, 0.12); border: 1px solid rgba(0, 168, 150, 0.3); border-radius: 10px; padding: 14px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Formula Rasmi AMC:</span>
-              <div style="font-size: 0.78rem; color: #FFFFFF; margin-top: 2px;">Asas RM250 + RM3.00/KM &gt;25KM + Caj Operasi</div>
-            </div>
-            <div style="text-align: right;">
-              <span style="font-size: 1.3rem; font-weight: 800; font-family: 'JetBrains Mono'; color: #34D399;" id="dispatchEstFare">RM 300.00</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-footer-actions">
-          <button type="button" class="btn-secondary" onclick="document.getElementById('dispatchLauncherModal').classList.remove('show')">Batal</button>
-          <button type="submit" class="btn-primary">Sahkan &amp; Buka WhatsApp Arahan</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- =========================================================================
-       MODAL 2: SUPABASE DATABASE CONFIGURATION
-       ========================================================================= -->
-  <div class="portal-modal-backdrop" id="portalSupabaseModal">
-    <div class="portal-modal-box" style="max-width: 500px;">
-      <div class="modal-header-banner">
-        <h2><span>⚡</span> <span>Pangkalan Data Supabase Cloud</span></h2>
-        <button class="modal-close-btn" id="closePortalSupabaseModalBtn">&times;</button>
+      <div class="modal-body-scroll" id="fullModalBody">
+        <!-- Rendered dynamically -->
       </div>
-
-      <div class="modal-body-scroll">
-        <p style="font-size: 0.78rem; color: var(--text-muted);">
-          Masukkan Project URL dan Anon Key daripada Supabase Dashboard untuk mengaktifkan penyegerakan langsung dengan aplikasi pemandu.
-        </p>
-
-        <div class="form-group" style="margin-top: 10px;">
-          <label class="form-label">Project URL</label>
-          <input type="url" id="portalSupabaseUrlInput" class="form-input" placeholder="https://xyz.supabase.co">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Anon Public Key</label>
-          <input type="password" id="portalSupabaseKeyInput" class="form-input" placeholder="sb_publishable_... atau eyJhbGci...">
-        </div>
-
-        <div id="portalSupabaseTestResult" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.76rem; margin-top: 4px;"></div>
-      </div>
-
       <div class="modal-footer-actions">
-        <button type="button" class="btn-secondary" id="portalTestSupabaseBtn">Uji Sambungan</button>
-        <button type="button" class="btn-primary" id="portalSaveSupabaseBtn">Simpan Kunci</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================================================================
-       MODAL 3: USER AUTHENTICATION (LOG MASUK / DAFTAR AKAUN PENGURUS)
-       ========================================================================= -->
-  <div class="portal-modal-backdrop" id="portalAuthModal">
-    <div class="portal-modal-box" style="max-width: 480px;">
-      <div class="modal-header-banner">
-        <h2><span id="authModalHeaderIcon">🔐</span> <span id="authModalTitle">Akaun Pengurus Cawangan</span></h2>
-        <button class="modal-close-btn" id="closePortalAuthModalBtn">&times;</button>
-      </div>
-
-      <!-- Logged Out View: Form with Tabs -->
-      <div id="authFormViewContainer">
-        <!-- Segmented Tab Switch: Log Masuk vs Daftar -->
-        <div style="padding: 16px 24px 0 24px;">
-          <div class="auth-segmented-nav">
-            <button type="button" class="auth-seg-btn active" id="btnTabLogin">
-              <span>🔑</span> <span>Log Masuk</span>
-            </button>
-            <button type="button" class="auth-seg-btn" id="btnTabRegister">
-              <span>✍️</span> <span>Daftar Akaun</span>
-            </button>
-          </div>
-        </div>
-
-        <form id="portalAuthForm">
-          <div class="modal-body-scroll" style="padding-top: 14px; gap: 12px;">
-            <!-- Register Specific Fields -->
-            <div id="registerOnlyFields" style="display: none; flex-direction: column; gap: 12px;">
-              <div class="form-group">
-                <label class="form-label">Nama Penuh</label>
-                <input type="text" class="form-input" id="authNameInput" placeholder="Cth: Abe Di / Syalihan">
-              </div>
-
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label class="form-label">Cawangan</label>
-                  <select class="form-select" id="authBranchInput">
-                    <option value="kok_lanas">HQ Kok Lanas (Kelantan)</option>
-                    <option value="raub">Cawangan Raub (Pahang)</option>
-                    <option value="all">Ibu Pejabat Pusat</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Peranan</label>
-                  <select class="form-select" id="authRoleInput">
-                    <option value="branch_manager">Pengurus Cawangan</option>
-                    <option value="dispatcher">Pegawai Dispatch</option>
-                    <option value="driver">Pemandu / EMT</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Common Fields -->
-            <div class="form-group">
-              <label class="form-label">Alamat Emel</label>
-              <input type="email" class="form-input" id="authEmailInput" placeholder="pengurus@alfarhain.my" required>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Kata Laluan</label>
-              <input type="password" class="form-input" id="authPasswordInput" placeholder="Minimum 6 aksara" required minlength="6">
-            </div>
-
-            <!-- Error / Status Message Box -->
-            <div id="authStatusMessage" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.76rem;"></div>
-
-            <!-- Quick Demo Logins for Instant Testing -->
-            <div class="demo-login-box">
-              <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
-                ⚡ Log Masuk Pantas (Demo Bertugas):
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 6px;">
-                <button type="button" class="btn-demo-quick-auth" data-email="abedi@alfarhain.my" data-name="Abe Di / Syalihan" data-branch="kok_lanas" data-role="Pengurus HQ Kok Lanas">
-                  <span>🏛️</span> <span>Abe Di (Pengurus HQ Kok Lanas • Kelantan)</span>
-                </button>
-                <button type="button" class="btn-demo-quick-auth" data-email="abedin@alfarhain.my" data-name="Abe Din Estimos Sukrosa" data-branch="raub" data-role="Pengurus Cawangan Raub">
-                  <span>🏔️</span> <span>Abe Din Estimos (Pengurus Cawangan Raub • Pahang)</span>
-                </button>
-                <button type="button" class="btn-demo-quick-auth" data-email="director@alfarhain.my" data-name="Dr. Afiqah (Pengarah)" data-branch="all" data-role="Pengarah Operasi AMC">
-                  <span>🩺</span> <span>Dr. Afiqah (Pengarah Operasi Seluruh Malaysia)</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer-actions">
-            <button type="button" class="btn-secondary" onclick="document.getElementById('portalAuthModal').classList.remove('show')">Batal</button>
-            <button type="submit" class="btn-primary" id="btnSubmitAuth">Log Masuk</button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Logged In View: Profile Info & Sign Out -->
-      <div id="authProfileViewContainer" style="display: none;">
-        <div class="modal-body-scroll" style="text-align: center; padding: 30px 24px;">
-          <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #00A896, #028090); color: #FFF; font-weight: 800; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; box-shadow: 0 0 20px var(--amc-teal-glow);" id="profileAvatarBig">
-            AD
-          </div>
-          <h3 style="font-size: 1.15rem; font-weight: 800; color: #FFF;" id="profileNameBig">Abe Di / Syalihan</h3>
-          <div style="font-size: 0.8rem; color: var(--amc-teal); font-weight: 700; margin-top: 4px;" id="profileRoleBig">Pengurus HQ Kok Lanas</div>
-          <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;" id="profileEmailBig">abedi@alfarhain.my</div>
-
-          <div style="margin-top: 20px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-light); border-radius: 10px; padding: 14px; text-align: left; font-size: 0.76rem;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-              <span style="color: var(--text-muted);">Status Sesi:</span>
-              <strong style="color: #34D399;">🟢 Aktif &amp; Disahkan</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span style="color: var(--text-muted);">Pangkalan Ditetapkan:</span>
-              <strong id="profileBranchBig">HQ Kok Lanas</strong>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-footer-actions">
-          <button type="button" class="btn-secondary" onclick="document.getElementById('portalAuthModal').classList.remove('show')">Tutup</button>
-          <button type="button" class="btn-secondary" id="btnSignOutPortal" style="border-color: #EF4444; color: #F87171;">
-            <span>🚪</span> <span>Log Keluar</span>
-          </button>
-        </div>
+        <button type="button" class="btn-cancel-flat" onclick="document.getElementById('bookingDetailModal').classList.remove('show')">Tutup</button>
+        <button type="button" class="btn-save-teal" id="btnPrintReceiptBtn">🖨️ Cetak Resit / Invois</button>
       </div>
     </div>
   </div>
