@@ -1,39 +1,41 @@
 /* =========================================================================
    AL-FARHAIN MEDICAL CENTER (AMC) - PORTAL OPERASI AMBULANS
-   Enterprise UI/UX System - Faithfully Designed from Operational Mockups
-   Brand Palette: #006C67 (Utama), #007D77 (Butang), #23CCC5 (Aksen),
-                  #F3FAF9 (Latar), #173D3B (Teks), #526966 (Label)
+   Enterprise UI/UX System - Red & White Theme
+   Brand Palette: #C61E2F (Primary red), #FFFFFF (White),
+                  #FFF0F2 (Soft accent), #25313C (Text)
    ========================================================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 /* -------------------------------------------------------------------------
-   1. DESIGN TOKENS (LIGHT THEME DEFAULT)
+   1. DESIGN TOKENS (RED & WHITE THEME)
    ------------------------------------------------------------------------- */
 :root {
-  /* Brand Specific Colors from Image 1: Reka Bentuk */
-  --amc-primary: #006C67;    /* Utama */
-  --amc-btn: #007D77;        /* Butang */
-  --amc-btn-hover: #005F5A;
-  --amc-accent: #23CCC5;     /* Aksen */
-  --bg-app: #F3FAF9;         /* Latar */
-  --text-main: #173D3B;      /* Teks */
-  --text-label: #526966;     /* Label */
+  /* Brand Specific Colors from Red & White Spec */
+  --amc-primary: #C61E2F;    /* Primary Red */
+  --amc-btn: #C61E2F;        /* Butang */
+  --amc-btn-hover: #A61625;
+  --amc-accent: #C61E2F;     /* Aksen */
+  --amc-soft: #FFF0F2;       /* Soft accent (#FFF0F2) */
+  --amc-soft-border: #FFD6DC;
+  --bg-app: #F8FAFC;         /* Latar */
+  --text-main: #25313C;      /* Text (#25313C) */
+  --text-label: #64748B;     /* Label */
 
   /* Neutral & Functional Colors */
-  --bg-sidebar: #004D4A;
-  --bg-sidebar-active: #FFFFFF;
+  --bg-sidebar: #FFFFFF;     /* Pure White Sidebar from Mockup */
+  --bg-sidebar-active: #C61E2F;
   --bg-card: #FFFFFF;
   --bg-surface: #FFFFFF;
   --bg-input: #FFFFFF;
 
-  --border-subtle: #E2EFEB;
-  --border-card: #E5EDEA;
-  --border-focus: #007D77;
+  --border-subtle: #E2E8F0;
+  --border-card: #E5E7EB;
+  --border-focus: #C61E2F;
 
   /* Badges & Status */
-  --badge-pink-bg: #FEE2E2;
-  --badge-pink-txt: #DC2626;
+  --badge-pink-bg: #FFF0F2;
+  --badge-pink-txt: #C61E2F;
   --badge-green-bg: #D1FAE5;
   --badge-green-txt: #059669;
   --badge-amber-bg: #FEF3C7;
@@ -48,9 +50,9 @@
   --font-mono: 'JetBrains Mono', monospace;
 
   /* Elevation */
-  --shadow-subtle: 0 1px 3px rgba(0, 48, 45, 0.05);
-  --shadow-card: 0 2px 8px -2px rgba(0, 48, 45, 0.06), 0 1px 3px rgba(0, 48, 45, 0.04);
-  --shadow-elevated: 0 10px 25px -5px rgba(0, 48, 45, 0.1), 0 4px 10px -3px rgba(0, 48, 45, 0.05);
+  --shadow-subtle: 0 1px 3px rgba(37, 49, 60, 0.05);
+  --shadow-card: 0 2px 8px -2px rgba(37, 49, 60, 0.06), 0 1px 3px rgba(37, 49, 60, 0.04);
+  --shadow-elevated: 0 10px 25px -5px rgba(198, 30, 47, 0.12), 0 4px 10px -3px rgba(37, 49, 60, 0.05);
   --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -453,7 +455,7 @@ body {
 }
 
 /* -------------------------------------------------------------------------
-   SIDEBAR (DEEP TEAL #004D4A)
+   SIDEBAR (RED & WHITE THEME - CRISP WHITE SIDEBAR)
    ------------------------------------------------------------------------- */
 .portal-sidebar {
   width: 250px;
@@ -461,9 +463,9 @@ body {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 16px 14px;
-  color: #FFFFFF;
+  border-right: 1px solid var(--border-card);
+  padding: 18px 16px;
+  color: var(--text-main);
   z-index: 100;
 }
 
@@ -478,7 +480,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-card);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .sidebar-logo-img {
@@ -488,12 +491,16 @@ body {
 }
 
 .sidebar-tag-amc {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.8px;
-  color: var(--amc-accent);
+  color: var(--amc-primary);
+  background: var(--amc-soft);
+  border: 1px solid var(--amc-soft-border);
+  border-radius: var(--radius-pill);
   text-align: center;
-  margin-top: 8px;
+  padding: 4px 8px;
+  margin-top: 10px;
 }
 
 .sidebar-nav-container {
@@ -506,7 +513,7 @@ body {
 .nav-group-label {
   font-size: 0.65rem;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.45);
+  color: #94A3B8;
   letter-spacing: 0.8px;
   padding: 4px 10px 8px 10px;
   text-transform: uppercase;
@@ -520,7 +527,7 @@ body {
   border-radius: var(--radius-sm);
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-main);
   font-family: var(--font-sans);
   font-size: 0.86rem;
   font-weight: 600;
@@ -530,32 +537,33 @@ body {
 }
 
 .nav-item-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #FFFFFF;
+  background: var(--amc-soft);
+  color: var(--amc-primary);
 }
 
-/* Active Nav Item: Pure White Pill with Dark Teal Text */
+/* Active Nav Item: Solid Red Pill with Pure White Text & Icon */
 .nav-item-btn.active {
-  background: #FFFFFF;
-  color: var(--amc-primary);
+  background: var(--amc-primary);
+  color: #FFFFFF;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(0, 30, 28, 0.2);
+  box-shadow: 0 3px 12px rgba(198, 30, 47, 0.28);
 }
 
 .nav-item-btn.active .nav-item-icon {
-  color: var(--amc-primary);
+  color: #FFFFFF;
 }
 
 .nav-item-icon {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--text-label);
 }
 
 /* Sidebar Bottom Profile Card */
 .sidebar-user-bottom-box {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #F8FAFC;
+  border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
   padding: 12px;
   margin-top: auto;
@@ -571,8 +579,8 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #7FE3DE;
-  color: #004D4A;
+  background: #E2E8F0;
+  color: var(--text-main);
   font-weight: 800;
   font-size: 0.85rem;
   display: flex;
@@ -584,13 +592,13 @@ body {
 .operator-name {
   font-size: 0.82rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--text-main);
   line-height: 1.2;
 }
 
 .operator-role {
   font-size: 0.7rem;
-  color: #93C5C1;
+  color: var(--text-label);
 }
 
 .operator-live-status {
@@ -598,10 +606,10 @@ body {
   align-items: center;
   gap: 6px;
   font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text-label);
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-card);
 }
 
 .live-dot-green {
@@ -631,7 +639,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: transparent;
+  background: #FFFFFF;
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
@@ -649,7 +657,7 @@ body {
 }
 
 .crumb-divider {
-  color: var(--text-label);
+  color: #CBD5E1;
 }
 
 .crumb-current {
@@ -687,11 +695,13 @@ body {
   font-size: 0.78rem;
   font-family: var(--font-sans);
   color: var(--text-main);
+  transition: all 0.15s ease;
 }
 
 .topbar-search-field:focus {
   outline: none;
   border-color: var(--amc-btn);
+  box-shadow: 0 0 0 3px rgba(198, 30, 47, 0.12);
 }
 
 .topbar-bell-btn {
@@ -705,13 +715,18 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.topbar-bell-btn:hover {
+  border-color: var(--amc-btn);
 }
 
 .bell-badge-count {
   position: absolute;
   top: -2px;
   right: -2px;
-  background: #EF4444;
+  background: var(--amc-primary);
   color: #FFFFFF;
   font-size: 0.62rem;
   font-weight: 800;
@@ -721,7 +736,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--bg-app);
+  border: 2px solid #FFFFFF;
 }
 
 .topbar-avatar-pill {
@@ -734,13 +749,14 @@ body {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #7FE3DE;
-  color: #004D4A;
+  background: var(--amc-primary);
+  color: #FFFFFF;
   font-weight: 800;
   font-size: 0.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 8px rgba(198, 30, 47, 0.3);
 }
 
 /* -------------------------------------------------------------------------
@@ -2488,6 +2504,574 @@ body {
 .act-sub {
   font-size: 0.68rem;
   color: var(--text-label);
+}
+
+/* =========================================================================
+   DASHBOARD RED & WHITE MOCKUP STYLES (MATCHING SCREENSHOT SPEC)
+   ========================================================================= */
+.sidebar-page-subcode {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94A3B8;
+  margin-top: 14px;
+  padding-left: 4px;
+}
+
+/* Header Filters */
+.dashboard-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-filter-select {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-card);
+  background: #FFFFFF;
+  color: var(--text-main);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  outline: none;
+}
+
+.dash-date-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #FFFFFF;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.dash-export-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #FFFFFF;
+  border: 1px solid var(--amc-soft-border);
+  color: var(--amc-primary);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dash-export-btn:hover {
+  background: var(--amc-soft);
+  border-color: var(--amc-primary);
+}
+
+/* 4 Metric Cards Grid */
+.dashboard-metrics-quad-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.dash-metric-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.dash-metric-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--amc-soft);
+  border: 1px solid var(--amc-soft-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--amc-primary);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.dash-metric-icon-box svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--amc-primary);
+}
+
+.dash-metric-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-metric-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-label);
+}
+
+.dash-metric-number {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.15;
+  margin: 2px 0 1px;
+}
+
+.dash-metric-caption {
+  font-size: 0.7rem;
+  color: var(--text-label);
+}
+
+/* Middle Section: Pemantauan Armada (Left) + Misi Aktif (Right) */
+.dashboard-mid-split-grid {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.dash-armada-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-card-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.dash-card-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.dash-armada-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-label);
+}
+
+.legend-item-dot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dot-red-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--amc-primary);
+  display: inline-block;
+}
+
+.dot-green-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  display: inline-block;
+}
+
+.dash-full-map-link {
+  color: var(--amc-primary);
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.dash-full-map-link:hover {
+  text-decoration: underline;
+}
+
+.dash-armada-map-wrapper {
+  position: relative;
+  height: 330px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-card);
+}
+
+#dashboardArmadaMap {
+  width: 100%;
+  height: 100%;
+}
+
+.dash-map-watermark-note {
+  font-size: 0.68rem;
+  color: #94A3B8;
+  margin-top: 8px;
+}
+
+/* Right Card: Misi Aktif */
+.dash-misi-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dash-misi-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dash-misi-badge {
+  background: var(--amc-soft);
+  color: var(--amc-primary);
+  border: 1px solid var(--amc-soft-border);
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+}
+
+.dash-misi-van-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border-card);
+}
+
+.dash-misi-van-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.dash-misi-status-pill {
+  background: #FEF3C7;
+  color: #D97706;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dash-misi-status-pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #D97706;
+  display: inline-block;
+}
+
+/* Route Stops Path */
+.dash-misi-route-path {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  padding-left: 20px;
+}
+
+.dash-misi-route-path::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: #E2E8F0;
+}
+
+.dash-route-node {
+  position: relative;
+  font-size: 0.78rem;
+}
+
+.dash-route-node::before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--amc-primary);
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 0 0 1px var(--amc-primary);
+}
+
+.dash-route-node strong {
+  color: var(--text-main);
+}
+
+.dash-route-node span {
+  color: var(--text-label);
+}
+
+/* ETA & Distance Stats */
+.dash-misi-eta-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: #F8FAFC;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.eta-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.eta-stat-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--amc-soft);
+  color: var(--amc-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+
+.eta-stat-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.eta-stat-label {
+  font-size: 0.68rem;
+  color: var(--text-label);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.eta-stat-val {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+/* Progress Tracker Bar */
+.dash-misi-stepper-tracker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  padding: 6px 0;
+}
+
+.misi-step-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #94A3B8;
+  z-index: 2;
+}
+
+.misi-step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #CBD5E1;
+}
+
+.misi-step-unit.active .misi-step-dot {
+  background: var(--amc-primary);
+  box-shadow: 0 0 0 3px var(--amc-soft);
+}
+
+.misi-step-unit.active {
+  color: var(--amc-primary);
+  font-weight: 700;
+}
+
+.misi-step-unit.completed .misi-step-dot {
+  background: var(--amc-primary);
+}
+
+/* Big Red CTA Button */
+.btn-dash-lihat-misi {
+  width: 100%;
+  padding: 12px;
+  background: var(--amc-primary);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(198, 30, 47, 0.28);
+  transition: all 0.15s ease;
+}
+
+.btn-dash-lihat-misi:hover {
+  background: var(--amc-btn-hover);
+  transform: translateY(-1px);
+}
+
+/* Caution Note Banner */
+.dash-misi-caution-alert {
+  background: var(--amc-soft);
+  border: 1px solid var(--amc-soft-border);
+  color: var(--amc-primary);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.74rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-misi-caution-alert strong {
+  font-weight: 800;
+}
+
+/* Bottom Card: Perjalanan Terkini */
+.dash-recent-trips-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+}
+
+.dash-recent-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.dash-recent-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dash-recent-filter-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.dash-pill-btn {
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  background: #F1F5F9;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-label);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dash-pill-btn:hover {
+  background: var(--amc-soft);
+  color: var(--amc-primary);
+}
+
+.dash-pill-btn.active {
+  background: var(--amc-soft);
+  color: var(--amc-primary);
+  border-color: var(--amc-soft-border);
+  font-weight: 700;
+}
+
+.dash-recent-see-all-link {
+  color: var(--amc-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dash-recent-see-all-link:hover {
+  text-decoration: underline;
+}
+
+.dash-recent-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.dash-recent-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-label);
+  border-bottom: 1px solid var(--border-card);
+}
+
+.dash-recent-table td {
+  padding: 12px;
+  border-bottom: 1px solid #F1F5F9;
+  color: var(--text-main);
+}
+
+.dash-recent-table tr:hover td {
+  background: #F8FAFC;
+}
+
+.dash-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+}
+
+.dash-status-badge.amber {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.dash-status-badge.green {
+  background: #DCFCE7;
+  color: #15803D;
 }
 
 /* =========================================================================

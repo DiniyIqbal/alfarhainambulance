@@ -175,7 +175,7 @@
       <nav class="sidebar-nav-container">
         <div class="nav-group-label">PEMANTAUAN</div>
 
-        <button class="nav-item-btn" data-target="dashboardView">
+        <button class="nav-item-btn active" data-target="dashboardView">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -206,7 +206,7 @@
           <span class="nav-item-label">Dispatch</span>
         </button>
 
-        <button class="nav-item-btn active" data-target="rekodPerjalananView">
+        <button class="nav-item-btn" data-target="rekodPerjalananView">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -269,6 +269,7 @@
           <span>Pusat Kawalan Ambulans</span>
         </div>
       </div>
+      <div class="sidebar-page-subcode">02 - Dashboard</div>
     </aside>
 
     <!-- =======================================================================
@@ -282,7 +283,7 @@
           <div class="topbar-breadcrumb" id="topbarBreadcrumb">
             <span class="crumb-parent">Portal Operasi</span>
             <span class="crumb-divider">/</span>
-            <span class="crumb-current" id="crumbCurrentView">Tetapan</span>
+            <span class="crumb-current" id="crumbCurrentView">Dashboard</span>
           </div>
         </div>
 
@@ -1065,7 +1066,7 @@
         <!-- ===================================================================
              VIEW 3: REKOD PERJALANAN (SCREENSHOT 3)
              =================================================================== -->
-        <section class="portal-view-section active" id="rekodPerjalananView">
+        <section class="portal-view-section" id="rekodPerjalananView">
           
           <!-- View Title Header -->
           <div class="view-header-row">
@@ -1714,77 +1715,292 @@
         </section>
 
         <!-- ===================================================================
-             VIEW 5: DASHBOARD
+             VIEW 5: DASHBOARD (RED & WHITE OPERATIONAL OVERVIEW)
              =================================================================== -->
-        <section class="portal-view-section" id="dashboardView">
+        <section class="portal-view-section active" id="dashboardView">
+          
+          <!-- View Title Header with Right Controls -->
           <div class="view-header-row">
             <div>
               <div class="view-title-wrap">
-                <h2 class="view-main-title">Dashboard Operasi</h2>
-                <span class="badge-data-contoh">MASA NYATA</span>
+                <h2 class="view-main-title">Gambaran Keseluruhan Operasi</h2>
+                <span class="badge-data-contoh">DATA CONTOH</span>
               </div>
-              <p class="view-subtitle">Ringkasan status misi harian, armada bersedia dan metrik operasi Al-Farhain AMC.</p>
+              <p class="view-subtitle">Pantau armada, perjalanan dan hasil dalam satu paparan.</p>
             </div>
-            <div class="view-header-code">01 · Dashboard</div>
-          </div>
 
-          <!-- Quick Action Buttons -->
-          <div class="dashboard-hero-action-bar">
-            <div class="quick-kpi-pill">
-              <span class="live-dot-green"></span>
-              <span>2 Cawangan Beroperasi (24 Jam)</span>
-            </div>
-            <div class="dashboard-actions-cluster">
-              <button class="btn-primary-dispatch" id="btnDashboardNewDispatch">
-                <span>⚡</span> <span>+ Dispatch Baharu</span>
+            <!-- Top Right Action & Filter Bar -->
+            <div class="dashboard-filter-bar">
+              <select id="dashBranchFilter" class="dash-filter-select" title="Tapis Cawangan">
+                <option value="all" selected>Semua cawangan</option>
+                <option value="kok_lanas">Kok Lanas HQ</option>
+                <option value="raub">Cawangan Raub</option>
+              </select>
+
+              <div class="dash-date-badge">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span>20 Okt 2026</span>
+              </div>
+
+              <button type="button" class="dash-export-btn" id="btnExportDashboardReport" title="Eksport Laporan Operasi">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="12" y1="18" x2="12" y2="12"></line>
+                  <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+                <span>Eksport Laporan</span>
               </button>
             </div>
           </div>
 
-          <!-- 4 Summary KPI Cards -->
-          <div class="records-kpi-quad-grid" style="margin-top: 16px;">
-            <div class="kpi-card-metric">
-              <div class="kpi-icon-round teal">🚑</div>
-              <div class="kpi-metric-texts">
-                <span class="kpi-metric-title">Unit Armada Aktif</span>
-                <span class="kpi-metric-hero">2 Unit</span>
-                <span class="kpi-metric-sub">VPQ 7606 (Kelantan) &amp; DFG 7606 (Pahang)</span>
+          <!-- 4 Stat / Metric Cards Grid -->
+          <div class="dashboard-metrics-quad-grid">
+            <!-- 1. Jumlah Ambulans -->
+            <div class="dash-metric-card">
+              <div class="dash-metric-icon-box">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 14h-3V7c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h1c0 1.66 1.34 3 3 3s3-1.34 3-3h4c0 1.66 1.34 3 3 3s3-1.34 3-3h1c1.1 0 2-.9 2-2v-3.5L19 14z"/>
+                  <circle cx="8" cy="18" r="2"/>
+                  <circle cx="16" cy="18" r="2"/>
+                  <path d="M7 10h4M9 8v4"/>
+                </svg>
+              </div>
+              <div class="dash-metric-content">
+                <span class="dash-metric-label">Jumlah Ambulans</span>
+                <span class="dash-metric-number" id="dashMetricTotalVans">2</span>
+                <span class="dash-metric-caption">2 cawangan</span>
               </div>
             </div>
-            <div class="kpi-card-metric">
-              <div class="kpi-icon-round cyan">⚡</div>
-              <div class="kpi-metric-texts">
-                <span class="kpi-metric-title">Misi Aktif Hari Ini</span>
-                <span class="kpi-metric-hero">1 Trip</span>
-                <span class="kpi-metric-sub">Menuju Hospital Raja Perempuan Zainab II</span>
+
+            <!-- 2. Dalam Perjalanan -->
+            <div class="dash-metric-card">
+              <div class="dash-metric-icon-box">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </div>
+              <div class="dash-metric-content">
+                <span class="dash-metric-label">Dalam Perjalanan</span>
+                <span class="dash-metric-number" id="dashMetricActiveMissions">1</span>
+                <span class="dash-metric-caption">1 misi aktif</span>
               </div>
             </div>
-            <div class="kpi-card-metric">
-              <div class="kpi-icon-round green">💵</div>
-              <div class="kpi-metric-texts">
-                <span class="kpi-metric-title">Hasil Bulan Ini</span>
-                <span class="kpi-metric-hero">RM 7,850</span>
-                <span class="kpi-metric-sub">24 rekod tempahan disegerakkan</span>
+
+            <!-- 3. Ambulans Bersedia -->
+            <div class="dash-metric-card">
+              <div class="dash-metric-icon-box">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+              <div class="dash-metric-content">
+                <span class="dash-metric-label">Ambulans Bersedia</span>
+                <span class="dash-metric-number" id="dashMetricStandbyVans">1</span>
+                <span class="dash-metric-caption">Sedia menerima tugasan</span>
               </div>
             </div>
-            <div class="kpi-card-metric">
-              <div class="kpi-icon-round slate">🛣️</div>
-              <div class="kpi-metric-texts">
-                <span class="kpi-metric-title">Jumlah Jarak Tempuh</span>
-                <span class="kpi-metric-hero">1,420 km</span>
-                <span class="kpi-metric-sub">Purata respons 12 minit</span>
+
+            <!-- 4. Hasil Hari Ini -->
+            <div class="dash-metric-card">
+              <div class="dash-metric-icon-box">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="20" x2="18" y2="10"></line>
+                  <line x1="12" y1="20" x2="12" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+              </div>
+              <div class="dash-metric-content">
+                <span class="dash-metric-label">Hasil Hari Ini</span>
+                <span class="dash-metric-number" id="dashMetricTodayRevenue">RM1,540</span>
+                <span class="dash-metric-caption">4 perjalanan selesai</span>
               </div>
             </div>
           </div>
 
-          <!-- Active Fleet Matrix -->
-          <div class="portal-card" style="margin-top: 18px;">
-            <h3 class="card-heading">Status Unit Ambulans AMC</h3>
-            <p class="card-subheading">Pemantauan status kenderaan, tekanan tangki oksigen dan kesiapsiagaan krew.</p>
-            <div class="matrix-card-stack" id="dashboardFleetList">
-              <!-- Rendered via JS -->
+          <!-- Middle Split Section: Pemantauan Armada (Left) + Misi Aktif (Right) -->
+          <div class="dashboard-mid-split-grid">
+            <!-- Left: Pemantauan Armada -->
+            <div class="dash-armada-card">
+              <div class="dash-card-header-flex">
+                <h3 class="dash-card-title">Pemantauan Armada</h3>
+                <div class="dash-armada-legend-row">
+                  <span class="legend-item-dot">
+                    <span class="dot-red-indicator"></span>
+                    <span>Dalam perjalanan</span>
+                  </span>
+                  <span class="legend-item-dot">
+                    <span class="dot-green-indicator"></span>
+                    <span>Bersedia</span>
+                  </span>
+                  <a href="#" class="dash-full-map-link" id="linkDashOpenFullMap">
+                    <span>Lihat peta penuh</span>
+                    <span>↗</span>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Leaflet Map Container -->
+              <div class="dash-armada-map-wrapper">
+                <div id="dashboardArmadaMap"></div>
+              </div>
+              <div class="dash-map-watermark-note">
+                Ilustrasi peta • bukan GPS sebenar
+              </div>
+            </div>
+
+            <!-- Right: Misi Aktif -->
+            <div class="dash-misi-card">
+              <div class="dash-misi-head-row">
+                <h3 class="dash-card-title">Misi Aktif</h3>
+                <span class="dash-misi-badge">1 misi</span>
+              </div>
+
+              <!-- Unit Plate & Status -->
+              <div class="dash-misi-van-row">
+                <div class="dash-misi-van-left">
+                  <span style="font-size: 1.2rem;">🚑</span>
+                  <span>VPQ 7606</span>
+                </div>
+                <div class="dash-misi-status-pill">
+                  Menuju lokasi
+                </div>
+              </div>
+
+              <!-- Route Path Stops -->
+              <div class="dash-misi-route-path">
+                <div class="dash-route-node">
+                  <strong>Kok Lanas HQ</strong>
+                </div>
+                <div class="dash-route-node">
+                  <span>Pengambilan •</span> <strong>Kota Bharu</strong>
+                </div>
+                <div class="dash-route-node">
+                  <span>Destinasi •</span> <strong>HRPZ II</strong>
+                </div>
+              </div>
+
+              <!-- ETA & Distance Stats -->
+              <div class="dash-misi-eta-stats">
+                <div class="eta-stat-item">
+                  <div class="eta-stat-icon">⏱️</div>
+                  <div class="eta-stat-meta">
+                    <span class="eta-stat-label">ETA</span>
+                    <span class="eta-stat-val">12 min</span>
+                  </div>
+                </div>
+                <div class="eta-stat-item">
+                  <div class="eta-stat-icon">📍</div>
+                  <div class="eta-stat-meta">
+                    <span class="eta-stat-label">Baki</span>
+                    <span class="eta-stat-val">8.2 km</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Stepper Progress Tracker -->
+              <div class="dash-misi-stepper-tracker">
+                <div class="misi-step-unit completed">
+                  <div class="misi-step-dot"></div>
+                  <span>Diterima</span>
+                </div>
+                <div class="misi-step-unit active">
+                  <div class="misi-step-dot"></div>
+                  <span>Menuju</span>
+                </div>
+                <div class="misi-step-unit">
+                  <div class="misi-step-dot"></div>
+                  <span>Di lokasi</span>
+                </div>
+                <div class="misi-step-unit">
+                  <div class="misi-step-dot"></div>
+                  <span>Transit</span>
+                </div>
+                <div class="misi-step-unit">
+                  <div class="misi-step-dot"></div>
+                  <span>Selesai</span>
+                </div>
+              </div>
+
+              <!-- Primary CTA Button -->
+              <button type="button" class="btn-dash-lihat-misi" id="btnDashLihatMisi">
+                Lihat Misi
+              </button>
+
+              <!-- Caution Note -->
+              <div class="dash-misi-caution-alert">
+                <span>⚠️</span>
+                <span><strong>Perlu perhatian:</strong> Semak peralatan sebelum tugasan seterusnya.</span>
+              </div>
             </div>
           </div>
+
+          <!-- Bottom: Perjalanan Terkini -->
+          <div class="dash-recent-trips-card">
+            <div class="dash-recent-header">
+              <div class="dash-recent-left">
+                <h3 class="dash-card-title">Perjalanan Terkini</h3>
+                <div class="dash-recent-filter-pills">
+                  <button type="button" class="dash-pill-btn active" data-filter="all">Semua</button>
+                  <button type="button" class="dash-pill-btn" data-filter="aktif">Aktif</button>
+                  <button type="button" class="dash-pill-btn" data-filter="selesai">Selesai</button>
+                </div>
+              </div>
+              <a href="#" class="dash-recent-see-all-link" id="linkDashSeeAllTrips">
+                <span>Lihat semua</span>
+                <span>&rarr;</span>
+              </a>
+            </div>
+
+            <div class="records-table-scroll-container">
+              <table class="dash-recent-table">
+                <thead>
+                  <tr>
+                    <th>No. Rujukan</th>
+                    <th>Cawangan</th>
+                    <th>Laluan</th>
+                    <th>Ambulans</th>
+                    <th>Status</th>
+                    <th>Jumlah</th>
+                  </tr>
+                </thead>
+                <tbody id="dashRecentTripsTableBody">
+                  <tr>
+                    <td><strong>AMC-1043</strong></td>
+                    <td>Kok Lanas HQ</td>
+                    <td>Kok Lanas &rarr; HRPZ II</td>
+                    <td>VPQ 7606</td>
+                    <td><span class="dash-status-badge amber">Menuju lokasi</span></td>
+                    <td><strong>RM503.90</strong></td>
+                  </tr>
+                  <tr>
+                    <td><strong>AMC-1042</strong></td>
+                    <td>Raub</td>
+                    <td>Raub &rarr; Hospital Kuala Lipis</td>
+                    <td>DFG 7606</td>
+                    <td><span class="dash-status-badge green">Selesai</span></td>
+                    <td><strong>RM452.50</strong></td>
+                  </tr>
+                  <tr>
+                    <td><strong>AMC-1041</strong></td>
+                    <td>Kok Lanas HQ</td>
+                    <td>Machang &rarr; Hospital Machang</td>
+                    <td>VPQ 7606</td>
+                    <td><span class="dash-status-badge green">Selesai</span></td>
+                    <td><strong>RM300.00</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </section>
 
         <!-- ===================================================================

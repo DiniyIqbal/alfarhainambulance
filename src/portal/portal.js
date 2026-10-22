@@ -42,7 +42,7 @@ const portalState = {
     branch: 'kok_lanas',
     email: 'pengurus@alfarhain.my'
   },
-  activeTab: 'tetapanView', // 'tetapanView' | 'dispatchView' | 'rekodPerjalananView' | 'cawanganView' | 'dashboardView' | 'petaFleetView' | 'hasilInvoisView'
+  activeTab: 'dashboardView', // 'tetapanView' | 'dispatchView' | 'rekodPerjalananView' | 'cawanganView' | 'dashboardView' | 'petaFleetView' | 'hasilInvoisView'
   theme: localStorage.getItem('amc_theme') || 'light',
   reduceMotion: localStorage.getItem('amc_reduce_motion') === 'true',
   selectedRecordId: 'AMC-1043',
@@ -221,6 +221,7 @@ let tacticalRadarMap = null;
 let dispatchRouteMap = null;
 let branchMapKokLanasObj = null;
 let branchMapRaubObj = null;
+let dashboardArmadaMap = null;
 
 /* -------------------------------------------------------------------------
    DOM INITIALIZATION
@@ -234,6 +235,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initDispatchView();
   initBranchView();
   initTacticalRadarMap();
+  initDashboardView();
   renderDashboardFleet();
   renderRevenueTable();
 });
@@ -961,6 +963,7 @@ function initTacticalRadarMap() {
 
 function invalidateAllMaps() {
   setTimeout(() => {
+    if (dashboardArmadaMap) dashboardArmadaMap.invalidateSize();
     if (tacticalRadarMap) tacticalRadarMap.invalidateSize();
     if (dispatchRouteMap) {
       dispatchRouteMap.invalidateSize();
@@ -977,6 +980,130 @@ function invalidateAllMaps() {
       branchMapRaubObj.setView([3.7915, 101.8590], 9);
     }
   }, 250);
+}
+
+/* -------------------------------------------------------------------------
+   8. DASHBOARD RED & WHITE VIEW LOGIC
+   ------------------------------------------------------------------------- */
+function initDashboardView() {
+  const mapEl = document.getElementById('dashboardArmadaMap');
+  if (mapEl && typeof L !== 'undefined') {
+    try {
+      dashboardArmadaMap = L.map('dashboardArmadaMap', {
+        zoomControl: true,
+        attributionControl: false
+      }).setView([5.3, 102.2], 7);
+
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18
+      }).addTo(dashboardArmadaMap);
+
+      const kokLanas = [5.9176965, 102.2446687];
+      const kotaBharu = [6.1254, 102.2386];
+      const hrpz2 = [6.1332, 102.2483];
+      const raub = [3.7915, 101.8590];
+
+      // Red Route between Kok Lanas & Kota Bharu / HRPZ II
+      L.polyline([kokLanas, kotaBharu, hrpz2], {
+        color: '#C61E2F',
+        weight: 4,
+        dashArray: '6, 6',
+        opacity: 0.85
+      }).addTo(dashboardArmadaMap);
+
+      // Marker VPQ 7606 (Dalam perjalanan, Red Marker)
+      const vpqIcon = L.divIcon({
+        className: 'custom-map-pin',
+        html: `<div style="display:flex; align-items:center; gap:6px; background:#C61E2F; color:#FFF; padding:4px 9px; border-radius:9999px; font-size:11px; font-weight:800; font-family:sans-serif; box-shadow:0 3px 10px rgba(198,30,47,0.45); white-space:nowrap;">
+          <span>🚑 VPQ 7606</span>
+          <span style="background:rgba(255,255,255,0.25); padding:1px 5px; border-radius:4px; font-size:9px;">Dalam perjalanan</span>
+        </div>`,
+        iconSize: [180, 26],
+        iconAnchor: [90, 13]
+      });
+      L.marker([6.05, 102.24], { icon: vpqIcon }).addTo(dashboardArmadaMap);
+
+      // Marker DFG 7606 (Bersedia, Green Marker)
+      const dfgIcon = L.divIcon({
+        className: 'custom-map-pin',
+        html: `<div style="display:flex; align-items:center; gap:6px; background:#10B981; color:#FFF; padding:4px 9px; border-radius:9999px; font-size:11px; font-weight:800; font-family:sans-serif; box-shadow:0 3px 10px rgba(16,185,129,0.35); white-space:nowrap;">
+          <span>🚑 DFG 7606</span>
+          <span style="background:rgba(255,255,255,0.25); padding:1px 5px; border-radius:4px; font-size:9px;">Bersedia</span>
+        </div>`,
+        iconSize: [150, 26],
+        iconAnchor: [75, 13]
+      });
+      L.marker(raub, { icon: dfgIcon }).addTo(dashboardArmadaMap);
+    } catch (e) {
+      console.warn('Dashboard armada map error:', e);
+    }
+  }
+
+  // Quick navigation links in dashboard
+  document.getElementById('linkDashOpenFullMap')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.querySelector('[data-target="petaFleetView"]')?.click();
+  });
+
+  document.getElementById('linkDashSeeAllTrips')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.querySelector('[data-target="rekodPerjalananView"]')?.click();
+  });
+
+  document.getElementById('btnDashLihatMisi')?.addEventListener('click', () => {
+    openBookingDetailModal('AMC-1043');
+  });
+
+  // Recent trips filter pills (Semua, Aktif, Selesai)
+  const pillBtns = document.querySelectorAll('.dash-pill-btn');
+  pillBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      pillBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.dataset.filter;
+      filterDashboardRecentTrips(filter);
+    });
+  });
+
+  // Branch filter change
+  document.getElementById('dashBranchFilter')?.addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (val === 'kok_lanas' && dashboardArmadaMap) {
+      dashboardArmadaMap.setView([5.9176965, 102.2446687], 10);
+    } else if (val === 'raub' && dashboardArmadaMap) {
+      dashboardArmadaMap.setView([3.7915, 101.8590], 10);
+    } else if (dashboardArmadaMap) {
+      dashboardArmadaMap.setView([5.3, 102.2], 7);
+    }
+  });
+
+  // Export report button
+  document.getElementById('btnExportDashboardReport')?.addEventListener('click', () => {
+    alert('Laporan Operasi Harian Al-Farhain AMC sedang dieksport ke format PDF/CSV...');
+  });
+}
+
+function filterDashboardRecentTrips(filter) {
+  const tbody = document.getElementById('dashRecentTripsTableBody');
+  if (!tbody) return;
+
+  const sampleTrips = [
+    { ref: 'AMC-1043', branch: 'Kok Lanas HQ', route: 'Kok Lanas → HRPZ II', van: 'VPQ 7606', status: 'Menuju lokasi', type: 'aktif', amount: 'RM503.90', statusClass: 'amber' },
+    { ref: 'AMC-1042', branch: 'Raub', route: 'Raub → Hospital Kuala Lipis', van: 'DFG 7606', status: 'Selesai', type: 'selesai', amount: 'RM452.50', statusClass: 'green' },
+    { ref: 'AMC-1041', branch: 'Kok Lanas HQ', route: 'Machang → Hospital Machang', van: 'VPQ 7606', status: 'Selesai', type: 'selesai', amount: 'RM300.00', statusClass: 'green' }
+  ];
+
+  const filtered = filter === 'all' ? sampleTrips : sampleTrips.filter(t => t.type === filter);
+  tbody.innerHTML = filtered.map(t => `
+    <tr>
+      <td><strong>${t.ref}</strong></td>
+      <td>${t.branch}</td>
+      <td>${t.route}</td>
+      <td>${t.van}</td>
+      <td><span class="dash-status-badge ${t.statusClass}">${t.status}</span></td>
+      <td><strong>${t.amount}</strong></td>
+    </tr>
+  `).join('');
 }
 
 /* -------------------------------------------------------------------------

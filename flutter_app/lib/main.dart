@@ -17,17 +17,26 @@ class AlFarhainAmbulanceApp extends StatelessWidget {
       title: 'Al-Farhain AMC Ambulans',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF070B14),
-        primaryColor: const Color(0xFF0EA5E9),
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+        primaryColor: const Color(0xFFC61E2F),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0B1220),
-          elevation: 0,
+          backgroundColor: Colors.white,
+          foregroundColor: Color(0xFF25313C),
+          elevation: 0.5,
+          iconTheme: IconThemeData(color: Color(0xFF25313C)),
         ),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF0EA5E9),
-          secondary: Color(0xFF10B981),
-          surface: Color(0xFF111B31),
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFFC61E2F),
+          secondary: Color(0xFFFFF0F2),
+          surface: Colors.white,
+          onPrimary: Colors.white,
+          onSurface: Color(0xFF25313C),
+        ),
+        cardTheme: CardTheme(
+          color: Colors.white,
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
       home: const MainNavigationScreen(),
@@ -59,9 +68,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF0B1220),
-        selectedItemColor: const Color(0xFF0EA5E9),
-        unselectedItemColor: Colors.white54,
+        backgroundColor: Colors.white,
+        selectedItemColor: const Color(0xFFC61E2F),
+        unselectedItemColor: const Color(0xFF64748B),
         onTap: (index) {
           setState(() {
             _currentIndex = index;

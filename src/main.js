@@ -1148,22 +1148,23 @@ function updateMiniMap() {
     : [state.pickupCoords, state.destinationCoords];
 
   miniRouteLeg1 = L.polyline(leg1Points, {
-    color: '#007D77',
+    color: '#C61E2F',
     weight: 4.5,
     opacity: 0.9,
     smoothFactor: 1
   }).addTo(miniMap);
 
   miniRouteLeg2 = L.polyline(leg2Points, {
-    color: '#DC2626',
+    color: '#C61E2F',
     weight: 4.5,
     opacity: 0.9,
+    dashArray: '6, 6',
     smoothFactor: 1
   }).addTo(miniMap);
 
-  const m1 = L.circleMarker(state.originCoords, { radius: 5, color: '#007D77', fillColor: '#FFFFFF', fillOpacity: 1, weight: 2.5 }).addTo(miniMap);
-  const m2 = L.circleMarker(state.pickupCoords, { radius: 6, color: '#0284C7', fillColor: '#38BDF8', fillOpacity: 1, weight: 2.5 }).addTo(miniMap);
-  const m3 = L.circleMarker(state.destinationCoords, { radius: 5, color: '#DC2626', fillColor: '#FFFFFF', fillOpacity: 1, weight: 2.5 }).addTo(miniMap);
+  const m1 = L.circleMarker(state.originCoords, { radius: 5, color: '#C61E2F', fillColor: '#FFFFFF', fillOpacity: 1, weight: 2.5 }).addTo(miniMap);
+  const m2 = L.circleMarker(state.pickupCoords, { radius: 6, color: '#C61E2F', fillColor: '#FFF0F2', fillOpacity: 1, weight: 2.5 }).addTo(miniMap);
+  const m3 = L.circleMarker(state.destinationCoords, { radius: 5, color: '#C61E2F', fillColor: '#FFFFFF', fillOpacity: 1, weight: 2.5 }).addTo(miniMap);
 
   miniMarkers = [m1, m2, m3];
   const activeRoutes = [miniRouteLeg1, miniRouteLeg2];
@@ -1243,17 +1244,18 @@ function updateFullMap() {
 
   // Draw Leg 1 (Pangkalan ➔ Pesakit)
   fullRouteLeg1 = L.polyline(leg1Points, {
-    color: '#007D77',
-    weight: 6,
+    color: '#C61E2F',
+    weight: 5.5,
     opacity: 0.9,
     smoothFactor: 1
   }).addTo(fullMap);
 
   // Draw Leg 2 (Pesakit ➔ Hospital)
   fullRouteLeg2 = L.polyline(leg2Points, {
-    color: '#DC2626',
-    weight: 6,
+    color: '#C61E2F',
+    weight: 5.5,
     opacity: 0.9,
+    dashArray: '8, 8',
     smoothFactor: 1
   }).addTo(fullMap);
 

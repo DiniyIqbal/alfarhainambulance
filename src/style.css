@@ -1,66 +1,70 @@
 /* =====================================================================
    AL-FARHAIN MEDICAL CENTER (AMC) - AMBULANCE MEDICAL SYSTEM
-   Design System & Premium Aesthetics (Vanilla CSS)
-   Faithfully implemented based on the 01, 02, 03 Official Mockup Spec
+   Red & White Design System (Vanilla CSS)
+   Faithfully implemented based on the Red & White Official Mockup Spec
    Color Legend:
-   - Primary Ambulance Teal: #007D77
-   - Dark Pine / Header Teal: #006C67
-   - Vibrant Mint / Cyan Accent: #23CCC5
-   - Urgent / Emergency Red: #C61E2F
-   - Medical Light Background: #F3FAF9
-   - Typography Pine Black: #173D3B
+   - Primary Red: #C61E2F
+   - White: #FFFFFF
+   - Soft Accent: #FFF0F2
+   - Typography Slate Text: #25313C
    ===================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
 
 /* =====================================================================
-   1. DESIGN TOKENS (LIGHT DEFAULT - FROM MOCKUP)
+   1. DESIGN TOKENS (RED & WHITE THEME - FROM MOCKUP)
    ===================================================================== */
 :root {
   --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-heading: 'Outfit', -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Official Mockup Color Palette */
-  --amc-teal: #007D77;
-  --amc-teal-dark: #006C67;
-  --amc-teal-darker: #004F4B;
-  --amc-teal-light: #E6F7F6;
-  --amc-teal-subtle: #F0F9F8;
-  --amc-cyan: #23CCC5;
-  --amc-cyan-light: #EDFAF9;
+  /* Red & White Palette Specification */
   --amc-red: #C61E2F;
-  --amc-red-light: #FFF0F1;
-  --amc-red-border: #FCA5A5;
+  --amc-red-dark: #A61625;
+  --amc-red-darker: #7F0E1B;
+  --amc-red-light: #FFF0F2;
+  --amc-red-subtle: #FFF7F8;
+  --amc-red-border: #FFD6DC;
+
+  /* Aliased primary accent tokens (Mapped to Primary Red) */
+  --amc-teal: #C61E2F;
+  --amc-teal-dark: #A61625;
+  --amc-teal-darker: #7F0E1B;
+  --amc-teal-light: #FFF0F2;
+  --amc-teal-subtle: #FFF7F8;
+  --amc-cyan: #C61E2F;
+  --amc-cyan-light: #FFF0F2;
+
   --amc-green: #10B981;
   --amc-green-light: #ECFDF5;
   --amc-amber: #D97706;
   --amc-amber-light: #FEF3C7;
 
   /* Neutrals & Surfaces */
-  --bg-page: #F3FAF9;
+  --bg-page: #F8FAFC;
   --bg-surface: #FFFFFF;
   --bg-card: #FFFFFF;
-  --bg-card-subtle: #F7FBFA;
-  --bg-input: #F8FCFB;
-  --border-light: #E2EFEF;
-  --border-subtle: #EAF3F2;
-  --border-focus: #007D77;
+  --bg-card-subtle: #FFF7F8;
+  --bg-input: #FFFFFF;
+  --border-light: #E2E8F0;
+  --border-subtle: #F1F5F9;
+  --border-focus: #C61E2F;
 
-  /* Typography */
-  --text-main: #173D3B;
-  --text-heading: #102C2A;
-  --text-sub: #4A6B68;
-  --text-muted: #7A9B98;
-  --text-dim: #9EB5B3;
+  /* Typography (Text #25313C from spec) */
+  --text-main: #25313C;
+  --text-heading: #25313C;
+  --text-sub: #475569;
+  --text-muted: #64748B;
+  --text-dim: #94A3B8;
   --text-white: #FFFFFF;
 
   /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 60, 55, 0.05);
-  --shadow-card: 0 4px 16px rgba(0, 60, 55, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02);
-  --shadow-elevated: 0 10px 28px rgba(0, 60, 55, 0.09);
-  --shadow-btn: 0 4px 12px rgba(0, 125, 119, 0.25);
-  --shadow-bottom-dock: 0 -4px 20px rgba(0, 40, 35, 0.07);
+  --shadow-sm: 0 1px 3px rgba(37, 49, 60, 0.05);
+  --shadow-card: 0 2px 10px rgba(37, 49, 60, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --shadow-elevated: 0 10px 28px rgba(198, 30, 47, 0.12);
+  --shadow-btn: 0 4px 14px rgba(198, 30, 47, 0.28);
+  --shadow-bottom-dock: 0 -3px 16px rgba(37, 49, 60, 0.07);
 
   /* Radius */
   --radius-sm: 8px;
@@ -141,23 +145,20 @@ html, body {
 
 
 /* =====================================================================
-   4. TOP APP HEADER WITH INTEGRATED UTILITIES (#006C67)
-/* =====================================================================
-   4. TOP APP HEADER WITH INTEGRATED NAVIGATION (#005047 - SPEC MATCH)
+   4. TOP APP HEADER (RED & WHITE THEME SPEC MATCH)
    ===================================================================== */
 .app-header {
-  background: #005047;
-  background: linear-gradient(180deg, #00584F 0%, #004B43 100%);
-  color: #FFFFFF;
-  padding: 10px 14px 10px;
+  background: #FFFFFF;
+  color: var(--text-main);
+  padding: 12px 14px 10px;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 10px;
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid var(--border-light);
 }
 
 /* Row 1: Brand & Emergency SOS Capsule */
@@ -177,19 +178,20 @@ html, body {
 .brand-cross-icon {
   width: 38px;
   height: 38px;
-  background-color: #FFFFFF;
+  background-color: var(--amc-red-light);
+  border: 1px solid var(--amc-red-border);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+  box-shadow: none;
   flex-shrink: 0;
 }
 
 .brand-cross-icon svg {
   width: 22px;
   height: 22px;
-  fill: #005047;
+  fill: var(--amc-red);
 }
 
 .brand-titles {
@@ -201,16 +203,16 @@ html, body {
   font-family: var(--font-heading);
   font-size: 1.15rem;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   line-height: 1.05;
-  color: #FFFFFF;
+  color: var(--text-heading);
 }
 
 .brand-title-sub {
-  font-size: 0.68rem;
-  font-weight: 700;
+  font-size: 0.72rem;
+  font-weight: 800;
   letter-spacing: 0.08em;
-  color: #80CBC4;
+  color: var(--text-main);
   text-transform: uppercase;
   margin-top: 1px;
 }
@@ -223,8 +225,7 @@ html, body {
 
 /* Vibrant Red SOS Pill Button */
 .header-sos-capsule {
-  background: #E53935;
-  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  background: var(--amc-red);
   border: none;
   color: #FFFFFF;
   padding: 7px 16px;
@@ -237,13 +238,14 @@ html, body {
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  box-shadow: 0 3px 10px rgba(220, 38, 38, 0.45);
+  box-shadow: 0 3px 10px rgba(198, 30, 47, 0.35);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .header-sos-capsule:hover {
   transform: scale(1.04);
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.55);
+  background-color: var(--amc-red-dark);
+  box-shadow: 0 4px 14px rgba(198, 30, 47, 0.45);
 }
 
 .header-sos-capsule:active {
@@ -266,7 +268,7 @@ html, body {
   width: 100%;
 }
 
-/* Branch Pill (Crisp Solid White) */
+/* Branch Pill (Crisp Solid White with Red Pin) */
 .branch-dropdown-wrapper {
   position: relative;
   flex-shrink: 0;
@@ -274,8 +276,8 @@ html, body {
 
 .branch-select-pill.white-pill {
   background: #FFFFFF;
-  color: #0F172A;
-  border: none;
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
   padding: 6px 14px 6px 12px;
   border-radius: 9999px;
   font-size: 0.82rem;
@@ -284,13 +286,14 @@ html, body {
   align-items: center;
   gap: 7px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .branch-select-pill.white-pill:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  border-color: var(--amc-red-border);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
 }
 
 .branch-select-pill.white-pill:active {
@@ -300,12 +303,12 @@ html, body {
 .pillar-svg-icon {
   width: 15px;
   height: 15px;
-  fill: #475569;
+  fill: var(--amc-red);
   flex-shrink: 0;
 }
 
 #activeBranchLabel {
-  color: #0F172A;
+  color: var(--text-main);
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -313,7 +316,7 @@ html, body {
 .chevron-down-svg {
   width: 13px;
   height: 13px;
-  fill: #0F172A;
+  fill: var(--text-main);
   flex-shrink: 0;
 }
 
@@ -327,13 +330,13 @@ html, body {
 
 /* Status Pill (Dalam talian) */
 .header-status-pill {
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--amc-red-light);
+  border: 1px solid var(--amc-red-border);
   border-radius: 9999px;
   padding: 5px 12px;
-  color: #FFFFFF;
+  color: var(--amc-red);
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -343,8 +346,8 @@ html, body {
 }
 
 .header-status-pill:hover {
-  background: rgba(0, 0, 0, 0.35);
-  border-color: rgba(255, 255, 255, 0.35);
+  background: #FFE2E6;
+  border-color: var(--amc-red);
 }
 
 .status-dot-green {
@@ -362,9 +365,9 @@ html, body {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #FFFFFF;
+  background: #F8FAFC;
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -375,8 +378,9 @@ html, body {
 }
 
 .header-circle-btn:hover {
-  background: rgba(0, 0, 0, 0.38);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--amc-red-light);
+  border-color: var(--amc-red-border);
+  color: var(--amc-red);
   transform: scale(1.05);
 }
 
@@ -384,7 +388,7 @@ html, body {
   transform: scale(0.95);
 }
 
-/* Font Size / Account Pill with Teal 'A' badge */
+/* Font Size / Account Pill with Red 'A' badge */
 .header-font-wrapper {
   position: relative;
   flex-shrink: 0;
@@ -393,9 +397,9 @@ html, body {
 .header-font-pill {
   height: 32px;
   border-radius: 9999px;
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #FFFFFF;
+  background: #F8FAFC;
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -405,15 +409,15 @@ html, body {
 }
 
 .header-font-pill:hover {
-  background: rgba(0, 0, 0, 0.38);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--amc-red-light);
+  border-color: var(--amc-red-border);
 }
 
 .font-a-badge {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #00A896;
+  background: var(--amc-red);
   color: #FFFFFF;
   font-weight: 800;
   font-size: 0.75rem;
@@ -877,18 +881,27 @@ html, body {
 }
 
 .stop-node-icon.pangkalan {
-  background-color: #E6F7F6;
-  color: var(--amc-teal);
+  background-color: var(--amc-red);
+  color: #FFFFFF;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
 }
 
 .stop-node-icon.pickup {
-  background-color: #E6F7F6;
-  color: var(--amc-teal);
+  background-color: var(--amc-red);
+  color: #FFFFFF;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
 }
 
 .stop-node-icon.dest {
-  background-color: #E6F7F6;
-  color: var(--amc-teal);
+  background-color: var(--amc-red);
+  color: #FFFFFF;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
 }
 
 .stop-node-icon.return {
