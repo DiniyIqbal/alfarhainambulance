@@ -77,22 +77,27 @@
   --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Eye-care Dark Mode (Optional Switch) */
+/* Eye-care Dark Mode (Red & White Theme) */
 [data-theme="dark"] {
-  --bg-page: #0C1518;
-  --bg-surface: #142023;
-  --bg-card: #142023;
-  --bg-card-subtle: #19272A;
-  --bg-input: #101B1E;
-  --border-light: #1F3236;
-  --border-subtle: #1A2A2E;
-  --text-main: #E5F3F2;
+  --bg-page: #0F141C;
+  --bg-surface: #161D27;
+  --bg-card: #161D27;
+  --bg-card-subtle: #1C2430;
+  --bg-input: #121820;
+  --border-light: #263345;
+  --border-subtle: #1F2A39;
+  --border-focus: #FF4D5E;
+  --text-main: #E2E8F0;
   --text-heading: #FFFFFF;
-  --text-sub: #A3C5C3;
-  --text-muted: #709391;
-  --text-dim: #4B6B69;
-  --amc-teal-light: rgba(0, 125, 119, 0.2);
-  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --text-sub: #94A3B8;
+  --text-muted: #64748B;
+  --text-dim: #475569;
+  --amc-red: #FF4D5E;
+  --amc-red-light: rgba(255, 77, 94, 0.16);
+  --amc-red-border: rgba(255, 77, 94, 0.35);
+  --amc-teal: #FF4D5E;
+  --amc-teal-light: rgba(255, 77, 94, 0.16);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.5);
   --shadow-bottom-dock: 0 -4px 20px rgba(0, 0, 0, 0.5);
 }
 
@@ -148,7 +153,7 @@ html, body {
    4. TOP APP HEADER (RED & WHITE THEME SPEC MATCH)
    ===================================================================== */
 .app-header {
-  background: #FFFFFF;
+  background: var(--bg-surface);
   color: var(--text-main);
   padding: 12px 14px 10px;
   display: flex;
@@ -179,7 +184,7 @@ html, body {
   width: 38px;
   height: 38px;
   background-color: var(--amc-red-light);
-  border: 1px solid var(--amc-red-border);
+  border: 1.5px solid var(--amc-red-border);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -212,9 +217,9 @@ html, body {
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: var(--text-main);
+  color: var(--amc-red);
   text-transform: uppercase;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .header-right-actions {
@@ -268,16 +273,16 @@ html, body {
   width: 100%;
 }
 
-/* Branch Pill (Crisp Solid White with Red Pin) */
+/* Branch Pill (Crisp Card Background with Red Pin) */
 .branch-dropdown-wrapper {
   position: relative;
   flex-shrink: 0;
 }
 
 .branch-select-pill.white-pill {
-  background: #FFFFFF;
-  color: var(--text-main);
-  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  color: var(--text-heading);
+  border: 1.5px solid var(--border-light);
   padding: 6px 14px 6px 12px;
   border-radius: 9999px;
   font-size: 0.82rem;
@@ -287,13 +292,13 @@ html, body {
   gap: 7px;
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .branch-select-pill.white-pill:hover {
   transform: translateY(-1px);
-  border-color: var(--amc-red-border);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  border-color: var(--amc-red);
+  box-shadow: 0 3px 8px rgba(198, 30, 47, 0.12);
 }
 
 .branch-select-pill.white-pill:active {
@@ -303,12 +308,12 @@ html, body {
 .pillar-svg-icon {
   width: 15px;
   height: 15px;
-  fill: var(--amc-red);
+  fill: var(--amc-red) !important;
   flex-shrink: 0;
 }
 
 #activeBranchLabel {
-  color: var(--text-main);
+  color: var(--text-heading);
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -316,7 +321,7 @@ html, body {
 .chevron-down-svg {
   width: 13px;
   height: 13px;
-  fill: var(--text-main);
+  fill: var(--text-sub) !important;
   flex-shrink: 0;
 }
 
@@ -331,7 +336,7 @@ html, body {
 /* Status Pill (Dalam talian) */
 .header-status-pill {
   background: var(--amc-red-light);
-  border: 1px solid var(--amc-red-border);
+  border: 1.5px solid var(--amc-red-border);
   border-radius: 9999px;
   padding: 5px 12px;
   color: var(--amc-red);
@@ -346,7 +351,7 @@ html, body {
 }
 
 .header-status-pill:hover {
-  background: #FFE2E6;
+  background: rgba(198, 30, 47, 0.15);
   border-color: var(--amc-red);
 }
 
@@ -354,8 +359,8 @@ html, body {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background-color: #22C55E;
-  box-shadow: 0 0 6px #22C55E;
+  background-color: #10B981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
   display: inline-block;
   flex-shrink: 0;
 }
@@ -365,9 +370,9 @@ html, body {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #F8FAFC;
-  border: 1px solid var(--border-light);
-  color: var(--text-main);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-light);
+  color: var(--text-heading);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -377,11 +382,20 @@ html, body {
   flex-shrink: 0;
 }
 
+.header-circle-btn svg {
+  stroke: var(--text-main);
+  transition: stroke 0.15s ease;
+}
+
 .header-circle-btn:hover {
   background: var(--amc-red-light);
-  border-color: var(--amc-red-border);
+  border-color: var(--amc-red);
   color: var(--amc-red);
   transform: scale(1.05);
+}
+
+.header-circle-btn:hover svg {
+  stroke: var(--amc-red);
 }
 
 .header-circle-btn:active {
@@ -397,9 +411,9 @@ html, body {
 .header-font-pill {
   height: 32px;
   border-radius: 9999px;
-  background: #F8FAFC;
-  border: 1px solid var(--border-light);
-  color: var(--text-main);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-light);
+  color: var(--text-heading);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -408,9 +422,18 @@ html, body {
   transition: all 0.15s ease;
 }
 
+.header-font-pill svg {
+  fill: var(--text-muted);
+  transition: fill 0.15s ease;
+}
+
 .header-font-pill:hover {
   background: var(--amc-red-light);
-  border-color: var(--amc-red-border);
+  border-color: var(--amc-red);
+}
+
+.header-font-pill:hover svg {
+  fill: var(--amc-red);
 }
 
 .font-a-badge {
@@ -575,8 +598,8 @@ html, body {
 }
 
 .branch-item:hover, .branch-item.active {
-  background-color: var(--amc-teal-light);
-  color: var(--amc-teal);
+  background-color: var(--amc-red-light);
+  color: var(--amc-red);
 }
 
 .branch-item-name {
@@ -594,7 +617,7 @@ html, body {
    ===================================================================== */
 .stepper-container {
   background-color: var(--bg-surface);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-light);
   padding: 12px 14px 10px;
   position: sticky;
   top: 50px;
@@ -615,13 +638,13 @@ html, body {
   left: 20px;
   right: 20px;
   height: 2px;
-  background-color: #E2EFEF;
+  background-color: var(--border-light);
   z-index: 1;
 }
 
 .stepper-progress-fill {
   height: 100%;
-  background-color: var(--amc-teal);
+  background-color: var(--amc-red);
   transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -648,9 +671,9 @@ html, body {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background-color: #FFFFFF;
-  border: 1.5px solid #CBD5E1;
-  color: #64748B;
+  background-color: var(--bg-surface);
+  border: 1.5px solid var(--border-light);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -662,17 +685,17 @@ html, body {
 }
 
 .stepper-node-item.active .node-circle {
-  background-color: var(--amc-teal);
-  border-color: var(--amc-teal);
+  background-color: var(--amc-red);
+  border-color: var(--amc-red);
   color: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(0, 125, 119, 0.35);
+  box-shadow: 0 2px 10px rgba(198, 30, 47, 0.35);
   transform: scale(1.08);
 }
 
 .stepper-node-item.completed .node-circle {
-  background-color: var(--amc-teal);
-  border-color: var(--amc-teal);
-  color: #FFFFFF;
+  background-color: var(--amc-red-light);
+  border-color: var(--amc-red);
+  color: var(--amc-red);
 }
 
 .node-title {
@@ -684,7 +707,7 @@ html, body {
 }
 
 .stepper-node-item.active .node-title {
-  color: var(--amc-teal);
+  color: var(--amc-red);
   font-weight: 800;
 }
 
@@ -2522,7 +2545,7 @@ html, body {
   left: 0;
   right: 0;
   height: 64px;
-  background: #FFFFFF;
+  background: var(--bg-surface);
   border-top: 1px solid var(--border-light);
   display: flex;
   align-items: center;
@@ -2556,24 +2579,28 @@ html, body {
   width: 22px;
   height: 22px;
   margin-bottom: 2px;
+  stroke: var(--text-muted);
   transition: var(--transition);
 }
 
 .dock-tab-title {
   font-size: 0.68rem;
   font-weight: 600;
+  color: var(--text-muted);
   transition: var(--transition);
 }
 
 .dock-tab-item.active {
-  color: var(--amc-teal);
+  color: var(--amc-red);
 }
 
 .dock-tab-item.active .dock-tab-title {
   font-weight: 800;
+  color: var(--amc-red);
 }
 
 .dock-tab-item.active .dock-icon-svg {
+  stroke: var(--amc-red);
   transform: scale(1.1);
 }
 
