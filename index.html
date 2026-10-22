@@ -235,6 +235,23 @@
 
               <div class="font-menu-divider"></div>
 
+              <!-- Portal Switcher Links -->
+              <a href="/driver.html" class="header-logout-item" style="color:var(--amc-red);text-decoration:none;" title="Buka Antara Muka Pemandu EMT">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                  <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
+                </svg>
+                <span>Portal Pemandu EMT</span>
+              </a>
+
+              <a href="/portal.html" class="header-logout-item" style="color:var(--text-sub);text-decoration:none;" title="Buka Portal HQ Pusat Operasi">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                  <path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/>
+                </svg>
+                <span>Web Portal HQ</span>
+              </a>
+
+              <div class="font-menu-divider"></div>
+
               <!-- Log Out Item -->
               <div class="header-logout-item" id="mobileHeaderSignOutBtn" title="Log keluar dari sesi ini">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
@@ -1250,17 +1267,17 @@
             <div id="mobileAuthStatusMsg" style="display: none; padding: 8px 12px; border-radius: 8px; font-size: 0.74rem;"></div>
           </div>
 
-          <!-- Quick 1-Click Demo Login for Drivers -->
+          <!-- Quick 1-Click Demo Login for Roles (Patient vs Driver) -->
           <div style="background: var(--bg-card); border: 1px dashed var(--border-light); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 14px;">
             <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
-              ⚡ Log Masuk Segera Pemandu (Demo):
+              ⚡ Pengasingan Peranan Emel Gmail:
             </div>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-              <button type="button" class="btn-demo-quick-auth-mobile" data-email="abedi@alfarhain.my" data-name="Abe Di / Syalihan" data-plate="VPQ 7606" data-role="Pemandu EMT Kok Lanas">
-                <span>🚑</span> <span>Abe Di (Pemandu VPQ 7606 • Kelantan)</span>
+              <button type="button" class="btn-demo-quick-auth-mobile" data-email="abedi-driver@gmail.com" data-name="Abe Di (EMT Driver)" data-plate="VPQ 7606" data-role="driver" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:var(--amc-red-light);border:1px solid var(--amc-red-border);color:var(--amc-red);cursor:pointer;font-weight:700;font-size:0.75rem;text-align:left;">
+                <span>🚗</span> <span>Pemandu: abedi-driver@gmail.com (Buka driver.html)</span>
               </button>
-              <button type="button" class="btn-demo-quick-auth-mobile" data-email="abedin@alfarhain.my" data-name="Abe Din Estimos Sukrosa" data-plate="DFG 7606" data-role="Pemandu EMT Raub">
-                <span>🚐</span> <span>Abe Din Estimos (Pemandu DFG 7606 • Pahang)</span>
+              <button type="button" class="btn-demo-quick-auth-mobile" data-email="ahmad@gmail.com" data-name="Ahmad (Waris Pesakit)" data-plate="" data-role="patient" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border-light);color:var(--text-main);cursor:pointer;font-weight:700;font-size:0.75rem;text-align:left;">
+                <span>👤</span> <span>Pesakit: ahmad@gmail.com (Kalkulator & Tempahan)</span>
               </button>
             </div>
           </div>

@@ -35,7 +35,9 @@ import {
   signOutUser,
   getCurrentAuthUser,
   getStoredUserProfile,
-  saveStoredUserProfile
+  saveStoredUserProfile,
+  resolveUserRole,
+  redirectBasedOnRole
 } from './services/supabaseClient.js';
 
 import {
@@ -2600,6 +2602,12 @@ async function initMobileAuth() {
 
   if (currentUser) {
     setMobileGateLocked(false);
+    const userRole = resolveUserRole(currentUser.email, currentUser.user_metadata);
+    const urlParams = new URLSearchParams(window.location.search);
+    if (userRole === 'driver' && !urlParams.has('stay_patient')) {
+      window.location.href = '/driver.html';
+      return;
+    }
   } else {
     setMobileGateLocked(true);
   }
@@ -2669,6 +2677,19 @@ async function initMobileAuth() {
         const user = res.user || res.data?.user;
         updateMobileAuthUI(user);
         if (branch) switchBranch(branch);
+
+        const userRole = resolveUserRole(user.email, user.user_metadata);
+        if (userRole === 'driver') {
+          if (gateStatusMsg) {
+            gateStatusMsg.textContent = 'Membuka Portal Pemandu EMT...';
+            gateStatusMsg.style.background = '#DCFCE7';
+            gateStatusMsg.style.color = '#15803D';
+          }
+          setTimeout(() => {
+            window.location.href = '/driver.html';
+          }, 600);
+          return;
+        }
 
         if (gateStatusMsg) {
           gateStatusMsg.textContent = gateMode === 'login' ? 'Log masuk berjaya! Membuka operasi...' : 'Pendaftaran berjaya! Membuka operasi...';
@@ -2765,6 +2786,19 @@ async function initMobileAuth() {
         updateMobileAuthUI(user);
         setMobileGateLocked(false);
 
+        const userRole = resolveUserRole(user.email, user.user_metadata);
+        if (userRole === 'driver') {
+          if (statusMsg) {
+            statusMsg.textContent = 'Log masuk pemandu berjaya! Membuka portal pemandu...';
+            statusMsg.style.background = '#DCFCE7';
+            statusMsg.style.color = '#15803D';
+          }
+          setTimeout(() => {
+            window.location.href = '/driver.html';
+          }, 600);
+          return;
+        }
+
         if (statusMsg) {
           statusMsg.textContent = authMode === 'login' ? 'Log masuk berjaya!' : 'Akaun berjaya didaftarkan!';
           statusMsg.style.background = '#DCFCE7';
@@ -2815,6 +2849,13 @@ async function initMobileAuth() {
 
       playSuccessChime();
       if (modal) modal.classList.remove('show');
+
+      const userRole = resolveUserRole(email, mockUser.user_metadata);
+      if (userRole === 'driver') {
+        setTimeout(() => {
+          window.location.href = '/driver.html';
+        }, 400);
+      }
     });
   });
 

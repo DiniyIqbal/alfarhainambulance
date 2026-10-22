@@ -282,6 +282,45 @@ export async function signInUser(email, password) {
   }
 }
 
+export async function signInWithGoogleOAuth(roleHint = 'patient') {
+  const supabase = getSupabaseClient();
+  const targetPage = roleHint === 'driver' ? '/driver.html' : '/index.html';
+  const redirectTo = window.location.origin + targetPage;
+
+  if (!supabase) {
+    // Local / Offline demo user simulation
+    const mockEmail = roleHint === 'driver' ? 'diniy-driver@gmail.com' : 'pesakit@gmail.com';
+    const mockUser = {
+      id: 'local_google_' + Date.now(),
+      email: mockEmail,
+      user_metadata: {
+        full_name: roleHint === 'driver' ? 'Abe Di (Pemandu EMT)' : 'Pesakit Al-Farhain',
+        role: roleHint,
+        ambulance_plate: 'VPQ 7606',
+        branch: 'Kok Lanas HQ'
+      }
+    };
+    saveStoredUserProfile(mockUser);
+    return { success: true, user: mockUser, isLocal: true, redirect: targetPage };
+  }
+
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo
+      }
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
 export async function signOutUser() {
   const supabase = getSupabaseClient();
   try {
@@ -325,5 +364,45 @@ export function saveStoredUserProfile(user) {
     localStorage.setItem('amc_auth_user', JSON.stringify(user));
   } catch (e) {
     console.warn('Failed to save auth profile to local storage:', e);
+  }
+}
+
+/**
+ * Automatically determine role from user email and metadata
+ * - "-driver@gmail.com" or ".driver@" -> 'driver'
+ * - "admin@" or "hq@" -> 'hq'
+ * - default -> 'patient'
+ */
+export function resolveUserRole(email = '', userMetadata = {}) {
+  if (userMetadata?.role) return userMetadata.role;
+  const clean = (email || '').toLowerCase().trim();
+  if (clean.includes('-driver@') || clean.includes('.driver@') || clean.includes('_driver@') || clean.includes('driver')) {
+    return 'driver';
+  }
+  if (clean.includes('hq@') || clean.includes('admin@') || clean.includes('dispatcher')) {
+    return 'hq';
+  }
+  return 'patient';
+}
+
+export function getRoleDestination(role) {
+  if (role === 'driver') return '/driver.html';
+  if (role === 'hq') return '/portal.html';
+  return '/index.html';
+}
+
+export function redirectBasedOnRole(user, options = {}) {
+  if (!user) return;
+  const role = resolveUserRole(user.email, user.user_metadata);
+  const currentPath = window.location.pathname;
+
+  if (role === 'driver' && !currentPath.includes('driver.html')) {
+    window.location.href = '/driver.html';
+  } else if (role === 'hq' && !currentPath.includes('portal.html')) {
+    window.location.href = '/portal.html';
+  } else if (role === 'patient' && (currentPath.includes('driver.html') || currentPath.includes('portal.html'))) {
+    if (!options.allowAdminBypass) {
+      window.location.href = '/index.html';
+    }
   }
 }

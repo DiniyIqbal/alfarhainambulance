@@ -1,0 +1,1027 @@
+/* =====================================================================
+   AL-FARHAIN AMC AMBULANCE - DRIVER INTERFACE STYLES (RED & WHITE THEME)
+   Based on Driver UI/UX Spec (Screens 02 through 08)
+   ===================================================================== */
+
+:root {
+  --driver-red: #C61E2F;
+  --driver-red-dark: #A51424;
+  --driver-red-light: #FFF0F2;
+  --driver-red-border: rgba(198, 30, 47, 0.22);
+  --driver-bg-page: #F6F8FA;
+  --driver-bg-card: #FFFFFF;
+  --driver-text-heading: #1E293B;
+  --driver-text-body: #334155;
+  --driver-text-muted: #64748B;
+  --driver-text-dim: #94A3B8;
+  --driver-border: #E2E8F0;
+  --driver-border-subtle: #F1F5F9;
+  --driver-green: #10B981;
+  --driver-green-bg: #ECFDF5;
+  --driver-amber: #F59E0B;
+  --driver-amber-bg: #FFFBEB;
+  --driver-blue: #0284C7;
+  --driver-blue-bg: #F0F9FF;
+  --driver-shadow-card: 0 2px 10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --driver-shadow-lg: 0 10px 25px rgba(198, 30, 47, 0.12);
+  --driver-shadow-dock: 0 -4px 18px rgba(30, 41, 59, 0.08);
+  --driver-radius-card: 16px;
+  --driver-radius-sm: 10px;
+  --driver-radius-pill: 9999px;
+  --driver-font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+[data-theme="dark"] {
+  --driver-red: #FF4D5E;
+  --driver-red-dark: #E62539;
+  --driver-red-light: rgba(255, 77, 94, 0.14);
+  --driver-red-border: rgba(255, 77, 94, 0.35);
+  --driver-bg-page: #0F141C;
+  --driver-bg-card: #161D27;
+  --driver-text-heading: #FFFFFF;
+  --driver-text-body: #E2E8F0;
+  --driver-text-muted: #94A3B8;
+  --driver-text-dim: #64748B;
+  --driver-border: #263345;
+  --driver-border-subtle: #1F2A39;
+  --driver-green-bg: rgba(16, 185, 129, 0.15);
+  --driver-amber-bg: rgba(245, 158, 11, 0.15);
+  --driver-blue-bg: rgba(2, 132, 199, 0.15);
+  --driver-shadow-card: 0 4px 18px rgba(0, 0, 0, 0.45);
+  --driver-shadow-dock: 0 -4px 20px rgba(0, 0, 0, 0.6);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body.driver-body {
+  font-family: var(--driver-font-family);
+  background-color: #E2E8F0;
+  color: var(--driver-text-body);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 0;
+}
+
+/* Outer Mobile Frame container */
+.driver-app-shell {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100vh;
+  background-color: var(--driver-bg-page);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 480px) {
+  .driver-app-shell {
+    max-width: 100%;
+    box-shadow: none;
+  }
+}
+
+/* =====================================================================
+   TOP BRAND / STATUS HEADER
+   ===================================================================== */
+.driver-top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--driver-bg-card);
+  border-bottom: 1px solid var(--driver-border);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.driver-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.driver-nav-back-btn {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--driver-text-heading);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.15s ease;
+}
+
+.driver-nav-back-btn:hover {
+  background-color: var(--driver-border-subtle);
+}
+
+.driver-nav-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--driver-text-heading);
+  letter-spacing: -0.01em;
+}
+
+.driver-nav-center {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.driver-clinic-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.driver-clinic-logo-text {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+
+.clinic-logo-main {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--driver-text-heading);
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.clinic-logo-sub {
+  font-size: 0.52rem;
+  font-weight: 600;
+  color: var(--driver-text-muted);
+}
+
+.driver-24h-badge {
+  background: var(--driver-red);
+  color: #FFFFFF;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.55rem;
+  line-height: 1;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 6px rgba(198, 30, 47, 0.3);
+  flex-shrink: 0;
+}
+
+.driver-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.driver-bell-btn {
+  background: var(--driver-bg-card);
+  border: 1.5px solid var(--driver-border);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--driver-text-heading);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.driver-bell-btn:hover {
+  border-color: var(--driver-red);
+  color: var(--driver-red);
+}
+
+.driver-bell-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  background-color: var(--driver-red);
+  border-radius: 50%;
+  border: 1.5px solid #FFFFFF;
+}
+
+/* =====================================================================
+   HERO BANNER FOR ACTIVE STAGES (RED CURVED TOP HERO)
+   ===================================================================== */
+.driver-stage-hero {
+  background: linear-gradient(135deg, #E62539 0%, #C61E2F 100%);
+  color: #FFFFFF;
+  padding: 16px 18px 22px;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+  position: relative;
+  box-shadow: 0 4px 16px rgba(198, 30, 47, 0.22);
+  margin-bottom: 12px;
+}
+
+.driver-stage-hero-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+
+.driver-stage-hero-sub {
+  font-size: 0.8rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.driver-stage-hero-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.driver-hero-task-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.driver-hero-pill-badge {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* =====================================================================
+   MAIN SCROLLABLE CONTENT
+   ===================================================================== */
+.driver-content-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 14px 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Screen View Toggling */
+.driver-screen-view {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  animation: driverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.driver-screen-view.active {
+  display: flex;
+}
+
+@keyframes driverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =====================================================================
+   CARDS & COMMON COMPONENTS
+   ===================================================================== */
+.driver-card {
+  background-color: var(--driver-bg-card);
+  border: 1px solid var(--driver-border);
+  border-radius: var(--driver-radius-card);
+  padding: 14px;
+  box-shadow: var(--driver-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.driver-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--driver-border-subtle);
+  padding-bottom: 8px;
+}
+
+.driver-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.driver-card-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background-color: var(--driver-red-light);
+  color: var(--driver-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.driver-card-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--driver-text-heading);
+}
+
+.driver-card-sub {
+  font-size: 0.72rem;
+  color: var(--driver-text-muted);
+}
+
+/* Badge Pills */
+.driver-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--driver-radius-pill);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.driver-pill-amber {
+  background-color: var(--driver-amber-bg);
+  color: #B45309;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.driver-pill-green {
+  background-color: var(--driver-green-bg);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.driver-pill-red {
+  background-color: var(--driver-red-light);
+  color: var(--driver-red);
+  border: 1px solid var(--driver-red-border);
+}
+
+/* Route Timeline Card */
+.driver-route-timeline {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  gap: 12px;
+  padding-left: 8px;
+}
+
+.driver-timeline-node {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+}
+
+.driver-node-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--driver-bg-card);
+  border: 2px solid var(--driver-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+.driver-node-indicator.filled {
+  background-color: var(--driver-red);
+  color: #FFFFFF;
+}
+
+.driver-node-indicator.home {
+  border-color: #64748B;
+  color: #64748B;
+}
+
+.driver-timeline-line {
+  position: absolute;
+  top: 24px;
+  left: 19px;
+  bottom: -12px;
+  width: 2px;
+  border-left: 2px dashed #CBD5E1;
+  z-index: 1;
+}
+
+.driver-node-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.driver-node-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--driver-text-muted);
+  text-transform: uppercase;
+}
+
+.driver-node-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--driver-text-heading);
+}
+
+.driver-node-desc {
+  font-size: 0.72rem;
+  color: var(--driver-text-muted);
+  line-height: 1.25;
+}
+
+/* Two Column Subcards */
+.driver-two-col-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.driver-subcard {
+  background-color: var(--driver-border-subtle);
+  border: 1px solid var(--driver-border);
+  border-radius: var(--driver-radius-sm);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.driver-subcard-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--driver-text-heading);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.driver-subcard-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--driver-text-body);
+}
+
+.driver-subcard-item .tag {
+  font-size: 0.65rem;
+  color: var(--driver-text-muted);
+  font-weight: 500;
+}
+
+/* Checklist Items */
+.driver-check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.driver-check-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--driver-border-subtle);
+  border: 1px solid var(--driver-border);
+  border-radius: var(--driver-radius-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.driver-check-item:hover {
+  border-color: var(--driver-red-border);
+}
+
+.driver-check-item.checked {
+  background-color: var(--driver-green-bg);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.driver-check-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.driver-check-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #CBD5E1;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.driver-check-item.checked .driver-check-icon {
+  background-color: var(--driver-green);
+}
+
+.driver-check-text-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.driver-check-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--driver-text-heading);
+}
+
+.driver-check-desc {
+  font-size: 0.7rem;
+  color: var(--driver-text-muted);
+}
+
+.driver-check-arrow {
+  color: var(--driver-text-dim);
+}
+
+/* Interactive Leaflet Maps */
+.driver-map-wrapper {
+  width: 100%;
+  height: 220px;
+  border-radius: var(--driver-radius-card);
+  overflow: hidden;
+  position: relative;
+  border: 1.5px solid var(--driver-border);
+  box-shadow: var(--driver-shadow-card);
+}
+
+.driver-map-canvas {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.driver-map-banner-top {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--driver-border);
+  border-radius: var(--driver-radius-pill);
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--driver-red);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+}
+
+/* Metric / Stat Boxes */
+.driver-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.driver-stat-box {
+  background-color: var(--driver-bg-card);
+  border: 1px solid var(--driver-border);
+  border-radius: var(--driver-radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.driver-stat-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--driver-red-light);
+  color: var(--driver-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.driver-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.driver-stat-val {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--driver-text-heading);
+  line-height: 1.1;
+}
+
+.driver-stat-lbl {
+  font-size: 0.7rem;
+  color: var(--driver-text-muted);
+  font-weight: 600;
+}
+
+/* Mini Stepper (Screens 04 and 06) */
+.driver-mini-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--driver-border-subtle);
+  border-radius: var(--driver-radius-card);
+  padding: 12px 14px;
+  position: relative;
+}
+
+.driver-step-dot-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 2;
+}
+
+.driver-step-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  border: 2px solid #CBD5E1;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.driver-step-dot.active {
+  background-color: var(--driver-red);
+  border-color: var(--driver-red);
+  color: #FFFFFF;
+  box-shadow: 0 0 10px rgba(198, 30, 47, 0.4);
+}
+
+.driver-step-dot.done {
+  background-color: var(--driver-red-light);
+  border-color: var(--driver-red);
+  color: var(--driver-red);
+}
+
+.driver-step-dot-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--driver-text-muted);
+  white-space: nowrap;
+}
+
+.driver-step-dot-item.active .driver-step-dot-label {
+  color: var(--driver-red);
+  font-weight: 800;
+}
+
+/* Buttons System */
+.driver-btn-primary {
+  width: 100%;
+  background: var(--driver-red);
+  color: #FFFFFF;
+  border: none;
+  padding: 13px 18px;
+  border-radius: var(--driver-radius-pill);
+  font-size: 0.92rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(198, 30, 47, 0.35);
+  transition: all 0.15s ease;
+}
+
+.driver-btn-primary:hover {
+  background-color: var(--driver-red-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(198, 30, 47, 0.45);
+}
+
+.driver-btn-primary:active {
+  transform: translateY(0);
+}
+
+.driver-btn-outline {
+  width: 100%;
+  background: var(--driver-bg-card);
+  color: var(--driver-red);
+  border: 1.5px solid var(--driver-red);
+  padding: 12px 18px;
+  border-radius: var(--driver-radius-pill);
+  font-size: 0.92rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.driver-btn-outline:hover {
+  background-color: var(--driver-red-light);
+}
+
+.driver-contact-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.driver-contact-btn {
+  background: var(--driver-bg-card);
+  border: 1.5px solid var(--driver-red-border);
+  color: var(--driver-red);
+  padding: 9px 12px;
+  border-radius: var(--driver-radius-sm);
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.driver-contact-btn:hover {
+  background-color: var(--driver-red-light);
+  border-color: var(--driver-red);
+}
+
+.driver-notice-box {
+  background-color: var(--driver-red-light);
+  border: 1px solid var(--driver-red-border);
+  border-radius: var(--driver-radius-sm);
+  padding: 8px 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--driver-red);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  justify-content: center;
+}
+
+/* Odometer Input Field */
+.driver-odometer-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--driver-border-subtle);
+  border: 1.5px solid var(--driver-border);
+  border-radius: var(--driver-radius-sm);
+  padding: 8px 12px;
+}
+
+.driver-odometer-input {
+  flex: 1;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--driver-text-heading);
+  outline: none;
+  font-family: monospace;
+  letter-spacing: 0.05em;
+}
+
+/* Vehicle Avatar Card */
+.driver-vehicle-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--driver-border-subtle);
+  border: 1px solid var(--driver-border);
+  border-radius: var(--driver-radius-sm);
+  padding: 10px;
+}
+
+.driver-vehicle-thumb {
+  width: 90px;
+  height: 55px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.driver-vehicle-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.driver-plate-title {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--driver-text-heading);
+}
+
+/* =====================================================================
+   BOTTOM NAVIGATION DOCK (UTAMA, TUGASAN (1), REKOD, PROFIL)
+   ===================================================================== */
+.driver-bottom-dock {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background-color: var(--driver-bg-card);
+  border-top: 1px solid var(--driver-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 6px;
+  box-shadow: var(--driver-shadow-dock);
+  z-index: 90;
+}
+
+.driver-dock-item {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: var(--driver-text-muted);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.driver-dock-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.driver-dock-item svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--driver-text-muted);
+  transition: all 0.15s ease;
+}
+
+.driver-dock-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--driver-text-muted);
+  transition: all 0.15s ease;
+}
+
+.driver-dock-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background-color: var(--driver-red);
+  color: #FFFFFF;
+  border-radius: 50%;
+  width: 17px;
+  height: 17px;
+  font-size: 0.62rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FFFFFF;
+}
+
+.driver-dock-item.active {
+  color: var(--driver-red);
+}
+
+.driver-dock-item.active svg {
+  stroke: var(--driver-red);
+  transform: scale(1.08);
+}
+
+.driver-dock-item.active .driver-dock-title {
+  color: var(--driver-red);
+  font-weight: 800;
+}
+
+.driver-dock-item.active .driver-dock-icon-wrap {
+  background-color: var(--driver-red-light);
+  border-radius: 12px;
+  padding: 4px 12px;
+}
+
+/* =====================================================================
+   MODALS & OVERLAYS
+   ===================================================================== */
+.driver-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.driver-modal-overlay.show {
+  display: flex;
+}
+
+.driver-modal-sheet {
+  background-color: var(--driver-bg-card);
+  width: 100%;
+  max-width: 440px;
+  border-radius: 20px 20px 16px 16px;
+  padding: 18px;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUpModal {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.driver-modal-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--driver-text-heading);
+}
+
+.driver-modal-textarea {
+  width: 100%;
+  height: 90px;
+  border: 1.5px solid var(--driver-border);
+  border-radius: var(--driver-radius-sm);
+  padding: 10px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  color: var(--driver-text-heading);
+  background: var(--driver-border-subtle);
+  resize: none;
+  outline: none;
+}
+
+.driver-modal-actions {
+  display: flex;
+  gap: 8px;
+}

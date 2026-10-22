@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="ms" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>AMC Driver OS | Al-Farhain Ambulance EMT Portal</title>
+  <meta name="description" content="Portal Pemandu EMT Al-Farhain Ambulance - Pengurusan tugasan, navigasi kecemasan, semakan kenderaan dan rekod odometer.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS for Emergency Map Routing -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/src/style.css">
+  <link rel="stylesheet" href="/src/driver/driver.css">
+</head>
+<body class="driver-body">
+
+  <div class="driver-app-shell">
+    
+    <!-- =====================================================================
+         1. TOP STICKY APP BAR (POLIKLINIK AL-FARHAIN 24 JAM BRANDING)
+         ===================================================================== -->
+    <header class="driver-top-nav">
+      <div class="driver-nav-left">
+        <button type="button" class="driver-nav-back-btn" id="driverHeaderBackBtn" title="Kembali">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
+        <span class="driver-nav-title" id="driverHeaderTitle">Tugasan baharu</span>
+      </div>
+
+      <div class="driver-nav-center">
+        <div class="driver-clinic-badge">
+          <div class="driver-clinic-logo-text">
+            <span class="clinic-logo-main">POLIKLINIK AL-FARHAIN</span>
+            <span class="clinic-logo-sub">FAMILY MEDICAL CARE CLINIC</span>
+          </div>
+          <div class="driver-24h-badge">
+            <span>24</span>
+            <span style="font-size:0.4rem;">JAM</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="driver-nav-right">
+        <button type="button" class="driver-bell-btn" id="driverBellBtn" title="Notifikasi Tugasan">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span class="driver-bell-dot"></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Role Switcher Notice (visible when patient logs in to test driver view) -->
+    <div id="driverRoleNoticeBanner" style="display:none;background:#FFFBEB;border-bottom:1px solid #FDE68A;padding:8px 14px;font-size:0.75rem;display:flex;align-items:center;justify-content:space-between;color:#92400E;">
+      <span>🚗 Mod Pemandu EMT Aktif (Akaun: <b id="driverEmailBadge">diniy-driver@gmail.com</b>)</span>
+      <a href="/index.html" style="color:#C61E2F;font-weight:700;text-decoration:none;">Buka Pesakit →</a>
+    </div>
+
+    <!-- =====================================================================
+         2. SCROLLABLE CONTAINER FOR THE 7 MISSION SCREENS
+         ===================================================================== -->
+    <main class="driver-content-container">
+
+      <!-- -------------------------------------------------------------
+           SCREEN 02: TUGASAN BAHARU (DISPATCH INCOMING)
+           ------------------------------------------------------------- -->
+      <section class="driver-screen-view active" id="screen02">
+        <!-- Main Task Header Card -->
+        <div class="driver-card">
+          <div class="driver-card-header">
+            <div class="driver-card-title-group">
+              <div class="driver-card-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+                  <rect x="9" y="3" width="6" height="4" rx="2"></rect>
+                  <path d="M9 14l2 2 4-4"></path>
+                </svg>
+              </div>
+              <div>
+                <h2 class="driver-card-title">AMC-1043</h2>
+                <span class="driver-card-sub">🕒 Menunggu penerimaan • Hari ini • 10:00</span>
+              </div>
+            </div>
+            <span class="driver-pill driver-pill-amber">⚠️ Tidak kecemasan</span>
+          </div>
+
+          <!-- Route Preview Thumbnail Map -->
+          <div style="background:#F1F5F9;border-radius:12px;padding:10px;display:flex;align-items:center;justify-content:space-between;border:1px solid #E2E8F0;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.2rem;">🗺️</span>
+              <div>
+                <div style="font-size:0.78rem;font-weight:800;color:var(--driver-text-heading);">Kota Bharu → HRPZ II</div>
+                <div style="font-size:0.68rem;color:var(--driver-text-muted);">Jarak dianggarkan: 27 km</div>
+              </div>
+            </div>
+            <span class="driver-pill driver-pill-red">HRPZ II</span>
+          </div>
+
+          <!-- Vertical 3-Node Route Timeline -->
+          <div class="driver-route-timeline">
+            <div class="driver-timeline-line"></div>
+
+            <!-- Node 1: Pangkalan -->
+            <div class="driver-timeline-node">
+              <div class="driver-node-indicator home">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                  <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+              </div>
+              <div class="driver-node-content">
+                <span class="driver-node-label">Pangkalan</span>
+                <span class="driver-node-name">Kok Lanas HQ</span>
+                <span class="driver-node-desc">Jalan Pasir Puteh, Kok Lanas, 16450 Kota Bharu, Kelantan</span>
+              </div>
+            </div>
+
+            <!-- Node 2: Pengambilan -->
+            <div class="driver-timeline-node">
+              <div class="driver-node-indicator filled">
+                <div style="width:6px;height:6px;background:#fff;border-radius:50%;"></div>
+              </div>
+              <div class="driver-node-content">
+                <span class="driver-node-label">Pengambilan</span>
+                <span class="driver-node-name">Kota Bharu</span>
+                <span class="driver-node-desc">Kota Bharu, Kelantan</span>
+              </div>
+            </div>
+
+            <!-- Node 3: Destinasi -->
+            <div class="driver-timeline-node">
+              <div class="driver-node-indicator filled" style="background:#C61E2F;">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="#fff">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+              </div>
+              <div class="driver-node-content">
+                <span class="driver-node-label">Destinasi</span>
+                <span class="driver-node-name">HRPZ II</span>
+                <span class="driver-node-desc">Hospital Raja Perempuan Zainab II, Kota Bharu, Kelantan</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two Column Details Card: Equipment & Crew -->
+        <div class="driver-two-col-grid">
+          <div class="driver-subcard">
+            <span class="driver-subcard-title">🧰 Keperluan tugasan</span>
+            <div class="driver-subcard-item">
+              <span>🛏️ Pengusung</span>
+              <span class="tag">Diperlukan</span>
+            </div>
+            <div class="driver-subcard-item">
+              <span>♿ Kerusi roda</span>
+              <span class="tag">Diperlukan</span>
+            </div>
+          </div>
+
+          <div class="driver-subcard">
+            <span class="driver-subcard-title">👥 Pasukan bertugas</span>
+            <div class="driver-subcard-item">
+              <span>👤 Pemandu 01</span>
+              <span class="tag">Bertugas</span>
+            </div>
+            <div class="driver-subcard-item">
+              <span>👨‍⚕️ Krew 02</span>
+              <span class="tag">EMT</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient Details Card -->
+        <div class="driver-card" style="padding:10px 14px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--driver-red-light);color:var(--driver-red);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">
+              👤
+            </div>
+            <div>
+              <div style="font-size:0.86rem;font-weight:800;color:var(--driver-text-heading);">Pesakit 01</div>
+              <div style="font-size:0.72rem;color:var(--driver-text-muted);">♿ Bantuan mobiliti: Kerusi roda</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HQ Verification Badge Card -->
+        <div class="driver-card" style="background:var(--driver-green-bg);border-color:rgba(16,185,129,0.3);padding:10px 14px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1.1rem;color:var(--driver-green);">✅</span>
+            <div>
+              <div style="font-size:0.78rem;font-weight:800;color:#065F46;">Tempahan disahkan oleh HQ</div>
+              <div style="font-size:0.7rem;color:#047857;">Tugasan ini telah disahkan dan sedia untuk penerimaan.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Call HQ Operations -->
+        <button type="button" class="driver-contact-btn btn-call-hq" style="width:100%;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1.1rem;">📞</span>
+            <div style="text-align:left;">
+              <div style="font-size:0.82rem;font-weight:800;color:var(--driver-red);">Hubungi pusat operasi</div>
+              <div style="font-size:0.68rem;color:var(--driver-text-muted);">HQ sedia membantu sepanjang masa</div>
+            </div>
+          </div>
+          <span>›</span>
+        </button>
+
+        <!-- Accept & Decline Action Buttons -->
+        <button type="button" class="driver-btn-primary" id="btnAcceptMission">
+          <span>✓</span>
+          <span>Terima tugasan</span>
+          <span>›</span>
+        </button>
+
+        <button type="button" class="driver-btn-outline" id="btnDeclineMission" style="border-color:#DC2626;color:#DC2626;">
+          <span>🚫</span>
+          <span>Tidak dapat bertugas</span>
+          <span>›</span>
+        </button>
+      </section>
+
+      <!-- -------------------------------------------------------------
+           SCREEN 03: SEMAKAN PRA-PERJALANAN (PRE-TRIP CHECKLIST)
+           ------------------------------------------------------------- -->
+      <section class="driver-screen-view" id="screen03">
+        <!-- Hero Banner -->
+        <div class="driver-stage-hero">
+          <h1 class="driver-stage-hero-title">Semakan pra-perjalanan</h1>
+          <p class="driver-stage-hero-sub">Pastikan ambulans dan krew bersedia.</p>
+        </div>
+
+        <!-- Assigned Vehicle Card -->
+        <div class="driver-card">
+          <div class="driver-vehicle-card">
+            <img src="/amc_login_van_artwork.png" alt="Ambulans AMC" class="driver-vehicle-thumb" onerror="this.src='/Al-Farhain-Hiace-Login-Full.png'">
+            <div class="driver-vehicle-meta">
+              <div style="font-size:0.72rem;color:var(--driver-text-muted);">Tugasan</div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:1.05rem;font-weight:900;color:var(--driver-text-heading);">AMC-1043</span>
+                <span class="driver-pill driver-pill-red" style="font-size:0.65rem;">Diterima</span>
+              </div>
+              <div style="font-size:0.75rem;color:var(--driver-text-muted);margin-top:2px;">
+                📍 Kok Lanas HQ &bull; <b>VPQ 7606</b>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress Bar (4 of 4 checked) -->
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:0.78rem;font-weight:800;color:var(--driver-text-heading);">
+              <span style="display:flex;align-items:center;gap:6px;">
+                <span style="color:var(--driver-green);">✅</span>
+                <span id="preTripProgressText">4 daripada 4 disemak</span>
+              </span>
+              <span style="color:var(--driver-green);">100%</span>
+            </div>
+            <div style="width:100%;height:6px;background:#E2E8F0;border-radius:999px;overflow:hidden;">
+              <div id="preTripProgressBar" style="width:100%;height:100%;background:#10B981;transition:width 0.3s ease;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive 4-Item Checklist -->
+        <div class="driver-check-list" id="screen03Checklist">
+          <div class="driver-check-item checked">
+            <div class="driver-check-left">
+              <div class="driver-check-icon">✓</div>
+              <div class="driver-check-text-group">
+                <span class="driver-check-title">🚗 Kenderaan diperiksa</span>
+                <span class="driver-check-desc">Tayar, lampu, bahan api dan keadaan kenderaan</span>
+              </div>
+            </div>
+            <span class="driver-check-arrow">›</span>
+          </div>
+
+          <div class="driver-check-item checked">
+            <div class="driver-check-left">
+              <div class="driver-check-icon">✓</div>
+              <div class="driver-check-text-group">
+                <span class="driver-check-title">🛏️ Pengusung dikunci</span>
+                <span class="driver-check-desc">Kunci dan tali keselamatan diperiksa</span>
+              </div>
+            </div>
+            <span class="driver-check-arrow">›</span>
+          </div>
+
+          <div class="driver-check-item checked">
+            <div class="driver-check-left">
+              <div class="driver-check-icon">✓</div>
+              <div class="driver-check-text-group">
+                <span class="driver-check-title">🧰 Peralatan lengkap</span>
+                <span class="driver-check-desc">Mengikut keperluan tugasan</span>
+              </div>
+            </div>
+            <span class="driver-check-arrow">›</span>
+          </div>
+
+          <div class="driver-check-item checked">
+            <div class="driver-check-left">
+              <div class="driver-check-icon">✓</div>
+              <div class="driver-check-text-group">
+                <span class="driver-check-title">👥 Krew bersedia</span>
+                <span class="driver-check-desc">Pemandu 01 dan Krew 02</span>
+              </div>
+            </div>
+            <span class="driver-check-arrow">›</span>
+          </div>
+        </div>
+
+        <!-- Starting Odometer Input & Photo Attachment -->
+        <div class="driver-two-col-grid">
+          <div class="driver-card" style="padding:10px 12px;">
+            <span style="font-size:0.72rem;color:var(--driver-text-muted);font-weight:700;">⏱️ Odometer mula (km)</span>
+            <div class="driver-odometer-input-wrap" style="margin-top:4px;">
+              <input type="number" id="odometerStartInput" class="driver-odometer-input" value="124580">
+            </div>
+          </div>
+
+          <div class="driver-card" style="padding:10px 12px;justify-content:center;cursor:pointer;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.3rem;">📷</span>
+              <div>
+                <div style="font-size:0.78rem;font-weight:800;color:var(--driver-text-heading);">Lampiran foto</div>
+                <div style="font-size:0.65rem;color:var(--driver-text-muted);">(Opsyenal) &rsaquo;</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vehicle Issue Button -->
+        <button type="button" class="driver-contact-btn btn-report-issue" style="width:100%;border-color:#F59E0B;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1.1rem;color:#F59E0B;">🔧</span>
+            <div style="text-align:left;">
+              <div style="font-size:0.8rem;font-weight:800;color:var(--driver-text-heading);">Lapor masalah kenderaan</div>
+              <div style="font-size:0.68rem;color:var(--driver-text-muted);">Jika terdapat sebarang kerosakan atau isu</div>
+            </div>
+          </div>
+          <span>›</span>
+        </button>
+
+        <!-- Live GPS Indicator -->
+        <div class="driver-card" style="padding:10px 14px;background:#F8FAFC;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--driver-green-bg);color:var(--driver-green);display:flex;align-items:center;justify-content:center;font-size:0.9rem;">
+              📍
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:0.78rem;font-weight:800;color:var(--driver-text-heading);display:flex;align-items:center;gap:6px;">
+                <span>GPS Aktif</span>
+                <span style="width:7px;height:7px;border-radius:50%;background:#10B981;box-shadow:0 0 6px #10B981;"></span>
+              </div>
+              <div style="font-size:0.68rem;color:var(--driver-text-muted);">Lokasi anda dikongsi secara langsung dengan Pusat Operasi HQ.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Primary Start Trip Action -->
+        <button type="button" class="driver-btn-primary" id="btnStartPickupTrip">
+          <span>▶</span>
+          <span>Sahkan & mula perjalanan</span>
+          <span>→</span>
+        </button>
+        <div class="driver-notice-box">
+          <span>ℹ️ HQ menerima status selepas pengesahan.</span>
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------------
+           SCREEN 04: KE LOKASI PENGAMBILAN (LIVE NAVIGATION MAP)
+           ------------------------------------------------------------- -->
+      <section class="driver-screen-view" id="screen04">
+        <!-- Hero Header -->
+        <div class="driver-stage-hero">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <h1 class="driver-stage-hero-title">Menuju pengambilan</h1>
+              <div class="driver-hero-task-tag">
+                <span>🚑</span>
+                <span>AMC-1043</span>
+              </div>
+            </div>
+            <span class="driver-hero-pill-badge">
+              <span>🚗</span>
+              <span>Dalam perjalanan</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Interactive Leaflet Map -->
+        <div class="driver-map-wrapper">
+          <div class="driver-map-banner-top btn-launch-nav" data-destination="Kota Bharu">
+            <span>↗ Ikut laluan ke lokasi pengambilan</span>
+            <span>›</span>
+          </div>
+          <div id="mapCanvas04" class="driver-map-canvas"></div>
+        </div>
+
+        <!-- Location & ETA Card -->
+        <div class="driver-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.3rem;color:var(--driver-red);">📍</span>
+              <div>
+                <div style="font-size:0.72rem;color:var(--driver-text-muted);font-weight:700;">Lokasi pengambilan</div>
+                <div style="font-size:1.05rem;font-weight:900;color:var(--driver-text-heading);">Kota Bharu</div>
+              </div>
+            </div>
+            <span class="driver-pill driver-pill-green">● Lokasi dikemas kini</span>
+          </div>
+
+          <div class="driver-stat-grid" style="margin-top:6px;">
+            <div class="driver-stat-box">
+              <div class="driver-stat-icon-wrap">⏱️</div>
+              <div class="driver-stat-info">
+                <span class="driver-stat-val">12 min</span>
+                <span class="driver-stat-lbl">Anggaran tiba</span>
+              </div>
+            </div>
+
+            <div class="driver-stat-box">
+              <div class="driver-stat-icon-wrap">🛣️</div>
+              <div class="driver-stat-info">
+                <span class="driver-stat-val">8.2 km</span>
+                <span class="driver-stat-lbl">Baki jarak</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mini Stepper Indicator -->
+        <div class="driver-mini-stepper">
+          <div class="driver-step-dot-item active">
+            <div class="driver-step-dot active">🚗</div>
+            <span class="driver-step-dot-label">Menuju lokasi</span>
+          </div>
+          <div class="driver-step-dot-item">
+            <div class="driver-step-dot">📍</div>
+            <span class="driver-step-dot-label">Di lokasi</span>
+          </div>
+          <div class="driver-step-dot-item">
+            <div class="driver-step-dot">🏥</div>
+            <span class="driver-step-dot-label">Ke hospital</span>
+          </div>
+          <div class="driver-step-dot-item">
+            <div class="driver-step-dot">✓</div>
+            <span class="driver-step-dot-label">Selesai</span>
+          </div>
+        </div>
+
+        <!-- Navigation Action Buttons -->
+        <button type="button" class="driver-btn-primary btn-launch-nav" data-destination="Kota Bharu">
+          <span>↗</span>
+          <span>Buka navigasi (Google Maps / Waze)</span>
+          <span>›</span>
+        </button>
+
+        <button type="button" class="driver-btn-outline" id="btnArrivedPickup">
+          <span>✓</span>
+          <span>Saya sudah tiba</span>
+        </button>
+
+        <!-- Call Buttons -->
+        <div class="driver-contact-row">
+          <button type="button" class="driver-contact-btn btn-call-caller">
+            <span>📞 Hubungi pemanggil</span>
+            <span>›</span>
+          </button>
+          <button type="button" class="driver-contact-btn btn-call-hq">
+            <span>🎧 Hubungi HQ</span>
+            <span>›</span>
+          </button>
+        </div>
+
+        <div class="driver-notice-box">
+          <span>ℹ️ Kemas kini status ketika berhenti.</span>
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------------
+           SCREEN 05: PENGAMBILAN PESAKIT (PATIENT PICKUP AT SITE)
+           ------------------------------------------------------------- -->
+      <section class="driver-screen-view" id="screen05">
+        <!-- Hero Header -->
+        <div class="driver-stage-hero">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <h1 class="driver-stage-hero-title">Pengambilan pesakit</h1>
+              <div class="driver-hero-task-tag">
+                <span>📋</span>
+                <span>AMC-1043</span>
+              </div>
+            </div>
+            <span class="driver-hero-pill-badge" style="background:#FFFFFF;color:var(--driver-red);">
+              <span>📍</span>
+              <span>Di lokasi</span>
+            </span>
+          </div>
+          <div style="margin-top:6px;">
+            <span class="driver-pill driver-pill-amber">⚠️ Tidak kecemasan</span>
+          </div>
+        </div>
+
+        <!-- Timeline Status Card -->
+        <div class="driver-card">
+          <div class="driver-route-timeline">
+            <div class="driver-timeline-line"></div>
+
+            <div class="driver-timeline-node">
+              <div class="driver-node-indicator filled" style="background:#10B981;border-color:#10B981;">✓</div>
+              <div class="driver-node-content">
+                <span class="driver-node-name">Tiba di lokasi</span>
+                <span class="driver-node-desc">10:15 &bull; Kota Bharu</span>
+              </div>
+            </div>
+
+            <div class="driver-timeline-node">
+              <div class="driver-node-indicator filled" style="background:var(--driver-red);">●</div>
+              <div class="driver-node-content">
+                <span class="driver-node-name" style="color:var(--driver-red);">Pengambilan pesakit</span>
+                <span class="driver-node-desc">Sedang dijalankan</span>
+              </div>
+            </div>
+
+            <div class="driver-timeline-node">
+              <div class="driver-node-indicator">○</div>
+              <div class="driver-node-content">
+                <span class="driver-node-name">Ke hospital</span>
+                <span class="driver-node-desc">Seterusnya</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Location Verified Confirmation Box -->
+        <div class="driver-card" style="background:var(--driver-green-bg);border-color:rgba(16,185,129,0.3);padding:10px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.2rem;color:var(--driver-green);">✅</span>
+              <div>
+                <div style="font-size:0.82rem;font-weight:800;color:#065F46;">Tiba di lokasi</div>
+                <div style="font-size:0.7rem;color:#047857;">10:15 &bull; Kota Bharu</div>
+              </div>
+            </div>
+            <span class="driver-pill driver-pill-green">Lokasi disahkan</span>
+          </div>
+        </div>
+
+        <!-- Patient Mobility Card -->
+        <div class="driver-card">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:40px;height:40px;border-radius:50%;background:var(--driver-red-light);color:var(--driver-red);display:flex;align-items:center;justify-content:center;font-size:1.3rem;">
+              👤
+            </div>
+            <div>
+              <div style="font-size:0.95rem;font-weight:900;color:var(--driver-text-heading);">Pesakit 01</div>
+              <div style="font-size:0.75rem;color:var(--driver-text-muted);font-weight:700;">♿ Bantuan mobiliti: Kerusi roda</div>
+              <div style="font-size:0.68rem;color:var(--driver-text-dim);">Maklumat terhad untuk tugasan ini</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Destination Card -->
+        <div class="driver-card" style="padding:10px 14px;cursor:pointer;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:1.3rem;color:var(--driver-red);">📍</span>
+              <div>
+                <div style="font-size:0.7rem;color:var(--driver-text-muted);font-weight:700;">Destinasi seterusnya</div>
+                <div style="font-size:0.95rem;font-weight:900;color:var(--driver-text-heading);">HRPZ II</div>
+              </div>
+            </div>
+            <span style="color:var(--driver-text-dim);">›</span>
+          </div>
+        </div>
+
+        <!-- Equipment Verification Check -->
+        <div class="driver-card" style="padding:10px 14px;">
+          <span style="font-size:0.75rem;font-weight:800;color:var(--driver-text-heading);">🧰 Peralatan diperlukan</span>
+          <div class="driver-two-col-grid" style="margin-top:6px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;background:#F8FAFC;padding:8px 10px;border-radius:8px;">
+              <span style="font-size:0.75rem;font-weight:700;">🛏️ Pengusung</span>
+              <span style="color:#10B981;">✓</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;background:#F8FAFC;padding:8px 10px;border-radius:8px;">
+              <span style="font-size:0.75rem;font-weight:700;">♿ Kerusi roda</span>
+              <span style="color:#10B981;">✓</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Verification Badges -->
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;align-items:center;gap:8px;font-size:0.78rem;font-weight:700;color:#065F46;">
+            <span>✅</span>
+            <span>Identiti disahkan oleh krew</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:0.78rem;font-weight:700;color:#065F46;">
+            <span>✅</span>
+            <span>Pesakit sedia untuk dipindahkan</span>
+          </div>
+        </div>
+
+        <!-- Contact Support Row -->
+        <div class="driver-contact-row">
+          <button type="button" class="driver-contact-btn btn-call-caller">
+            <span>📞 Hubungi pemanggil</span>
+            <span>›</span>
+          </button>
+          <button type="button" class="driver-contact-btn btn-call-hq">
+            <span>🎧 Hubungi HQ</span>
+            <span>›</span>
+          </button>
+        </div>
+
+        <button type="button" class="driver-contact-btn btn-report-issue" style="width:100%;border-color:#F59E0B;color:#D97706;">
+          <span>⏱️ Lapor kelewatan / isu</span>
+          <span>›</span>
+        </button>
+
+        <!-- Primary Action: Start Hospital Trip -->
+        <button type="button" class="driver-btn-primary" id="btnStartHospitalTrip">
+          <span>🚑</span>
+          <span>Mulakan perjalanan ke hospital</span>
+          <span>→</span>
+        </button>
+        <div class="driver-notice-box">
+          <span>ℹ️ Sahkan bersama krew sebelum meneruskan.</span>
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------------
+           SCREEN 06: PERJALANAN KE HOSPITAL (ROUTE TO HRPZ II)
+           ------------------------------------------------------------- -->
+      <section class="driver-screen-view" id="screen06">
+        <!-- Hero Header -->
+        <div class="driver-stage-hero">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <h1 class="driver-stage-hero-title">Menuju hospital</h1>
+              <div class="driver-hero-task-tag">
+                <span>🚑</span>
+                <span>AMC-1043</span>
+              </div>
+            </div>
+            <span class="driver-hero-pill-badge">
+              <span>🩺</span>
+              <span>Pesakit dalam ambulans</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ETA & Remaining Distance Grid -->
+        <div class="driver-stat-grid">
+          <div class="driver-stat-box">
+            <div class="driver-stat-icon-wrap">⏱️</div>
+            <div class="driver-stat-info">
+              <span class="driver-stat-val">9 min</span>
+              <span class="driver-stat-lbl">Anggaran tiba</span>
+            </div>
+          </div>
+
+          <div class="driver-stat-box">
+            <div class="driver-stat-icon-wrap">🛣️</div>
+            <div class="driver-stat-info">
+              <span class="driver-stat-val">4.1 km</span>
+              <span class="driver-stat-lbl">Jarak berbaki</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Leaflet Map to Hospital -->
+        <div class="driver-map-wrapper">
+          <div class="driver-map-banner-top btn-launch-nav" data-destination="HRPZ II">
+            <span>↗ Laluan terus ke Hospital HRPZ II</span>
+            <span>›</span>
+          </div>
+          <div id="mapCanvas06" class="driver-map-canvas"></div>
+        </div>
+
+        <!-- Hospital Destination Info Card -->
+        <div class="driver-card">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:1.3rem;color:var(--driver-red);">📍</span>
+            <div>
+              <div style="font-size:0.7rem;color:var(--driver-text-muted);font-weight:700;">Destinasi</div>
+              <div style="font-size:1.05rem;font-weight:900;color:var(--driver-text-heading);">HRPZ II</div>
+              <div style="font-size:0.7rem;color:var(--driver-text-muted);">Unit penerimaan mengikut arahan HQ / krew</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3-Step Progress Indicator -->
+        <div class="driver-mini-stepper">
+          <div class="driver-step-dot-item done">
+            <div class="driver-step-dot done">✓</div>
+            <span class="driver-step-dot-label">Pengambilan</span>
+          </div>
+          <div class="driver-step-dot-item active">
+            <div class="driver-step-dot active">●</div>
+            <span class="driver-step-dot-label">Ke hospital</span>
+          </div>
+          <div class="driver-step-dot-item">
+            <div class="driver-step-dot">○</div>
+            <span class="driver-step-dot-label">Serahan</span>
+          </div>
+        </div>
+
+        <!-- Actions Buttons -->
+        <button type="button" class="driver-btn-primary" id="btnArrivedHospital">
+          <span>🏁</span>
+          <span>Tiba di hospital</span>
+          <span>→</span>
+        </button>
+
+        <button type="button" class="driver-btn-outline btn-launch-nav" data-destination="HRPZ II">
+          <span>↗</span>
+          <span>Buka navigasi</span>
+          <span>›</span>
+        </button>
+
+        <!-- Support Buttons -->
+        <div class="driver-contact-row">
+          <button type="button" class="driver-contact-btn btn-call-hq">
+            <span>📞 Hubungi pusat operasi</span>
+            <span>›</span>
+          </button>
+          <button type="button" class="driver-contact-btn btn-report-issue">
+            <span>🔄 Lapor perubahan laluan</span>
+            <span>›</span>
+          </button>
+        </div>
+
+        <div class="driver-notice-box">
+          <span>ℹ️ Kemas kini status ketika berhenti.</span>
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------------
+           SCREEN 07: SERAHAN & TAMAT (HOSPITAL HANDOVER & ODOMETER)
+           ------------------------------------------------------------- -->
+      <section class="driver-screen-view" id="screen07">
+        <!-- Hero Header -->
+        <div class="driver-stage-hero">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <h1 class="driver-stage-hero-title">Serahan & tamat</h1>
+              <div class="driver-hero-task-tag">
+                <span>📋</span>
+                <span>AMC-1043</span>
+              </div>
+            </div>
+            <span class="driver-hero-pill-badge" style="background:#FFFFFF;color:var(--driver-red);">
+              <span>📍</span>
+              <span>HRPZ II</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Hospital Arrival Confirmed Box -->
+        <div class="driver-card" style="background:var(--driver-green-bg);border-color:rgba(16,185,129,0.3);padding:10px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.2rem;color:var(--driver-green);">✅</span>
+              <div>
+                <div style="font-size:0.82rem;font-weight:800;color:#065F46;">Tiba di hospital</div>
+                <div style="font-size:0.7rem;color:#047857;">10:26 &bull; HRPZ II</div>
+              </div>
+            </div>
+            <span style="font-size:1.5rem;">🏥</span>
+          </div>
+        </div>
+
+        <!-- Handover Verification Form -->
+        <div class="driver-card">
+          <span style="font-size:0.82rem;font-weight:800;color:var(--driver-text-heading);">📋 Pengesahan serahan</span>
+          
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+            <label style="font-size:0.72rem;color:var(--driver-text-muted);font-weight:600;">Penerima / unit</label>
+            <div style="display:flex;align-items:center;gap:8px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:8px 12px;">
+              <span>🏥</span>
+              <input type="text" value="Unit penerimaan hospital" style="border:none;background:none;outline:none;font-size:0.82rem;font-weight:700;color:var(--driver-text-heading);width:100%;">
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+            <label style="font-size:0.72rem;color:var(--driver-text-muted);font-weight:600;">Masa serahan</label>
+            <div style="display:flex;align-items:center;gap:8px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:8px 12px;">
+              <span>🕒</span>
+              <input type="text" value="10:32" style="border:none;background:none;outline:none;font-size:0.85rem;font-weight:800;color:var(--driver-text-heading);width:100%;">
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:8px;background:var(--driver-red-light);border:1px solid var(--driver-red-border);border-radius:8px;padding:8px 12px;margin-top:4px;">
+            <span style="color:var(--driver-red);">✓</span>
+            <div>
+              <div style="font-size:0.78rem;font-weight:800;color:var(--driver-red);">Serahan disahkan oleh krew</div>
+              <div style="font-size:0.68rem;color:var(--driver-text-muted);">Pesakit telah diserahkan kepada penerima.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Odometer & Distance Calculation Card -->
+        <div class="driver-card">
+          <span style="font-size:0.82rem;font-weight:800;color:var(--driver-text-heading);">⏱️ Odometer & jarak</span>
+          
+          <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px;margin-top:6px;align-items:center;">
+            <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:6px 8px;">
+              <div style="font-size:0.62rem;color:var(--driver-text-muted);font-weight:600;">Odometer mula</div>
+              <div style="font-size:0.88rem;font-weight:800;color:var(--driver-text-heading);">124580 km</div>
+            </div>
+
+            <div style="background:#F8FAFC;border:1.5px solid var(--driver-red);border-radius:8px;padding:6px 8px;">
+              <div style="font-size:0.62rem;color:var(--driver-red);font-weight:700;">Odometer akhir</div>
+              <input type="number" id="odometerEndInput" value="124607" style="width:100%;border:none;background:none;outline:none;font-size:0.88rem;font-weight:900;color:var(--driver-text-heading);">
+            </div>
+
+            <div style="background:var(--driver-red-light);border:1px solid var(--driver-red-border);border-radius:8px;padding:6px 8px;text-align:center;">
+              <div style="font-size:0.62rem;color:var(--driver-red);font-weight:700;">Jarak direkodkan</div>
+              <div id="recordedDistanceVal" style="font-size:1.15rem;font-weight:900;color:var(--driver-red);line-height:1.1;">27 km</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mission Notes Field -->
+        <div class="driver-card">
+          <span style="font-size:0.78rem;font-weight:800;color:var(--driver-text-heading);">📝 Catatan tugasan (pilihan)</span>
+          <textarea class="driver-modal-textarea" style="height:60px;" placeholder="Tiada isu dilaporkan">Tiada isu dilaporkan</textarea>
+        </div>
+
+        <!-- Extra Stop Request -->
+        <div class="driver-card" style="padding:10px 14px;cursor:pointer;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="color:var(--driver-red);font-size:1.2rem;">📍</span>
+              <div>
+                <div style="font-size:0.8rem;font-weight:800;color:var(--driver-red);">Mohon lokasi tambahan</div>
+                <div style="font-size:0.68rem;color:var(--driver-text-muted);">Tugasan diteruskan selepas kelulusan.</div>
+              </div>
+            </div>
+            <span class="driver-pill driver-pill-amber">⚠️ Kelulusan HQ ›</span>
+          </div>
+        </div>
+
+        <!-- Final Handover Confirmation Button -->
+        <button type="button" class="driver-btn-primary" id="btnConfirmHandover">
+          <span>✓</span>
+          <span>Sahkan tamat tugasan</span>
+          <span>→</span>
+        </button>
+
+        <button type="button" class="driver-contact-btn btn-call-hq" style="width:100%;">
+          <span>📞 Hubungi HQ</span>
+          <span>›</span>
+        </button>
+
+        <div class="driver-notice-box">
+          <span>ℹ️ Ambulans perlu disemak sebelum bersedia semula.</span>
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------------
+           SCREEN 08: REKOD & KESIAPSIAGAAN (POST-TRIP RESET)
+           ------------------------------------------------------------- -->
+      <section class="driver-screen-view" id="screen08">
+        <!-- Hero Header -->
+        <div class="driver-stage-hero">
+          <h1 class="driver-stage-hero-title">Rekod tugasan</h1>
+          <p class="driver-stage-hero-sub">Lihat status tugasan, sejarah dan kesiapsiagaan kenderaan anda.</p>
+        </div>
+
+        <!-- Segmented Filter Tabs: Terkini, Sejarah, Kesiapsiagaan -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr;background:var(--driver-border-subtle);border:1px solid var(--driver-border);border-radius:999px;padding:3px;gap:4px;">
+          <button type="button" style="background:var(--driver-red);color:#fff;border:none;padding:6px 0;border-radius:999px;font-size:0.75rem;font-weight:800;cursor:pointer;">Terkini</button>
+          <button type="button" style="background:none;color:var(--driver-text-muted);border:none;padding:6px 0;font-size:0.75rem;font-weight:700;cursor:pointer;">Sejarah</button>
+          <button type="button" style="background:none;color:var(--driver-text-muted);border:none;padding:6px 0;font-size:0.75rem;font-weight:700;cursor:pointer;">Kesiapsiagaan</button>
+        </div>
+
+        <!-- Completed Mission Summary Card -->
+        <div class="driver-card">
+          <div class="driver-card-header">
+            <div class="driver-card-title-group">
+              <span style="font-size:1.2rem;color:var(--driver-red);">📋</span>
+              <div>
+                <h3 class="driver-card-title">AMC-1043</h3>
+                <span class="driver-card-sub">Hari ini &bull; 10:32</span>
+              </div>
+            </div>
+            <span class="driver-pill driver-pill-green">✓ Selesai</span>
+          </div>
+
+          <!-- Vertical Timeline Recap -->
+          <div class="driver-route-timeline" style="gap:8px;margin-top:4px;">
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.75rem;">
+              <span style="color:var(--driver-red);">●</span>
+              <span style="font-weight:800;color:var(--driver-text-heading);width:100px;">Kok Lanas HQ</span>
+              <span style="color:var(--driver-text-muted);">10:02</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.75rem;">
+              <span style="color:var(--driver-red);">●</span>
+              <span style="font-weight:800;color:var(--driver-text-heading);width:100px;">Kota Bharu</span>
+              <span style="color:var(--driver-text-muted);">10:18</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.75rem;">
+              <span style="color:var(--driver-red);">📍</span>
+              <span style="font-weight:800;color:var(--driver-text-heading);width:100px;">HRPZ II</span>
+              <span style="color:var(--driver-text-muted);">10:32</span>
+            </div>
+          </div>
+
+          <div class="driver-stat-grid" style="margin-top:6px;">
+            <div class="driver-stat-box" style="padding:6px 10px;">
+              <span>🛣️</span>
+              <div>
+                <div style="font-size:0.95rem;font-weight:900;color:var(--driver-text-heading);">27 km</div>
+                <div style="font-size:0.65rem;color:var(--driver-text-muted);">Jarak perjalanan</div>
+              </div>
+            </div>
+            <div class="driver-stat-box" style="padding:6px 10px;">
+              <span>⏱️</span>
+              <div>
+                <div style="font-size:0.95rem;font-weight:900;color:var(--driver-text-heading);">10:32</div>
+                <div style="font-size:0.65rem;color:var(--driver-text-muted);">Masa selesai</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align:right;margin-top:4px;">
+            <a href="#" style="font-size:0.72rem;font-weight:800;color:var(--driver-red);text-decoration:none;">Lihat ringkasan tugasan ›</a>
+          </div>
+        </div>
+
+        <!-- Readiness Checklist for Next Mission -->
+        <div class="driver-card">
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <h3 class="driver-card-title">Sedia untuk tugasan seterusnya?</h3>
+            <span class="driver-card-sub">Pastikan semua item disemak sebelum menerima tugasan baharu.</span>
+          </div>
+
+          <div class="driver-check-list" style="margin-top:6px;">
+            <div class="driver-check-item checked">
+              <div class="driver-check-left">
+                <div class="driver-check-icon">✓</div>
+                <div class="driver-check-text-group">
+                  <span class="driver-check-title">Pembersihan selesai</span>
+                  <span class="driver-check-desc">Kenderaan bersih dan sedia digunakan</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="driver-check-item checked">
+              <div class="driver-check-left">
+                <div class="driver-check-icon">✓</div>
+                <div class="driver-check-text-group">
+                  <span class="driver-check-title">Peralatan disemak</span>
+                  <span class="driver-check-desc">Semua peralatan kecemasan lengkap</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="driver-check-item checked">
+              <div class="driver-check-left">
+                <div class="driver-check-icon">✓</div>
+                <div class="driver-check-text-group">
+                  <span class="driver-check-title">Krew bersedia</span>
+                  <span class="driver-check-desc">Pemandu dan pembantu sedia bertugas</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vehicle Readiness Card -->
+          <div class="driver-vehicle-card" style="margin-top:6px;">
+            <img src="/amc_login_van_artwork.png" alt="Ambulans AMC" class="driver-vehicle-thumb" onerror="this.src='/Al-Farhain-Hiace-Login-Full.png'">
+            <div class="driver-vehicle-meta">
+              <div style="font-size:0.7rem;color:var(--driver-text-muted);">Ambulans anda</div>
+              <div class="driver-plate-title">VPQ 7606</div>
+              <span id="vehicleReadinessPill" class="driver-pill driver-pill-amber" style="margin-top:3px;align-self:flex-start;">⚠️ Menunggu pengesahan</span>
+            </div>
+          </div>
+
+          <button type="button" class="driver-btn-primary" id="btnMarkReady" style="margin-top:4px;">
+            <span>✓</span>
+            <span>Tandakan bersedia</span>
+          </button>
+        </div>
+
+        <!-- Sync Status and Defect Report -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#047857;font-weight:700;">
+            <span>✅</span>
+            <span>Semua rekod disegerakkan</span>
+          </div>
+          <button type="button" class="btn-report-issue" style="background:none;border:none;color:var(--driver-red);font-size:0.72rem;font-weight:800;cursor:pointer;">
+            🔧 Lapor kerosakan ›
+          </button>
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------------
+           DRIVER PROFILE TAB (ACCOUNT & AMBULANCE ASSIGNMENT)
+           ------------------------------------------------------------- -->
+      <section class="driver-screen-view" id="screenProfil">
+        <!-- Hero Header -->
+        <div class="driver-stage-hero">
+          <h1 class="driver-stage-hero-title">Profil Pemandu</h1>
+          <p class="driver-stage-hero-sub">Pusat kawalan akaun EMT lapangan Al-Farhain.</p>
+        </div>
+
+        <!-- Profile Card -->
+        <div class="driver-card">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="width:54px;height:54px;border-radius:50%;background:var(--driver-red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.8rem;border:3px solid #fff;box-shadow:0 3px 10px rgba(198,30,47,0.3);">
+              👤
+            </div>
+            <div>
+              <h2 id="driverProfileName" style="font-size:1.1rem;font-weight:900;color:var(--driver-text-heading);">Abe Di</h2>
+              <div style="font-size:0.75rem;color:var(--driver-red);font-weight:800;">Pemandu EMT Bertugas</div>
+              <div style="font-size:0.7rem;color:var(--driver-text-muted);margin-top:2px;" id="driverEmailBadge">diniy-driver@gmail.com</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Assigned Vehicle Details -->
+        <div class="driver-card">
+          <span style="font-size:0.8rem;font-weight:800;color:var(--driver-text-heading);">🚑 Kenderaan Bertugas</span>
+          <div class="driver-two-col-grid" style="margin-top:4px;">
+            <div class="driver-subcard">
+              <span class="driver-subcard-title">Nombor Pendaftaran</span>
+              <span style="font-size:1rem;font-weight:900;color:var(--driver-text-heading);">VPQ 7606</span>
+              <span class="tag">Toyota Hiace High-Roof</span>
+            </div>
+            <div class="driver-subcard">
+              <span class="driver-subcard-title">Pangkalan</span>
+              <span style="font-size:0.88rem;font-weight:900;color:var(--driver-text-heading);">Kok Lanas HQ</span>
+              <span class="tag">Kelantan</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Switch Interface to Patient App -->
+        <div class="driver-card" style="background:var(--driver-red-light);border-color:var(--driver-red-border);">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:0.82rem;font-weight:800;color:var(--driver-red);">Tukar ke Mod Pesakit</div>
+              <div style="font-size:0.7rem;color:var(--driver-text-muted);">Buka kalkulator tambang & tempahan awam</div>
+            </div>
+            <button type="button" class="driver-btn-outline" id="btnSwitchToPatientApp" style="width:auto;padding:6px 14px;font-size:0.75rem;">
+              Buka Pesakit ›
+            </button>
+          </div>
+        </div>
+
+        <!-- Sign Out Button -->
+        <button type="button" class="driver-btn-outline" id="btnDriverSignOut" style="border-color:#DC2626;color:#DC2626;margin-top:10px;">
+          <span>🚪</span>
+          <span>Log Keluar dari Pemandu</span>
+        </button>
+      </section>
+
+    </main>
+
+    <!-- =====================================================================
+         3. PERSISTENT 4-TAB BOTTOM DOCK (UTAMA, TUGASAN (1), REKOD, PROFIL)
+         ===================================================================== -->
+    <nav class="driver-bottom-dock">
+      <!-- Tab 1: Utama -->
+      <button type="button" class="driver-dock-item" data-tab="utama" title="Utama">
+        <div class="driver-dock-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
+        <span class="driver-dock-title">Utama</span>
+      </button>
+
+      <!-- Tab 2: Tugasan (Active with Red Badge "1") -->
+      <button type="button" class="driver-dock-item active" data-tab="tugasan" title="Tugasan Lapangan">
+        <div class="driver-dock-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <span class="driver-dock-badge">1</span>
+        </div>
+        <span class="driver-dock-title">Tugasan</span>
+      </button>
+
+      <!-- Tab 3: Rekod -->
+      <button type="button" class="driver-dock-item" data-tab="rekod" title="Rekod & Kesiapsiagaan">
+        <div class="driver-dock-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
+        <span class="driver-dock-title">Rekod</span>
+      </button>
+
+      <!-- Tab 4: Profil -->
+      <button type="button" class="driver-dock-item" data-tab="profil" title="Profil Pemandu">
+        <div class="driver-dock-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <span class="driver-dock-title">Profil</span>
+      </button>
+    </nav>
+
+    <!-- =====================================================================
+         4. MODAL DIALOGS (DECLINE REASON & ISSUE REPORT)
+         ===================================================================== -->
+    <!-- Modal: Tolak Tugasan -->
+    <div class="driver-modal-overlay" id="modalDeclineReason">
+      <div class="driver-modal-sheet">
+        <h3 class="driver-modal-title">Maklumkan Sebab Penolakan</h3>
+        <p style="font-size:0.75rem;color:var(--driver-text-muted);">Sila pilih atau tulis sebab anda tidak dapat bertugas:</p>
+        <select style="padding:8px 12px;border:1.5px solid var(--driver-border);border-radius:8px;font-size:0.82rem;background:#F8FAFC;">
+          <option>Kerosakan teknikal kenderaan</option>
+          <option>Krew tidak lengkap / kecemasan peribadi</option>
+          <option>Masalah kesihatan bertugas</option>
+          <option>Lain-lain</option>
+        </select>
+        <textarea class="driver-modal-textarea" placeholder="Catatan tambahan untuk Pusat Operasi..."></textarea>
+        <div class="driver-modal-actions">
+          <button type="button" class="driver-btn-outline driver-modal-close" style="flex:1;">Batal</button>
+          <button type="button" class="driver-btn-primary" id="btnConfirmDecline" style="flex:1;background:#DC2626;">Hantar ke HQ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Lapor Isu Lapangan -->
+    <div class="driver-modal-overlay" id="modalReportIssue">
+      <div class="driver-modal-sheet">
+        <h3 class="driver-modal-title">Lapor Isu / Kelewatan Lapangan</h3>
+        <p style="font-size:0.75rem;color:var(--driver-text-muted);">Pusat Operasi akan dimaklumkan secara masa-nyata:</p>
+        <textarea class="driver-modal-textarea" placeholder="Nyatakan keadaan lalu lintas, isu kenderaan atau pesakit..."></textarea>
+        <div class="driver-modal-actions">
+          <button type="button" class="driver-btn-outline driver-modal-close" style="flex:1;">Tutup</button>
+          <button type="button" class="driver-btn-primary" id="btnSubmitReport" style="flex:1;">Hantar Laporan</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Driver App Script -->
+  <script type="module" src="/src/driver/driver.js"></script>
+</body>
+</html>
