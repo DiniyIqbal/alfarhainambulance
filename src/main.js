@@ -423,15 +423,101 @@ function initNavigationTabs() {
         stickyBar.style.display = showSticky ? 'flex' : 'none';
       }
 
-      // Refresh maps if switching to dispatch
+      // Refresh maps if switching to dispatch or tugasan
       if (isDispatch) {
         setTimeout(() => {
           if (state.step1Mode === 'lokasi' && miniMap) miniMap.invalidateSize();
           if (state.step1Mode === 'peta' && fullMap) fullMap.invalidateSize();
         }, 150);
+      } else if (targetId === 'driver-view') {
+        setTimeout(() => {
+          initTugasanMissionMap();
+        }, 150);
       }
     });
   });
+}
+
+let tugasanMap = null;
+function initTugasanMissionMap() {
+  const container = document.getElementById('tugasanMapCanvas');
+  if (!container || !window.L) return;
+
+  if (tugasanMap) {
+    tugasanMap.invalidateSize();
+    return;
+  }
+
+  const startCoords = [6.1254, 102.2381]; // Kota Bharu
+  const endCoords = [6.1265, 102.2464];   // HRPZ II
+
+  tugasanMap = window.L.map('tugasanMapCanvas', {
+    zoomControl: false,
+    attributionControl: false
+  }).setView(startCoords, 14);
+
+  window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+  }).addTo(tugasanMap);
+
+  const routePoints = [
+    startCoords,
+    [6.1245, 102.2415],
+    [6.1255, 102.2440],
+    endCoords
+  ];
+
+  window.L.polyline(routePoints, {
+    color: '#C61E2F',
+    weight: 5,
+    opacity: 0.95
+  }).addTo(tugasanMap);
+
+  // Custom Ambulance Marker
+  const ambulanceIcon = window.L.divIcon({
+    className: 'custom-driver-amb-icon',
+    html: `<div style="background:#C61E2F;color:#fff;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(198,30,47,0.45);border:2px solid #fff;font-size:16px;">🚑</div>`,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17]
+  });
+  window.L.marker(startCoords, { icon: ambulanceIcon }).addTo(tugasanMap);
+
+  // Target Marker (HRPZ II)
+  const hospitalIcon = window.L.divIcon({
+    className: 'custom-driver-target-icon',
+    html: `<div style="background:#1E293B;color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,0.3);border:2px solid #fff;font-size:14px;">🏥</div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+  });
+  window.L.marker(endCoords, { icon: hospitalIcon }).addTo(tugasanMap);
+
+  tugasanMap.fitBounds(window.L.latLngBounds(routePoints), { padding: [25, 25] });
+
+  // Attach button action handlers
+  const btnNav = document.getElementById('btnTugasanOpenNav');
+  const btnFloatingNav = document.getElementById('btnLaunchTugasanNav');
+  const launchNav = () => {
+    playClickSound();
+    window.open('https://www.google.com/maps/dir/?api=1&destination=6.1265,102.2464&destination_place_id=HRPZ+II', '_blank');
+  };
+  if (btnNav) btnNav.onclick = launchNav;
+  if (btnFloatingNav) btnFloatingNav.onclick = launchNav;
+
+  const btnArrived = document.getElementById('btnTugasanArrivedHospital');
+  if (btnArrived) {
+    btnArrived.onclick = () => {
+      playSuccessChime();
+      alert('Ambulans telah tiba di Hospital HRPZ II. Sila teruskan ke serahan pesakit.');
+    };
+  }
+
+  const btnReroute = document.getElementById('btnTugasanReportReroute');
+  if (btnReroute) {
+    btnReroute.onclick = () => {
+      playClickSound();
+      alert('Pusat Operasi HQ telah dimaklumkan tentang pertukaran laluan.');
+    };
+  }
 }
 
 /* =========================================================================
@@ -2617,25 +2703,38 @@ async function initMobileAuth() {
     gateTabLogin.addEventListener('click', () => {
       playClickSound();
       gateMode = 'login';
-      gateTabLogin.style.background = 'var(--amc-teal)';
+      gateTabLogin.style.background = 'var(--amc-red)';
       gateTabLogin.style.color = '#FFFFFF';
       gateTabRegister.style.background = 'transparent';
       gateTabRegister.style.color = 'var(--text-muted)';
       if (gateRegFields) gateRegFields.style.display = 'none';
-      if (gateSubmitLabel) gateSubmitLabel.textContent = 'Log Masuk ke Ambulans OS';
+      if (gateSubmitLabel) gateSubmitLabel.textContent = 'Log Masuk ke Sistem';
       if (gateStatusMsg) gateStatusMsg.style.display = 'none';
     });
 
     gateTabRegister.addEventListener('click', () => {
       playClickSound();
       gateMode = 'register';
-      gateTabRegister.style.background = 'var(--amc-teal)';
+      gateTabRegister.style.background = 'var(--amc-red)';
       gateTabRegister.style.color = '#FFFFFF';
       gateTabLogin.style.background = 'transparent';
       gateTabLogin.style.color = 'var(--text-muted)';
       if (gateRegFields) gateRegFields.style.display = 'flex';
-      if (gateSubmitLabel) gateSubmitLabel.textContent = 'Daftar Pemandu & Buka Akses';
+      if (gateSubmitLabel) gateSubmitLabel.textContent = 'Daftar Akaun Baharu';
       if (gateStatusMsg) gateStatusMsg.style.display = 'none';
+    });
+  }
+
+  // Handle Role selector in registration
+  const roleSelect = document.getElementById('mobileGateAuthRole');
+  const driverOnlyFields = document.getElementById('mobileGateDriverOnlyFields');
+  if (roleSelect && driverOnlyFields) {
+    roleSelect.addEventListener('change', () => {
+      if (roleSelect.value === 'driver') {
+        driverOnlyFields.style.display = 'grid';
+      } else {
+        driverOnlyFields.style.display = 'none';
+      }
     });
   }
 
@@ -2650,9 +2749,12 @@ async function initMobileAuth() {
       const plate = document.getElementById('mobileGateAuthPlate')?.value || 'VPQ 7606';
       const phone = document.getElementById('mobileGateAuthPhone')?.value.trim() || '';
 
+      const selectedRole = document.getElementById('mobileGateAuthRole')?.value || (email.includes('-driver@') ? 'driver' : 'patient');
+      const roleLabel = selectedRole === 'driver' ? 'Pemandu EMT Bertugas' : (selectedRole === 'paramedic' ? 'Penolong Pegawai Perubatan' : 'Pengguna Awam / Waris Pesakit');
+
       if (gateStatusMsg) {
         gateStatusMsg.style.display = 'block';
-        gateStatusMsg.textContent = gateMode === 'login' ? 'Mengesahkan pemandu...' : 'Mendaftar krew ambulans...';
+        gateStatusMsg.textContent = gateMode === 'login' ? 'Mengesahkan akaun pengguna...' : 'Mendaftar akaun baharu...';
         gateStatusMsg.style.background = '#E0F2FE';
         gateStatusMsg.style.color = '#0284C7';
       }
@@ -2664,11 +2766,11 @@ async function initMobileAuth() {
         res = await signUpUser(email, password, {
           name,
           full_name: name,
-          branch,
-          assigned_plate: plate,
+          branch: selectedRole === 'driver' ? branch : 'kok_lanas',
+          assigned_plate: selectedRole === 'driver' ? plate : '',
           phone,
-          role: 'driver',
-          role_label: 'Pemandu EMT Bertugas'
+          role: selectedRole,
+          role_label: roleLabel
         });
       }
 

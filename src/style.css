@@ -3305,7 +3305,7 @@ html, body {
   position: fixed;
   inset: 0;
   z-index: 99999;
-  background: radial-gradient(circle at 50% 20%, #082926 0%, #031413 100%);
+  background: radial-gradient(circle at 50% 20%, #251014 0%, #0F141C 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3327,14 +3327,14 @@ html, body {
   max-width: 440px;
   background: #FFFFFF;
   border-radius: var(--radius-xl);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
   overflow: hidden;
-  border: 1px solid rgba(0, 168, 150, 0.25);
+  border: 1px solid rgba(198, 30, 47, 0.2);
   animation: fadeIn 0.25s ease-out;
 }
 
 .mobile-gate-header {
-  background: linear-gradient(135deg, #006C67 0%, #028090 100%);
+  background: linear-gradient(135deg, #C61E2F 0%, #8E101D 100%);
   color: #FFFFFF;
   padding: 24px 20px;
   text-align: center;
@@ -3402,6 +3402,352 @@ html, body {
 .utility-tool-logout:hover {
   background: #EF4444 !important;
   color: #FFFFFF !important;
+}
+
+/* =========================================================================
+   22. TUGASAN MISSION TRACKING VIEW (SCREEN 06 — MENUJU HOSPITAL SPEC)
+   ========================================================================= */
+.tugasan-view-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeIn 0.25s ease-out;
+  padding-bottom: 24px;
+}
+
+.tugasan-hero-banner {
+  background: linear-gradient(135deg, #E62539 0%, #C61E2F 100%);
+  color: #FFFFFF;
+  padding: 18px 18px 20px;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(198, 30, 47, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tugasan-hero-sub {
+  font-size: 0.82rem;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
+.tugasan-hero-title {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.01em;
+  margin: 2px 0 6px;
+}
+
+.tugasan-hero-pill {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+}
+
+.tugasan-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.tugasan-stat-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.tugasan-stat-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: var(--amc-red-light);
+  color: var(--amc-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.tugasan-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.tugasan-stat-val {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--text-heading);
+  line-height: 1.1;
+}
+
+.tugasan-stat-lbl {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.tugasan-map-wrap {
+  width: 100%;
+  height: 230px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+  border: 1.5px solid var(--border-light);
+  box-shadow: var(--shadow-card);
+}
+
+.tugasan-map-canvas {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.tugasan-map-floating-bar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-light);
+  border-radius: 9999px;
+  padding: 7px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--amc-red);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.tugasan-map-floating-bar:hover {
+  transform: translateY(-1px);
+}
+
+.tugasan-dest-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tugasan-dest-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: var(--amc-red-light);
+  color: var(--amc-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.tugasan-dest-title {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tugasan-dest-name {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--text-heading);
+  margin-top: 1px;
+}
+
+.tugasan-dest-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.tugasan-stepper-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  position: relative;
+  box-shadow: var(--shadow-card);
+}
+
+.tugasan-step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 2;
+  position: relative;
+}
+
+.tugasan-step-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--bg-surface);
+  border: 2px solid var(--border-light);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  transition: all 0.2s ease;
+}
+
+.tugasan-step-item.done .tugasan-step-circle {
+  background-color: var(--amc-red);
+  border-color: var(--amc-red);
+  color: #FFFFFF;
+}
+
+.tugasan-step-item.active .tugasan-step-circle {
+  background-color: var(--amc-red);
+  border-color: var(--amc-red);
+  color: #FFFFFF;
+  box-shadow: 0 0 10px rgba(198, 30, 47, 0.4);
+}
+
+.tugasan-step-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.tugasan-step-status {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+}
+
+.tugasan-step-item.active .tugasan-step-title {
+  color: var(--amc-red);
+  font-weight: 800;
+}
+
+.tugasan-btn-primary {
+  width: 100%;
+  background: var(--amc-red);
+  color: #FFFFFF;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 9999px;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(198, 30, 47, 0.35);
+  transition: all 0.15s ease;
+}
+
+.tugasan-btn-primary:hover {
+  background-color: var(--amc-red-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(198, 30, 47, 0.45);
+}
+
+.tugasan-btn-primary:active {
+  transform: translateY(0);
+}
+
+.tugasan-btn-outline {
+  width: 100%;
+  background: var(--bg-surface);
+  color: var(--amc-red);
+  border: 1.5px solid var(--amc-red);
+  padding: 12px 18px;
+  border-radius: 9999px;
+  font-family: var(--font-heading);
+  font-size: 0.92rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tugasan-btn-outline:hover {
+  background-color: var(--amc-red-light);
+}
+
+.tugasan-support-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tugasan-support-btn {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-light);
+  color: var(--text-heading);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.76rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tugasan-support-btn:hover {
+  border-color: var(--amc-red-border);
+  background-color: var(--amc-red-light);
+  color: var(--amc-red);
+}
+
+.tugasan-notice-box {
+  background-color: var(--amc-red-light);
+  border: 1px solid var(--amc-red-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--amc-red);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 
