@@ -238,6 +238,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   initDashboardView();
   renderDashboardFleet();
   renderRevenueTable();
+  initAdminBookingView();
+  initKatalogArmadaView();
 });
 
 /* -------------------------------------------------------------------------
@@ -441,7 +443,9 @@ function initSidebarNavigation() {
     cawanganView: 'Cawangan',
     dashboardView: 'Dashboard',
     petaFleetView: 'Peta & Fleet',
-    hasilInvoisView: 'Hasil & Invois'
+    hasilInvoisView: 'Hasil & Invois',
+    adminBookingView: 'Tempahan Baru',
+    katalogArmadaView: 'Katalog & Armada'
   };
 
   navBtns.forEach(btn => {
@@ -1196,4 +1200,827 @@ function showToast(msg) {
     toast.style.transform = 'translateY(20px)';
     toast.style.opacity = '0';
   }, 3200);
+}
+
+/* -------------------------------------------------------------------------
+   10. ADMIN BOOKING DESK CONTROLLER (6-STEP WIZARD + BOOKING SECTION)
+   ------------------------------------------------------------------------- */
+function initAdminBookingView() {
+  const adminBookingState = {
+    bookingType: 'regular_trip',
+    standbyHours: 4,
+    standbyEventName: 'Kejohanan Sukan Tahunan',
+    patient: {
+      name: 'Mohd Azlan bin Ismail',
+      age: 62,
+      gender: 'Lelaki',
+      mobility: 'Stretcher',
+      phone: '019-982 4511',
+      notes: 'Post-op discharge, stabil'
+    },
+    location: {
+      hub: 'kok_lanas',
+      hubName: 'HQ Kok Lanas (Kelantan)',
+      pickup: 'Kediaman Pesakit Kota Bharu (Pusat Bandar)',
+      dest: 'Hospital Raja Perempuan Zainab II (HRPZ II)',
+      distanceKm: 27.2
+    },
+    category: {
+      id: 'emergency_standard',
+      name: 'Kecemasan Standard',
+      base: 250
+    },
+    staff: {
+      id: 'ma',
+      roleTitle: 'Penolong Pegawai Perubatan (PPP)',
+      price: 200
+    },
+    equipments: {
+      oxygen_supply: 1,
+      med_kit: 0,
+      transport_incubator: 0,
+      infusion_pump_ventilator: 0,
+      suction_unit: 0,
+      aed_unit: 0,
+      spine_board: 0,
+      iv_drip_set: 0
+    }
+  };
+
+  // Booking Type Toggle
+  const btnRegular = document.getElementById('adminBookingTypeRegular');
+  const btnStandby = document.getElementById('adminBookingTypeStandby');
+  const standbyBox = document.getElementById('adminStandbyOptionsBox');
+  const standbyHoursSelect = document.getElementById('adminStandbyHoursSelect');
+  const standbyEventInput = document.getElementById('adminStandbyEventName');
+
+  function setBookingType(type) {
+    adminBookingState.bookingType = type;
+    if (btnRegular) btnRegular.classList.toggle('active', type === 'regular_trip');
+    if (btnStandby) btnStandby.classList.toggle('active', type === 'event_standby');
+    if (standbyBox) standbyBox.style.display = type === 'event_standby' ? 'block' : 'none';
+    updateInvoiceSummary();
+  }
+
+  if (btnRegular) btnRegular.addEventListener('click', () => { playClickSound(); setBookingType('regular_trip'); });
+  if (btnStandby) btnStandby.addEventListener('click', () => { playClickSound(); setBookingType('event_standby'); });
+
+  if (standbyHoursSelect) {
+    standbyHoursSelect.addEventListener('change', (e) => {
+      adminBookingState.standbyHours = parseInt(e.target.value, 10) || 4;
+      updateInvoiceSummary();
+    });
+  }
+
+  if (standbyEventInput) {
+    standbyEventInput.addEventListener('input', (e) => {
+      adminBookingState.standbyEventName = e.target.value.trim() || 'Acara / Sukan';
+      updateInvoiceSummary();
+    });
+  }
+
+  // Wizard Step Switching
+  const wizTabs = document.querySelectorAll('.admin-wiz-tab');
+  const wizSteps = document.querySelectorAll('.admin-wiz-content-step');
+  const nextBtns = document.querySelectorAll('.btn-admin-next');
+  const prevBtns = document.querySelectorAll('.btn-admin-prev');
+
+  function switchWizStep(stepNum) {
+    wizTabs.forEach(t => {
+      t.classList.toggle('active', parseInt(t.dataset.step, 10) === stepNum);
+    });
+    wizSteps.forEach((s, idx) => {
+      s.style.display = (idx + 1 === stepNum) ? 'block' : 'none';
+    });
+    if (stepNum === 6) {
+      updateInvoiceSummary();
+    }
+  }
+
+  wizTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      playClickSound();
+      switchWizStep(parseInt(tab.dataset.step, 10));
+    });
+  });
+
+  nextBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      playClickSound();
+      switchWizStep(parseInt(btn.dataset.next, 10));
+    });
+  });
+
+  prevBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      playClickSound();
+      switchWizStep(parseInt(btn.dataset.prev, 10));
+    });
+  });
+
+  // Step 1: Patient Info Inputs
+  const pName = document.getElementById('adminPatientName');
+  const pAge = document.getElementById('adminPatientAge');
+  const pGender = document.getElementById('adminPatientGender');
+  const pPhone = document.getElementById('adminPatientPhone');
+  const pNotes = document.getElementById('adminPatientClinicalNotes');
+  const mobCards = document.querySelectorAll('.admin-mob-card');
+
+  if (pName) pName.addEventListener('input', (e) => { adminBookingState.patient.name = e.target.value.trim(); });
+  if (pAge) pAge.addEventListener('input', (e) => { adminBookingState.patient.age = parseInt(e.target.value, 10) || 0; });
+  if (pGender) pGender.addEventListener('change', (e) => { adminBookingState.patient.gender = e.target.value; });
+  if (pPhone) pPhone.addEventListener('input', (e) => { adminBookingState.patient.phone = e.target.value.trim(); });
+  if (pNotes) pNotes.addEventListener('input', (e) => { adminBookingState.patient.notes = e.target.value.trim(); });
+
+  mobCards.forEach(card => {
+    card.addEventListener('click', () => {
+      playClickSound();
+      mobCards.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      adminBookingState.patient.mobility = card.dataset.mobility;
+    });
+  });
+
+  // Step 2: Location Inputs
+  const bHub = document.getElementById('adminBookingHub');
+  const bDist = document.getElementById('adminBookingDistanceKm');
+  const bPickup = document.getElementById('adminBookingPickupName');
+  const bDest = document.getElementById('adminBookingDestName');
+
+  if (bHub) bHub.addEventListener('change', (e) => {
+    adminBookingState.location.hub = e.target.value;
+    adminBookingState.location.hubName = e.target.options[e.target.selectedIndex].text;
+  });
+  if (bDist) bDist.addEventListener('input', (e) => {
+    adminBookingState.location.distanceKm = parseFloat(e.target.value) || 25.0;
+  });
+  if (bPickup) bPickup.addEventListener('input', (e) => { adminBookingState.location.pickup = e.target.value.trim(); });
+  if (bDest) bDest.addEventListener('input', (e) => { adminBookingState.location.dest = e.target.value.trim(); });
+
+  // Step 3: Category Cards
+  const catCards = document.querySelectorAll('#adminCategoryCardsContainer .admin-cat-card');
+  catCards.forEach(card => {
+    card.addEventListener('click', () => {
+      playClickSound();
+      catCards.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      adminBookingState.category = {
+        id: card.dataset.catId,
+        name: card.querySelector('strong').textContent.trim(),
+        base: parseFloat(card.dataset.base) || 250
+      };
+    });
+  });
+
+  // Step 4: Staff Cards
+  const staffCards = document.querySelectorAll('#adminStaffCardsContainer .admin-cat-card');
+  staffCards.forEach(card => {
+    card.addEventListener('click', () => {
+      playClickSound();
+      staffCards.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      adminBookingState.staff = {
+        id: card.dataset.pkgId,
+        roleTitle: card.querySelector('strong').textContent.trim(),
+        price: parseFloat(card.dataset.price) || 0
+      };
+    });
+  });
+
+  // Step 5: Equipment Steppers
+  function renderAdminEquipSteppers() {
+    const container = document.getElementById('adminEquipSteppersContainer');
+    if (!container) return;
+
+    const equipments = portalState.katalogEquipments || ADDITIONAL_EQUIPMENTS;
+    container.innerHTML = equipments.map(eq => {
+      const qty = adminBookingState.equipments[eq.id] || 0;
+      return `
+        <div class="admin-equip-item-card">
+          <div>
+            <div style="font-weight: 700; font-size: 0.82rem; color: #0F172A;">${eq.name}</div>
+            <div style="font-size: 0.72rem; color: #64748B;">RM ${eq.price.toFixed(2)} &middot; ${eq.category || 'Alatan'}</div>
+          </div>
+          <div class="admin-equip-stepper">
+            <button type="button" class="btn-equip-step btn-step-minus" data-eq="${eq.id}">-</button>
+            <span class="admin-equip-qty-val" id="adminQty_${eq.id}">${qty}</span>
+            <button type="button" class="btn-equip-step btn-step-plus" data-eq="${eq.id}">+</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.querySelectorAll('.btn-step-minus').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.eq;
+        const current = adminBookingState.equipments[id] || 0;
+        if (current > 0) {
+          playClickSound();
+          adminBookingState.equipments[id] = current - 1;
+          const el = document.getElementById(`adminQty_${id}`);
+          if (el) el.textContent = adminBookingState.equipments[id];
+        }
+      });
+    });
+
+    container.querySelectorAll('.btn-step-plus').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.eq;
+        const current = adminBookingState.equipments[id] || 0;
+        playClickSound();
+        adminBookingState.equipments[id] = current + 1;
+        const el = document.getElementById(`adminQty_${id}`);
+        if (el) el.textContent = adminBookingState.equipments[id];
+      });
+    });
+  }
+  renderAdminEquipSteppers();
+
+  // Step 6: Invoice Calculation and Summary
+  function updateInvoiceSummary() {
+    const pText = document.getElementById('adminInvPatientText');
+    const mobText = document.getElementById('adminInvMobilityText');
+    const rText = document.getElementById('adminInvRouteText');
+    const distText = document.getElementById('adminInvDistanceText');
+    const btypeText = document.getElementById('adminInvBookingTypeText');
+    const catText = document.getElementById('adminInvCategoryText');
+    const tbody = document.getElementById('adminInvTableBody');
+    const grandTotalEl = document.getElementById('adminInvGrandTotal');
+
+    if (pText) pText.textContent = `${adminBookingState.patient.name} (${adminBookingState.patient.age} Thn, ${adminBookingState.patient.gender})`;
+    const mobIcons = { Walking: '🚶', Wheelchair: '🧑‍🦽', Stretcher: '🛏️' };
+    if (mobText) mobText.textContent = `${mobIcons[adminBookingState.patient.mobility] || '🛏️'} Mobiliti: ${adminBookingState.patient.mobility}`;
+    if (rText) rText.textContent = `${adminBookingState.location.pickup} ➔ ${adminBookingState.location.dest}`;
+    if (distText) distText.textContent = `${adminBookingState.location.distanceKm.toFixed(1)} KM (${adminBookingState.location.hubName})`;
+
+    if (btypeText) {
+      btypeText.textContent = adminBookingState.bookingType === 'event_standby'
+        ? `🎪 Standby Event (${adminBookingState.standbyHours} Jam)`
+        : '🚑 Ambulance Regular Trip';
+    }
+    if (catText) catText.textContent = adminBookingState.category.name;
+
+    // Pricing calculation
+    let basePrice = adminBookingState.category.base || 250.00;
+    let extraDistanceFare = 0;
+    const baseKm = 25.0;
+    const distance = adminBookingState.location.distanceKm;
+
+    if (adminBookingState.bookingType === 'event_standby') {
+      const hours = adminBookingState.standbyHours || 4;
+      const standbyRates = { 4: 450.00, 8: 800.00, 12: 1150.00, 24: 2000.00 };
+      basePrice = standbyRates[hours] || (hours * 110.00);
+      extraDistanceFare = 0;
+    } else {
+      const extraKm = Math.max(0, distance - baseKm);
+      extraDistanceFare = extraKm * 3.00;
+    }
+
+    const staffFare = adminBookingState.staff.price || 0.00;
+
+    let equipRowsHtml = '';
+    let equipTotal = 0;
+    const equipments = portalState.katalogEquipments || ADDITIONAL_EQUIPMENTS;
+    equipments.forEach(eq => {
+      const q = adminBookingState.equipments[eq.id] || 0;
+      if (q > 0) {
+        const lineTotal = q * eq.price;
+        equipTotal += lineTotal;
+        equipRowsHtml += `
+          <tr>
+            <td><strong>${eq.name}</strong></td>
+            <td>${q} &times; RM ${eq.price.toFixed(2)}</td>
+            <td style="text-align: right; font-weight: 700;">RM ${lineTotal.toFixed(2)}</td>
+          </tr>
+        `;
+      }
+    });
+
+    const grandTotal = basePrice + extraDistanceFare + staffFare + equipTotal;
+
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td><strong>Kadar Asas (${adminBookingState.bookingType === 'event_standby' ? 'Pakej Standby Acara' : adminBookingState.category.name})</strong></td>
+          <td>${adminBookingState.bookingType === 'event_standby' ? `Standby ${adminBookingState.standbyHours} Jam di lokasi program` : `Kadar tetap sehingga ${baseKm} KM pertama`}</td>
+          <td style="text-align: right; font-weight: 700;">RM ${basePrice.toFixed(2)}</td>
+        </tr>
+        ${extraDistanceFare > 0 ? `
+          <tr>
+            <td><strong>Caj Tambahan Jarak</strong></td>
+            <td>${(distance - baseKm).toFixed(1)} KM &times; RM 3.00 / KM</td>
+            <td style="text-align: right; font-weight: 700;">RM ${extraDistanceFare.toFixed(2)}</td>
+          </tr>
+        ` : ''}
+        <tr>
+          <td><strong>Pakej Bantuan Staf: ${adminBookingState.staff.roleTitle}</strong></td>
+          <td>${staffFare > 0 ? 'Kru klinikal khusus mengiringi pesakit' : 'Kru EMT standard termasuk'}</td>
+          <td style="text-align: right; font-weight: 700;">RM ${staffFare.toFixed(2)}</td>
+        </tr>
+        ${equipRowsHtml}
+      `;
+    }
+
+    if (grandTotalEl) grandTotalEl.textContent = `RM ${grandTotal.toFixed(2)}`;
+  }
+
+  // Primary Dispatch Submission
+  const btnDispatch = document.getElementById('btnAdminConfirmDispatch');
+  if (btnDispatch) {
+    btnDispatch.addEventListener('click', () => {
+      playSuccessChime();
+      const newRef = `AMC-${1044 + portalState.records.length}`;
+      const now = new Date();
+      const dateStr = `${now.getDate()} Okt 2026 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      // Pricing
+      let basePrice = adminBookingState.category.base || 250.00;
+      let extraDist = 0;
+      if (adminBookingState.bookingType === 'event_standby') {
+        const rates = { 4: 450, 8: 800, 12: 1150, 24: 2000 };
+        basePrice = rates[adminBookingState.standbyHours] || 450;
+      } else {
+        extraDist = Math.max(0, adminBookingState.location.distanceKm - 25.0) * 3.00;
+      }
+      const staffPrice = adminBookingState.staff.price || 0;
+      let eqTotal = 0;
+      const equipments = portalState.katalogEquipments || ADDITIONAL_EQUIPMENTS;
+      equipments.forEach(eq => {
+        const q = adminBookingState.equipments[eq.id] || 0;
+        eqTotal += q * eq.price;
+      });
+      const totalAmount = basePrice + extraDist + staffPrice + eqTotal;
+
+      const newRecord = {
+        ref: newRef,
+        date: dateStr,
+        branch: adminBookingState.location.hub === 'raub' ? 'Cawangan Raub' : 'Kok Lanas HQ',
+        route: `${adminBookingState.location.pickup.split('(')[0].trim()} → ${adminBookingState.location.dest.split('(')[0].trim()}`,
+        ambulance: adminBookingState.location.hub === 'raub' ? 'DFG 7606' : 'VPQ 7606',
+        driver: adminBookingState.location.hub === 'raub' ? 'Abe Din' : 'Abe Di / Syalihan',
+        patient: `${adminBookingState.patient.name} (${adminBookingState.patient.mobility})`,
+        amount: totalAmount,
+        status: 'Menuju lokasi',
+        category: adminBookingState.category.name,
+        staff: adminBookingState.staff.roleTitle,
+        contact: adminBookingState.patient.phone
+      };
+
+      portalState.records.unshift(newRecord);
+      renderRevenueTable();
+      renderRecordsTable();
+
+      showToast(`Misi ${newRef} berjaya dilancarkan ke Pemandu (${newRecord.ambulance})!`);
+      alert(`✅ Misi Ambulans Berjaya Dicipta!\n\nNo. Rujukan: ${newRef}\nPesakit: ${adminBookingState.patient.name} (${adminBookingState.patient.mobility})\nAmbulans: ${newRecord.ambulance}\nJumlah Invois: RM ${totalAmount.toFixed(2)}\nStatus: Dihantar ke Sistem Dispatch Lapangan.`);
+
+      // Switch to dispatch view
+      const navDispatch = document.querySelector('.nav-item-btn[data-target="dispatchView"]');
+      if (navDispatch) navDispatch.click();
+    });
+  }
+
+  // Print Invoice Button
+  const btnPrint = document.getElementById('btnAdminPrintBookingInvoice');
+  if (btnPrint) {
+    btnPrint.addEventListener('click', () => {
+      window.print();
+    });
+  }
+}
+
+/* -------------------------------------------------------------------------
+   11. KATALOG ALATAN, BANTUAN STAF & ARMADA AMBULANS CRUD ENGINE
+   ------------------------------------------------------------------------- */
+function initKatalogArmadaView() {
+  // 1. Initial State from Storage or Defaults
+  if (!portalState.katalogEquipments) {
+    const saved = localStorage.getItem('amc_katalog_equipments');
+    portalState.katalogEquipments = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(ADDITIONAL_EQUIPMENTS));
+  }
+  if (!portalState.katalogAssistance) {
+    const saved = localStorage.getItem('amc_katalog_assistance');
+    portalState.katalogAssistance = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(ASSISTANCE_PACKAGES));
+  }
+  if (!portalState.katalogFleet) {
+    const saved = localStorage.getItem('amc_katalog_fleet');
+    portalState.katalogFleet = saved ? JSON.parse(saved) : [
+      { plate: 'VPQ 7606', model: 'Toyota Hiace High-Roof Type B', hub: 'HQ Kok Lanas (Kelantan)', driver: 'Abe Di / Syalihan', phone: '013-914 7606', status: 'Siap Sedia' },
+      { plate: 'DFG 7606', model: 'Toyota Hiace Type B', hub: 'Cawangan Raub (Pahang)', driver: 'Abe Din Estimos', phone: '013-914 7606', status: 'Siap Sedia' },
+      { plate: 'AMC 7608', model: 'Mercedes Sprinter Intensive Care Type C', hub: 'HQ Kok Lanas (Kelantan)', driver: 'Dr. Razali / Paramedik', phone: '013-914 7606', status: 'Siap Sedia' },
+      { plate: 'AMC 7609', model: 'Nissan Urvan Transporter', hub: 'Cawangan Jeli (Kelantan)', driver: 'Krew Jeli Bertugas', phone: '013-914 7606', status: 'Selenggara' }
+    ];
+  }
+
+  // 2. Tab Navigation
+  const tabBtns = document.querySelectorAll('#katalogTabsBar .set-tab-btn');
+  const tabContents = document.querySelectorAll('.katalog-tab-content');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      playClickSound();
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const target = btn.dataset.ktab;
+      tabContents.forEach(c => {
+        c.style.display = (c.id === `ktab-${target}`) ? 'block' : 'none';
+      });
+    });
+  });
+
+  // 3. Render Functions
+  function renderEquipmentsTable(filterQuery = '') {
+    const tbody = document.getElementById('tableKatalogEquipmentsBody');
+    if (!tbody) return;
+
+    let items = portalState.katalogEquipments;
+    if (filterQuery) {
+      items = items.filter(i => i.name.toLowerCase().includes(filterQuery) || (i.category && i.category.toLowerCase().includes(filterQuery)));
+    }
+
+    tbody.innerHTML = items.map((item, index) => `
+      <tr>
+        <td style="font-family: var(--font-mono); font-size: 0.76rem; font-weight: 700;">${item.id}</td>
+        <td>
+          <div style="font-weight: 700; color: #0F172A;">${item.name}</div>
+          <div style="font-size: 0.72rem; color: #64748B;">${item.description || '-'}</div>
+        </td>
+        <td><span class="badge-status-pill blue" style="background:#EFF6FF; color:#1D4ED8;">${item.category || 'Alatan'}</span></td>
+        <td style="font-family: var(--font-mono); font-weight: 700; color: #C61E2F;">RM ${item.price.toFixed(2)}</td>
+        <td style="font-size: 0.78rem;">${item.unit || 'Per Unit'}</td>
+        <td>
+          <span class="badge-status-pill ${item.outOfStock ? 'amber' : 'green'}">
+            ● ${item.outOfStock ? 'Habis Stok' : 'Tersedia'}
+          </span>
+        </td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button type="button" class="btn-tbl-action edit btn-edit-equip" data-idx="${index}">✏️ Edit</button>
+          <button type="button" class="btn-tbl-action delete btn-delete-equip" data-idx="${index}">🗑️ Padam</button>
+        </td>
+      </tr>
+    `).join('');
+
+    // Attach row events
+    tbody.querySelectorAll('.btn-edit-equip').forEach(btn => {
+      btn.addEventListener('click', () => openEditEquipModal(parseInt(btn.dataset.idx, 10)));
+    });
+    tbody.querySelectorAll('.btn-delete-equip').forEach(btn => {
+      btn.addEventListener('click', () => openDeleteModal('equipment', parseInt(btn.dataset.idx, 10)));
+    });
+  }
+
+  function renderAssistanceTable(filterQuery = '') {
+    const tbody = document.getElementById('tableKatalogAssistanceBody');
+    if (!tbody) return;
+
+    let items = portalState.katalogAssistance;
+    if (filterQuery) {
+      items = items.filter(i => i.name.toLowerCase().includes(filterQuery) || (i.roleTitle && i.roleTitle.toLowerCase().includes(filterQuery)));
+    }
+
+    tbody.innerHTML = items.map((item, index) => `
+      <tr>
+        <td style="font-family: var(--font-mono); font-size: 0.76rem; font-weight: 700;">${item.id}</td>
+        <td><strong style="color: #0F172A;">${item.roleTitle || item.name}</strong></td>
+        <td style="font-size: 0.78rem; color: #475569;">${item.name}</td>
+        <td style="font-family: var(--font-mono); font-weight: 700; color: #007D77;">RM ${item.price.toFixed(2)}</td>
+        <td style="font-size: 0.74rem; color: #64748B;">${Array.isArray(item.skills) ? item.skills.join(', ') : (item.skills || '-')}</td>
+        <td><span class="badge-status-pill green">● Aktif</span></td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button type="button" class="btn-tbl-action edit btn-edit-assist" data-idx="${index}">✏️ Edit</button>
+          <button type="button" class="btn-tbl-action delete btn-delete-assist" data-idx="${index}">🗑️ Padam</button>
+        </td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('.btn-edit-assist').forEach(btn => {
+      btn.addEventListener('click', () => openEditAssistModal(parseInt(btn.dataset.idx, 10)));
+    });
+    tbody.querySelectorAll('.btn-delete-assist').forEach(btn => {
+      btn.addEventListener('click', () => openDeleteModal('assistance', parseInt(btn.dataset.idx, 10)));
+    });
+  }
+
+  function renderFleetTable(filterQuery = '') {
+    const tbody = document.getElementById('tableKatalogFleetBody');
+    if (!tbody) return;
+
+    let items = portalState.katalogFleet;
+    if (filterQuery) {
+      items = items.filter(i => i.plate.toLowerCase().includes(filterQuery) || i.model.toLowerCase().includes(filterQuery) || i.hub.toLowerCase().includes(filterQuery));
+    }
+
+    tbody.innerHTML = items.map((item, index) => `
+      <tr>
+        <td style="font-family: var(--font-mono); font-size: 0.88rem; font-weight: 800; color: #C61E2F;">${item.plate}</td>
+        <td><strong style="color: #0F172A;">${item.model}</strong></td>
+        <td>${item.hub}</td>
+        <td>
+          <div style="font-weight: 600;">${item.driver}</div>
+          <div style="font-size: 0.72rem; color: #64748B;">${item.phone}</div>
+        </td>
+        <td>
+          <span class="badge-status-pill ${item.status === 'Siap Sedia' ? 'green' : (item.status === 'Dalam Misi' ? 'blue' : 'amber')}">
+            ● ${item.status}
+          </span>
+        </td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button type="button" class="btn-tbl-action edit btn-edit-fleet" data-idx="${index}">✏️ Edit</button>
+          <button type="button" class="btn-tbl-action delete btn-delete-fleet" data-idx="${index}">🗑️ Padam</button>
+        </td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('.btn-edit-fleet').forEach(btn => {
+      btn.addEventListener('click', () => openEditFleetModal(parseInt(btn.dataset.idx, 10)));
+    });
+    tbody.querySelectorAll('.btn-delete-fleet').forEach(btn => {
+      btn.addEventListener('click', () => openDeleteModal('fleet', parseInt(btn.dataset.idx, 10)));
+    });
+  }
+
+  renderEquipmentsTable();
+  renderAssistanceTable();
+  renderFleetTable();
+
+  // Search Filters
+  const searchEquip = document.getElementById('searchKatalogEquipmentInput');
+  if (searchEquip) searchEquip.addEventListener('input', (e) => renderEquipmentsTable(e.target.value.toLowerCase().trim()));
+
+  const searchAssist = document.getElementById('searchKatalogAssistanceInput');
+  if (searchAssist) searchAssist.addEventListener('input', (e) => renderAssistanceTable(e.target.value.toLowerCase().trim()));
+
+  const searchFleet = document.getElementById('searchKatalogFleetInput');
+  if (searchFleet) searchFleet.addEventListener('input', (e) => renderFleetTable(e.target.value.toLowerCase().trim()));
+
+  // 4. Modal Handlers: Equipment CRUD
+  const modalEquip = document.getElementById('modalEquipmentForm');
+  const btnAddEquip = document.getElementById('btnAddNewEquipment');
+  const btnCloseEquip = document.getElementById('closeEquipModalBtn');
+  const btnCancelEquip = document.getElementById('btnCancelEquipModal');
+  const formEquip = document.getElementById('formEquipmentCrud');
+
+  if (btnAddEquip) {
+    btnAddEquip.addEventListener('click', () => {
+      playClickSound();
+      document.getElementById('modalEquipTitle').textContent = 'Tambah Alatan Tambahan Baru';
+      document.getElementById('crudEquipMode').value = 'create';
+      document.getElementById('crudEquipId').value = `EQ-${Date.now().toString().slice(-4)}`;
+      document.getElementById('crudEquipName').value = '';
+      document.getElementById('crudEquipPrice').value = '';
+      document.getElementById('crudEquipDesc').value = '';
+      modalEquip.classList.add('show');
+    });
+  }
+
+  function openEditEquipModal(idx) {
+    const item = portalState.katalogEquipments[idx];
+    if (!item) return;
+    playClickSound();
+    document.getElementById('modalEquipTitle').textContent = `Kemaskini Alatan: ${item.name}`;
+    document.getElementById('crudEquipMode').value = 'edit';
+    document.getElementById('crudEquipId').value = item.id;
+    document.getElementById('crudEquipName').value = item.name;
+    document.getElementById('crudEquipCategory').value = item.category || 'Sokongan Pernafasan';
+    document.getElementById('crudEquipPrice').value = item.price;
+    document.getElementById('crudEquipUnit').value = item.unit || 'Per Unit / Trip';
+    document.getElementById('crudEquipStatus').value = item.outOfStock ? 'out_of_stock' : 'in_stock';
+    document.getElementById('crudEquipDesc').value = item.description || '';
+    modalEquip.classList.add('show');
+  }
+
+  if (btnCloseEquip) btnCloseEquip.addEventListener('click', () => modalEquip.classList.remove('show'));
+  if (btnCancelEquip) btnCancelEquip.addEventListener('click', () => modalEquip.classList.remove('show'));
+
+  if (formEquip) {
+    formEquip.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const mode = document.getElementById('crudEquipMode').value;
+      const id = document.getElementById('crudEquipId').value;
+      const name = document.getElementById('crudEquipName').value.trim();
+      const category = document.getElementById('crudEquipCategory').value;
+      const price = parseFloat(document.getElementById('crudEquipPrice').value) || 0;
+      const unit = document.getElementById('crudEquipUnit').value.trim();
+      const status = document.getElementById('crudEquipStatus').value;
+      const desc = document.getElementById('crudEquipDesc').value.trim();
+
+      if (mode === 'create') {
+        portalState.katalogEquipments.push({
+          id: id || `EQ-${Date.now().toString().slice(-4)}`,
+          name, category, price, unit, description: desc, outOfStock: status === 'out_of_stock'
+        });
+        showToast(`Alatan "${name}" berjaya ditambah!`);
+      } else {
+        const item = portalState.katalogEquipments.find(i => i.id === id);
+        if (item) {
+          item.name = name;
+          item.category = category;
+          item.price = price;
+          item.unit = unit;
+          item.outOfStock = status === 'out_of_stock';
+          item.description = desc;
+        }
+        showToast(`Alatan "${name}" berjaya dikemaskini!`);
+      }
+
+      localStorage.setItem('amc_katalog_equipments', JSON.stringify(portalState.katalogEquipments));
+      renderEquipmentsTable();
+      modalEquip.classList.remove('show');
+      playSuccessChime();
+    });
+  }
+
+  // 5. Modal Handlers: Staff Assistance CRUD
+  const modalAssist = document.getElementById('modalAssistanceForm');
+  const btnAddAssist = document.getElementById('btnAddNewAssistance');
+  const btnCloseAssist = document.getElementById('closeAssistModalBtn');
+  const btnCancelAssist = document.getElementById('btnCancelAssistModal');
+  const formAssist = document.getElementById('formAssistanceCrud');
+
+  if (btnAddAssist) {
+    btnAddAssist.addEventListener('click', () => {
+      playClickSound();
+      document.getElementById('modalAssistTitle').textContent = 'Tambah Pakej Bantuan Staf Baru';
+      document.getElementById('crudAssistMode').value = 'create';
+      document.getElementById('crudAssistId').value = `PKG-${Date.now().toString().slice(-4)}`;
+      document.getElementById('crudAssistRoleTitle').value = '';
+      document.getElementById('crudAssistName').value = '';
+      document.getElementById('crudAssistPrice').value = '';
+      document.getElementById('crudAssistSkills').value = '';
+      document.getElementById('crudAssistRecommended').value = '';
+      modalAssist.classList.add('show');
+    });
+  }
+
+  function openEditAssistModal(idx) {
+    const item = portalState.katalogAssistance[idx];
+    if (!item) return;
+    playClickSound();
+    document.getElementById('modalAssistTitle').textContent = `Kemaskini Pakej: ${item.roleTitle || item.name}`;
+    document.getElementById('crudAssistMode').value = 'edit';
+    document.getElementById('crudAssistId').value = item.id;
+    document.getElementById('crudAssistRoleTitle').value = item.roleTitle || '';
+    document.getElementById('crudAssistName').value = item.name || '';
+    document.getElementById('crudAssistPrice').value = item.price;
+    document.getElementById('crudAssistSkills').value = Array.isArray(item.skills) ? item.skills.join(', ') : (item.skills || '');
+    document.getElementById('crudAssistRecommended').value = item.recommendedFor || '';
+    modalAssist.classList.add('show');
+  }
+
+  if (btnCloseAssist) btnCloseAssist.addEventListener('click', () => modalAssist.classList.remove('show'));
+  if (btnCancelAssist) btnCancelAssist.addEventListener('click', () => modalAssist.classList.remove('show'));
+
+  if (formAssist) {
+    formAssist.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const mode = document.getElementById('crudAssistMode').value;
+      const id = document.getElementById('crudAssistId').value;
+      const roleTitle = document.getElementById('crudAssistRoleTitle').value.trim();
+      const name = document.getElementById('crudAssistName').value.trim();
+      const price = parseFloat(document.getElementById('crudAssistPrice').value) || 0;
+      const skills = document.getElementById('crudAssistSkills').value.split(',').map(s => s.trim()).filter(Boolean);
+      const recommended = document.getElementById('crudAssistRecommended').value.trim();
+
+      if (mode === 'create') {
+        portalState.katalogAssistance.push({
+          id: id || `PKG-${Date.now().toString().slice(-4)}`,
+          roleTitle, name, price, skills, recommendedFor: recommended
+        });
+        showToast(`Pakej "${roleTitle}" berjaya ditambah!`);
+      } else {
+        const item = portalState.katalogAssistance.find(i => i.id === id);
+        if (item) {
+          item.roleTitle = roleTitle;
+          item.name = name;
+          item.price = price;
+          item.skills = skills;
+          item.recommendedFor = recommended;
+        }
+        showToast(`Pakej "${roleTitle}" berjaya dikemaskini!`);
+      }
+
+      localStorage.setItem('amc_katalog_assistance', JSON.stringify(portalState.katalogAssistance));
+      renderAssistanceTable();
+      modalAssist.classList.remove('show');
+      playSuccessChime();
+    });
+  }
+
+  // 6. Modal Handlers: Fleet CRUD
+  const modalFleet = document.getElementById('modalFleetForm');
+  const btnAddFleet = document.getElementById('btnAddNewFleetVehicle');
+  const btnCloseFleet = document.getElementById('closeFleetModalBtn');
+  const btnCancelFleet = document.getElementById('btnCancelFleetModal');
+  const formFleet = document.getElementById('formFleetCrud');
+
+  if (btnAddFleet) {
+    btnAddFleet.addEventListener('click', () => {
+      playClickSound();
+      document.getElementById('modalFleetTitle').textContent = 'Tambah Armada Ambulans Baru';
+      document.getElementById('crudFleetMode').value = 'create';
+      document.getElementById('crudFleetPlate').value = '';
+      document.getElementById('crudFleetPlate').readOnly = false;
+      document.getElementById('crudFleetModel').value = '';
+      modalFleet.classList.add('show');
+    });
+  }
+
+  function openEditFleetModal(idx) {
+    const item = portalState.katalogFleet[idx];
+    if (!item) return;
+    playClickSound();
+    document.getElementById('modalFleetTitle').textContent = `Kemaskini Ambulans: ${item.plate}`;
+    document.getElementById('crudFleetMode').value = 'edit';
+    document.getElementById('crudFleetPlate').value = item.plate;
+    document.getElementById('crudFleetPlate').readOnly = true;
+    document.getElementById('crudFleetModel').value = item.model;
+    document.getElementById('crudFleetHub').value = item.hub;
+    document.getElementById('crudFleetStatus').value = item.status;
+    document.getElementById('crudFleetDriver').value = item.driver;
+    document.getElementById('crudFleetPhone').value = item.phone;
+    modalFleet.classList.add('show');
+  }
+
+  if (btnCloseFleet) btnCloseFleet.addEventListener('click', () => modalFleet.classList.remove('show'));
+  if (btnCancelFleet) btnCancelFleet.addEventListener('click', () => modalFleet.classList.remove('show'));
+
+  if (formFleet) {
+    formFleet.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const mode = document.getElementById('crudFleetMode').value;
+      const plate = document.getElementById('crudFleetPlate').value.trim().toUpperCase();
+      const model = document.getElementById('crudFleetModel').value.trim();
+      const hub = document.getElementById('crudFleetHub').value;
+      const status = document.getElementById('crudFleetStatus').value;
+      const driver = document.getElementById('crudFleetDriver').value.trim();
+      const phone = document.getElementById('crudFleetPhone').value.trim();
+
+      if (mode === 'create') {
+        portalState.katalogFleet.push({ plate, model, hub, status, driver, phone });
+        showToast(`Ambulans "${plate}" berjaya didaftarkan!`);
+      } else {
+        const item = portalState.katalogFleet.find(i => i.plate === plate);
+        if (item) {
+          item.model = model;
+          item.hub = hub;
+          item.status = status;
+          item.driver = driver;
+          item.phone = phone;
+        }
+        showToast(`Ambulans "${plate}" berjaya dikemaskini!`);
+      }
+
+      localStorage.setItem('amc_katalog_fleet', JSON.stringify(portalState.katalogFleet));
+      renderFleetTable();
+      modalFleet.classList.remove('show');
+      playSuccessChime();
+    });
+  }
+
+  // 7. Modal Handlers: Universal Delete Confirmation
+  const modalDelete = document.getElementById('modalDeleteConfirm');
+  const btnConfirmDelete = document.getElementById('btnConfirmDeleteAction');
+  const btnCancelDelete = document.getElementById('btnCancelDeleteAction');
+  const promptText = document.getElementById('modalDeletePromptText');
+  let deleteContext = null;
+
+  function openDeleteModal(type, index) {
+    deleteContext = { type, index };
+    let itemName = '';
+    if (type === 'equipment') itemName = portalState.katalogEquipments[index]?.name || 'Alatan';
+    if (type === 'assistance') itemName = portalState.katalogAssistance[index]?.roleTitle || 'Pakej Staf';
+    if (type === 'fleet') itemName = portalState.katalogFleet[index]?.plate || 'Ambulans';
+
+    promptText.textContent = `Adakah anda pasti ingin memadam "${itemName}" dari sistem? Tindakan ini tidak boleh diundur.`;
+    modalDelete.classList.add('show');
+  }
+
+  if (btnCancelDelete) btnCancelDelete.addEventListener('click', () => modalDelete.classList.remove('show'));
+
+  if (btnConfirmDelete) {
+    btnConfirmDelete.addEventListener('click', () => {
+      if (!deleteContext) return;
+      const { type, index } = deleteContext;
+
+      if (type === 'equipment') {
+        const removed = portalState.katalogEquipments.splice(index, 1)[0];
+        localStorage.setItem('amc_katalog_equipments', JSON.stringify(portalState.katalogEquipments));
+        renderEquipmentsTable();
+        showToast(`Alatan "${removed.name}" telah dipadam.`);
+      } else if (type === 'assistance') {
+        const removed = portalState.katalogAssistance.splice(index, 1)[0];
+        localStorage.setItem('amc_katalog_assistance', JSON.stringify(portalState.katalogAssistance));
+        renderAssistanceTable();
+        showToast(`Pakej "${removed.roleTitle || removed.name}" telah dipadam.`);
+      } else if (type === 'fleet') {
+        const removed = portalState.katalogFleet.splice(index, 1)[0];
+        localStorage.setItem('amc_katalog_fleet', JSON.stringify(portalState.katalogFleet));
+        renderFleetTable();
+        showToast(`Ambulans "${removed.plate}" telah dipadam.`);
+      }
+
+      modalDelete.classList.remove('show');
+      deleteContext = null;
+      playClickSound();
+    });
+  }
 }

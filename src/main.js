@@ -107,6 +107,19 @@ const state = {
     'maternity_kit': 0
   },
 
+  // Booking Section: Regular Trip vs Ambulance Standby (Event)
+  bookingType: 'regular_trip', // 'regular_trip' | 'event_standby'
+  standbyDurationHours: 4,
+  standbyEventName: 'Kejohanan Sukan Sekolah',
+
+  // Patient Information (Name, Age, Gender, Mobility)
+  patientInfo: {
+    name: 'Ahmad bin Razali',
+    age: 58,
+    gender: 'Lelaki',
+    mobility: 'Stretcher' // 'Walking' | 'Wheelchair' | 'Stretcher'
+  },
+
   driverStage: 2, // 1: Diterima, 2: Menuju lokasi, 3: Tiba di lokasi, 4: Dalam transit, 5: Selesai
   activeTab: 'calculator-view',
   activeCatalogFilter: 'all',
@@ -138,6 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initModeSegmentedSwitch();
   initDispatchStepper();
   initLocationModal();
+  initPatientAndBookingSection();
   initServicesList();
   initStaffList();
   initEquipmentList();
@@ -645,6 +659,123 @@ function switchCalcStep(stepNum) {
 }
 
 /* =========================================================================
+   7.B. BOOKING SECTION & PATIENT INFORMATION CONTROLLER
+   ========================================================================= */
+function initPatientAndBookingSection() {
+  const btnRegular = document.getElementById('btnBookingTypeRegular');
+  const btnStandby = document.getElementById('btnBookingTypeStandby');
+  const standbyOptions = document.getElementById('standbyEventOptionsBox');
+  const standbyDuration = document.getElementById('standbyDurationSelect');
+  const standbyEventName = document.getElementById('standbyEventNameInput');
+
+  const patientName = document.getElementById('patientNameInput');
+  const patientAge = document.getElementById('patientAgeInput');
+  const patientGender = document.getElementById('patientGenderSelect');
+  const mobilityPills = document.querySelectorAll('.mobility-pill-btn');
+
+  // Booking Type Toggle (Regular vs Standby Event)
+  function setBookingType(type) {
+    state.bookingType = type;
+    if (btnRegular) btnRegular.classList.toggle('active', type === 'regular_trip');
+    if (btnStandby) btnStandby.classList.toggle('active', type === 'event_standby');
+    if (standbyOptions) standbyOptions.style.display = type === 'event_standby' ? 'block' : 'none';
+    updatePatientSummaryBadges();
+    calculateAll();
+  }
+
+  if (btnRegular) {
+    btnRegular.addEventListener('click', () => {
+      playClickSound();
+      setBookingType('regular_trip');
+    });
+  }
+
+  if (btnStandby) {
+    btnStandby.addEventListener('click', () => {
+      playClickSound();
+      setBookingType('event_standby');
+    });
+  }
+
+  if (standbyDuration) {
+    standbyDuration.addEventListener('change', (e) => {
+      state.standbyDurationHours = parseInt(e.target.value, 10) || 4;
+      updatePatientSummaryBadges();
+      calculateAll();
+    });
+  }
+
+  if (standbyEventName) {
+    standbyEventName.addEventListener('input', (e) => {
+      state.standbyEventName = e.target.value.trim() || 'Acara Sukan / Program';
+    });
+  }
+
+  // Patient Info Inputs
+  if (patientName) {
+    patientName.addEventListener('input', (e) => {
+      state.patientInfo.name = e.target.value.trim() || 'Ahmad bin Razali';
+      updatePatientSummaryBadges();
+    });
+  }
+
+  if (patientAge) {
+    patientAge.addEventListener('input', (e) => {
+      state.patientInfo.age = parseInt(e.target.value, 10) || 58;
+      updatePatientSummaryBadges();
+    });
+  }
+
+  if (patientGender) {
+    patientGender.addEventListener('change', (e) => {
+      state.patientInfo.gender = e.target.value;
+      updatePatientSummaryBadges();
+    });
+  }
+
+  // Mobility Pills
+  mobilityPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      playClickSound();
+      mobilityPills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      const mobilityVal = pill.dataset.mobility;
+      state.patientInfo.mobility = mobilityVal;
+      updatePatientSummaryBadges();
+    });
+  });
+
+  function updatePatientSummaryBadges() {
+    const invPatientName = document.getElementById('invSummaryPatientName');
+    if (invPatientName) invPatientName.textContent = state.patientInfo.name;
+
+    const invPatientAgeGender = document.getElementById('invSummaryPatientAgeGender');
+    if (invPatientAgeGender) invPatientAgeGender.textContent = `${state.patientInfo.age} Tahun (${state.patientInfo.gender})`;
+
+    const invMobilityBadge = document.getElementById('invSummaryMobilityBadge');
+    if (invMobilityBadge) {
+      const mobIcons = { Walking: '🚶', Wheelchair: '🧑‍🦽', Stretcher: '🛏️' };
+      invMobilityBadge.textContent = `${mobIcons[state.patientInfo.mobility] || '🛏️'} MOBILITI: ${state.patientInfo.mobility.toUpperCase()}`;
+    }
+
+    const invBookingTypeBadge = document.getElementById('invSummaryBookingTypeBadge');
+    if (invBookingTypeBadge) {
+      invBookingTypeBadge.textContent = state.bookingType === 'event_standby'
+        ? `🎪 STANDBY EVENT (${state.standbyDurationHours} JAM)`
+        : '🚑 REGULAR TRIP';
+    }
+  }
+
+  // Emergency direct call sound effect
+  const loginEmergencyBtn = document.getElementById('loginEmergencyDirectCall');
+  if (loginEmergencyBtn) {
+    loginEmergencyBtn.addEventListener('click', () => {
+      playEmergencyAlertSiren();
+    });
+  }
+}
+
+/* =========================================================================
    8. STICKY ACTION BAR NAVIGATION (STEPS 2, 3, 4)
    ========================================================================= */
 function initStickyBar() {
@@ -675,10 +806,18 @@ function calculateAll() {
   const extraKm = Math.max(0, totalKm - baseKm);
   const extraKmRate = BASE_SETTINGS.extraKmRateNormal; // RM3.00
 
-  // 1. Base trip fee
-  const baseFare = state.selectedTripType ? state.selectedTripType.baseFare : 250.00;
-  const extraDistanceFee = extraKm * extraKmRate;
-  const step1BaseTotal = baseFare + extraDistanceFee;
+  // 1. Base trip fee or Standby Event Package
+  let baseFare = state.selectedTripType ? state.selectedTripType.baseFare : 250.00;
+  let extraDistanceFee = extraKm * extraKmRate;
+  let step1BaseTotal = baseFare + extraDistanceFee;
+
+  if (state.bookingType === 'event_standby') {
+    const hours = parseInt(state.standbyDurationHours, 10) || 4;
+    const standbyRates = { 4: 450.00, 8: 800.00, 12: 1150.00, 24: 2000.00 };
+    baseFare = standbyRates[hours] || (hours * 110.00);
+    extraDistanceFee = 0;
+    step1BaseTotal = baseFare;
+  }
 
   // 2. Staff package fee
   const staffFee = state.selectedAssistance ? state.selectedAssistance.price : 0.00;
@@ -702,7 +841,9 @@ function calculateAll() {
   // Step 1: Distance and Base Fare Display
   const distSplit = document.getElementById('displayDistanceSplit');
   if (distSplit) {
-    if (state.hasStop4) {
+    if (state.bookingType === 'event_standby') {
+      distSplit.textContent = `Pakej Acara: ${state.standbyDurationHours} Jam`;
+    } else if (state.hasStop4) {
       distSplit.textContent = `${state.leg1Km.toFixed(1)} km + ${state.leg2Km.toFixed(1)} km + ${state.leg3Km.toFixed(1)} km`;
     } else {
       distSplit.textContent = `${state.leg1Km.toFixed(1)} km + ${state.leg2Km.toFixed(1)} km`;
@@ -714,7 +855,11 @@ function calculateAll() {
 
   const formulaEl = document.getElementById('displayEstimateFormula');
   if (formulaEl) {
-    formulaEl.textContent = `RM${baseFare.toFixed(0)} + (${extraKm.toFixed(1)} km × RM${extraKmRate.toFixed(0)}) Kadar asas + jarak tambahan`;
+    if (state.bookingType === 'event_standby') {
+      formulaEl.textContent = `Standby ${state.standbyDurationHours} Jam (Ambulans + Krew EMT di lokasi acara)`;
+    } else {
+      formulaEl.textContent = `RM${baseFare.toFixed(0)} + (${extraKm.toFixed(1)} km × RM${extraKmRate.toFixed(0)}) Kadar asas + jarak tambahan`;
+    }
   }
 
   const step1PriceEl = document.getElementById('displayStep1Price');
@@ -872,6 +1017,23 @@ function populatePrintableInvoice(baseFare, extraKm, extraKmRate, extraDistanceF
 
   const invBranch = document.getElementById('invBranchName');
   if (invBranch) invBranch.textContent = state.currentHub.name;
+
+  // Patient Info & Booking Type
+  const invPatientName = document.getElementById('invPatientName');
+  if (invPatientName) invPatientName.textContent = state.patientInfo.name || 'Ahmad bin Razali';
+
+  const invPatientAgeGender = document.getElementById('invPatientAgeGender');
+  if (invPatientAgeGender) invPatientAgeGender.textContent = `${state.patientInfo.age || 58} Tahun (${state.patientInfo.gender || 'Lelaki'})`;
+
+  const invPatientMobility = document.getElementById('invPatientMobility');
+  if (invPatientMobility) invPatientMobility.textContent = state.patientInfo.mobility || 'Stretcher';
+
+  const invBookingTypeLabel = document.getElementById('invBookingTypeLabel');
+  if (invBookingTypeLabel) {
+    invBookingTypeLabel.textContent = state.bookingType === 'event_standby'
+      ? `Standby Acara (${state.standbyDurationHours} Jam)`
+      : 'Regular Trip';
+  }
 
   const tbody = document.getElementById('invTableBody');
   if (tbody) {
@@ -1719,9 +1881,16 @@ function initActionModals() {
         ? `🔄 *Destinasi Ke-2 / Pulang:* ${state.returnName} (${state.returnAddress || '-'})\n`
         : '';
 
-      const msg = `*AL-FARHAIN AMC AMBULANS - SEBUTHARGA TRIP*\n\n` +
+      const btypeLabel = state.bookingType === 'event_standby'
+        ? `🎪 AMBULANCE STANDBY (EVENT) - ${state.standbyDurationHours} Jam`
+        : `🚑 AMBULANCE REGULAR TRIP`;
+
+      const msg = `*AL-FARHAIN AMC AMBULANS - SEBUTHARGA & TEMPAHAN*\n\n` +
+        `📋 *Jenis Tempahan:* ${btypeLabel}\n` +
+        `👤 *Nama Pesakit:* ${state.patientInfo.name} (${state.patientInfo.age} tahun, ${state.patientInfo.gender})\n` +
+        `♿ *Mobiliti Pesakit:* ${state.patientInfo.mobility}\n\n` +
         `🏛️ *Pangkalan Bertolak:* ${state.currentHub.name}\n` +
-        `📍 *Lokasi Pengambilan (Pesakit):* ${state.pickupName} (${state.pickupAddress})\n` +
+        `📍 *Lokasi Pengambilan:* ${state.pickupName} (${state.pickupAddress})\n` +
         `🏥 *Pusat Perubatan Tujuan:* ${state.destinationName}\n` +
         returnLine + `\n` +
         `🛣️ *Pecahan Jarak Jalan Raya:*\n` +

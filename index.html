@@ -41,6 +41,28 @@
 
       <!-- Body / Form Area -->
       <div class="mobile-gate-body">
+
+        <!-- EMERGENCY DIRECT CALL BUTTON (DIRECT CRISIS DIALING WITHOUT AUTHENTICATION) -->
+        <a href="tel:0139147606" class="login-emergency-call-card" id="loginEmergencyDirectCall" title="Tekan untuk hubungi Talian Kecemasan 24 Jam serta-merta">
+          <div class="emergency-call-pulse-dot">
+            <span class="emergency-phone-icon">🚨</span>
+          </div>
+          <div class="emergency-call-body">
+            <div class="emergency-call-top">
+              <span class="emergency-tag-red">KECEMASAN 24 JAM</span>
+              <span class="emergency-fast-call">DIRECT CALL ➔</span>
+            </div>
+            <div class="emergency-call-number">013-914 7606</div>
+            <div class="emergency-call-desc">Hubungi Pusat Operasi Al-Farhain serta-merta tanpa perlu log masuk</div>
+          </div>
+          <div class="emergency-call-btn-action">
+            <span>PANGGIL</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+            </svg>
+          </div>
+        </a>
+
         <!-- Segmented Tab Switcher -->
         <div class="auth-segmented-nav" style="display: flex; background: #F1F5F9; border-radius: 8px; padding: 4px; gap: 4px; margin-bottom: 16px;">
           <button type="button" class="auth-seg-btn active" id="mobileGateBtnTabLogin" style="flex: 1; padding: 8px; font-size: 0.76rem; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; background: var(--amc-red); color: #FFF;">
@@ -338,7 +360,106 @@
               <div class="page-title-row">
                 <h2 class="page-title">Rancang perjalanan</h2>
               </div>
-              <div class="page-subtitle">Tetapkan pangkalan, pengambilan dan destinasi.</div>
+              <div class="page-subtitle">Tetapkan jenis tempahan, maklumat pesakit &amp; laluan.</div>
+
+              <!-- 1. SECTION: JENIS TEMPAHAN (BOOKING SECTION) -->
+              <div class="ui-card booking-type-section-card">
+                <div class="card-mini-label">JENIS TEMPAHAN (BOOKING SECTION)</div>
+                <div class="booking-type-toggle-grid">
+                  <div class="booking-type-card active" id="btnBookingTypeRegular" data-type="regular_trip">
+                    <div class="btype-icon">🚑</div>
+                    <div class="btype-info">
+                      <div class="btype-title">Ambulance Regular Trip</div>
+                      <div class="btype-sub">Rawatan rutin, discaj hospital &amp; pemindahan</div>
+                    </div>
+                    <div class="btype-radio-circle">✓</div>
+                  </div>
+
+                  <div class="booking-type-card" id="btnBookingTypeStandby" data-type="event_standby">
+                    <div class="btype-icon">🎪</div>
+                    <div class="btype-info">
+                      <div class="btype-title">Ambulance Standby (Event)</div>
+                      <div class="btype-sub">Sukan, acara rasmi, konsert &amp; tapak program</div>
+                    </div>
+                    <div class="btype-radio-circle">✓</div>
+                  </div>
+                </div>
+
+                <!-- Standby Event Extra Options (Visible when Standby is selected) -->
+                <div class="standby-event-options-box" id="standbyEventOptionsBox" style="display: none;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                    <div>
+                      <label class="field-micro-label">TEMPOH MASA STANDBY</label>
+                      <select id="standbyDurationSelect" class="search-bar-box" style="width: 100%; margin-top: 4px; font-weight: 700;">
+                        <option value="4" selected>4 Jam (Standard RM450)</option>
+                        <option value="8">8 Jam (Sehari RM800)</option>
+                        <option value="12">12 Jam (Penuh RM1,150)</option>
+                        <option value="24">24 Jam (Hari Berturut)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="field-micro-label">NAMA ACARA / PROGRAM</label>
+                      <input type="text" id="standbyEventNameInput" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="Cth: Kejohanan Sukan / Konsert" value="Kejohanan Sukan Sekolah">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. SECTION: MAKLUMAT PESAKIT (PATIENT INFORMATION) -->
+              <div class="ui-card patient-info-card">
+                <div class="card-mini-label">MAKLUMAT PESAKIT (PATIENT INFORMATION)</div>
+                
+                <div class="patient-fields-grid">
+                  <div class="pfield-full">
+                    <label class="field-micro-label">* NAMA PESAKIT (PATIENT NAME)</label>
+                    <input type="text" id="patientNameInput" class="search-bar-box" style="width: 100%; margin-top: 4px; font-weight: 700;" placeholder="Nama penuh pesakit" value="Ahmad bin Razali">
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div>
+                      <label class="field-micro-label">* UMUR (AGE)</label>
+                      <input type="number" id="patientAgeInput" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="Cth: 58" value="58" min="0" max="120">
+                    </div>
+                    <div>
+                      <label class="field-micro-label">* JANTINA (GENDER)</label>
+                      <select id="patientGenderSelect" class="search-bar-box" style="width: 100%; margin-top: 4px;">
+                        <option value="Lelaki" selected>Lelaki (Male)</option>
+                        <option value="Perempuan">Perempuan (Female)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Mobility Selector: Walking / Wheelchair / Stretcher -->
+                  <div class="pfield-full">
+                    <label class="field-micro-label">* MOBILITI PESAKIT (MOBILITY STATUS)</label>
+                    <div class="mobility-pills-row" id="mobilityPillsContainer">
+                      <button type="button" class="mobility-pill-btn" data-mobility="Walking">
+                        <span class="mob-icon">🚶</span>
+                        <div class="mob-texts">
+                          <span class="mob-title">Walking</span>
+                          <span class="mob-sub">Boleh jalan</span>
+                        </div>
+                      </button>
+
+                      <button type="button" class="mobility-pill-btn" data-mobility="Wheelchair">
+                        <span class="mob-icon">🧑‍🦽</span>
+                        <div class="mob-texts">
+                          <span class="mob-title">Wheelchair</span>
+                          <span class="mob-sub">Kerusi roda</span>
+                        </div>
+                      </button>
+
+                      <button type="button" class="mobility-pill-btn active" data-mobility="Stretcher">
+                        <span class="mob-icon">🛏️</span>
+                        <div class="mob-texts">
+                          <span class="mob-title">Stretcher</span>
+                          <span class="mob-sub">Usungan baring</span>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <!-- Location Pickers Card -->
               <div class="ui-card location-nodes-card">
@@ -569,6 +690,24 @@
             <div class="page-title-row">
               <h2 class="page-title">Semak perjalanan</h2>
               <span class="title-badge-pill anggaran">ANGGARAN</span>
+            </div>
+
+            <!-- Patient & Booking Type Summary Card -->
+            <div class="ui-card patient-summary-overview-card">
+              <div class="patient-summary-top-row">
+                <span class="summary-btype-badge" id="invSummaryBookingTypeBadge">🚑 REGULAR TRIP</span>
+                <span class="summary-mobility-badge" id="invSummaryMobilityBadge">🛏️ MOBILITI: STRETCHER</span>
+              </div>
+              <div class="patient-summary-details-grid">
+                <div>
+                  <span class="sum-micro-lbl">NAMA PESAKIT</span>
+                  <span class="sum-bold-val" id="invSummaryPatientName">Ahmad bin Razali</span>
+                </div>
+                <div>
+                  <span class="sum-micro-lbl">UMUR &amp; JANTINA</span>
+                  <span class="sum-bold-val" id="invSummaryPatientAgeGender">58 Tahun (Lelaki)</span>
+                </div>
+              </div>
             </div>
 
             <!-- Route Summary Card -->
@@ -1032,7 +1171,14 @@
           </div>
         </div>
 
-        <div class="invoice-meta-grid">
+        <div class="invoice-meta-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+          <div>
+            <strong>MAKLUMAT PESAKIT:</strong><br>
+            Nama: <span id="invPatientName" style="font-weight: 700;">Ahmad bin Razali</span><br>
+            Umur / Jantina: <span id="invPatientAgeGender">58 Tahun (Lelaki)</span><br>
+            Mobiliti: <span id="invPatientMobility" style="font-weight: 700; color: var(--amc-red);">Stretcher</span><br>
+            Jenis: <span id="invBookingTypeLabel" style="font-weight: 700;">Regular Trip</span>
+          </div>
           <div>
             <strong>MAKLUMAT AMBULAN:</strong><br>
             Plat: <span id="invPlateNumber" style="font-weight: 700;">VPQ 7606</span><br>

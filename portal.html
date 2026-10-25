@@ -253,6 +253,33 @@
           </span>
           <span class="nav-item-label">Tetapan</span>
         </button>
+
+        <div class="nav-group-label" style="margin-top: 14px;">TEMPAHAN &amp; KATALOG</div>
+
+        <button class="nav-item-btn" data-target="adminBookingView" id="navBtnAdminBooking">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+              <line x1="12" y1="14" x2="12" y2="18"></line>
+              <line x1="10" y1="16" x2="14" y2="16"></line>
+            </svg>
+          </span>
+          <span class="nav-item-label">Tempahan Baru</span>
+        </button>
+
+        <button class="nav-item-btn" data-target="katalogArmadaView" id="navBtnKatalogArmada">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+          </span>
+          <span class="nav-item-label">Katalog &amp; Armada</span>
+        </button>
       </nav>
 
       <!-- Sidebar Bottom Profile Card -->
@@ -2103,6 +2130,498 @@
               </table>
             </div>
           </div>
+        <!-- ===================================================================
+             VIEW 8: TEMPAHAN BARU - ALIRAN LENGKAP 6-LANGKAH (ADMIN BOOKING DESK)
+             =================================================================== -->
+        <section class="portal-view-section" id="adminBookingView">
+          <div class="view-header-row">
+            <div>
+              <div class="view-title-wrap">
+                <h2 class="view-main-title">Tempahan Baru (Pusat Kawalan Operasi)</h2>
+                <span class="badge-data-contoh">ALIRAN DISPATCH</span>
+              </div>
+              <p class="view-subtitle">Kemasukan tempahan panggilan telefon &amp; kecemasan mengikut aliran: Info Pesakit &rarr; Lokasi &rarr; Kategori &rarr; Staf &rarr; Alatan &rarr; Invois.</p>
+            </div>
+            <div class="view-header-code">09 · Tempahan Operasi</div>
+          </div>
+
+          <!-- Booking Section Switcher (Regular vs Standby Event) -->
+          <div class="portal-card" style="margin-bottom: 16px;">
+            <div class="card-mini-label" style="margin-bottom: 8px;">JENIS TEMPAHAN (BOOKING SECTION)</div>
+            <div class="booking-type-toggle-grid">
+              <div class="booking-type-card active" id="adminBookingTypeRegular" data-type="regular_trip">
+                <div class="btype-icon">🚑</div>
+                <div class="btype-info">
+                  <div class="btype-title">Ambulance Regular Trip</div>
+                  <div class="btype-sub">Rawatan rutin, discaj hospital &amp; pemindahan antara fasiliti</div>
+                </div>
+                <div class="btype-radio-circle">✓</div>
+              </div>
+
+              <div class="booking-type-card" id="adminBookingTypeStandby" data-type="event_standby">
+                <div class="btype-icon">🎪</div>
+                <div class="btype-info">
+                  <div class="btype-title">Ambulance Standby (Event)</div>
+                  <div class="btype-sub">Sukan, acara rasmi, konsert &amp; tapak projek bertugas</div>
+                </div>
+                <div class="btype-radio-circle">✓</div>
+              </div>
+            </div>
+
+            <!-- Standby Event Options in Admin Portal -->
+            <div id="adminStandbyOptionsBox" style="display: none; background: #FFFBEB; border: 1px dashed #F59E0B; border-radius: 8px; padding: 12px; margin-top: 12px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                  <label class="field-micro-label" style="font-weight: 700;">TEMPOH MASA STANDBY</label>
+                  <select id="adminStandbyHoursSelect" class="settings-input" style="width: 100%; margin-top: 4px; font-weight: 700;">
+                    <option value="4" selected>4 Jam (Standard RM450)</option>
+                    <option value="8">8 Jam (Sehari RM800)</option>
+                    <option value="12">12 Jam (Penuh RM1,150)</option>
+                    <option value="24">24 Jam (Hari Berturut RM2,000)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-micro-label" style="font-weight: 700;">NAMA ACARA / PROGRAM</label>
+                  <input type="text" id="adminStandbyEventName" class="settings-input" style="width: 100%; margin-top: 4px;" placeholder="Cth: Kejohanan Sukan Tahunan" value="Kejohanan Sukan Tahunan">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6-Step Navigation Wizard -->
+          <div class="admin-wizard-tabs-bar">
+            <button type="button" class="admin-wiz-tab active" data-step="1">
+              <span class="wiz-num">1</span>
+              <span>Info Pesakit</span>
+            </button>
+            <button type="button" class="admin-wiz-tab" data-step="2">
+              <span class="wiz-num">2</span>
+              <span>Lokasi</span>
+            </button>
+            <button type="button" class="admin-wiz-tab" data-step="3">
+              <span class="wiz-num">3</span>
+              <span>Kategori</span>
+            </button>
+            <button type="button" class="admin-wiz-tab" data-step="4">
+              <span class="wiz-num">4</span>
+              <span>Staf</span>
+            </button>
+            <button type="button" class="admin-wiz-tab" data-step="5">
+              <span class="wiz-num">5</span>
+              <span>Alatan</span>
+            </button>
+            <button type="button" class="admin-wiz-tab" data-step="6">
+              <span class="wiz-num">6</span>
+              <span>Invois &amp; Dispatch</span>
+            </button>
+          </div>
+
+          <!-- Wizard Forms Container -->
+          <div class="portal-card" style="margin-top: 14px;">
+
+            <!-- STEP 1: INFO PESAKIT -->
+            <div class="admin-wiz-content-step active" id="adminStep1">
+              <h3 class="card-heading" style="margin-bottom: 4px;">Langkah 1: Maklumat Pesakit (Patient Information)</h3>
+              <p style="font-size: 0.8rem; color: #526966; margin-bottom: 14px;">Masukkan butiran pesakit, tahap mobiliti dan maklumat kontak waris.</p>
+
+              <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px;">
+                <div>
+                  <label class="field-micro-label">* NAMA PENUH PESAKIT (PATIENT NAME)</label>
+                  <input type="text" id="adminPatientName" class="settings-input" style="width: 100%; margin-top: 4px; font-weight: 700;" placeholder="Cth: Mohd Azlan bin Ismail" value="Mohd Azlan bin Ismail">
+                </div>
+                <div>
+                  <label class="field-micro-label">* UMUR (AGE)</label>
+                  <input type="number" id="adminPatientAge" class="settings-input" style="width: 100%; margin-top: 4px;" placeholder="Cth: 62" value="62" min="0" max="120">
+                </div>
+                <div>
+                  <label class="field-micro-label">* JANTINA (GENDER)</label>
+                  <select id="adminPatientGender" class="settings-input" style="width: 100%; margin-top: 4px;">
+                    <option value="Lelaki" selected>Lelaki (Male)</option>
+                    <option value="Perempuan">Perempuan (Female)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Mobility Selector -->
+              <div style="margin-top: 14px;">
+                <label class="field-micro-label">* STATUS MOBILITI PESAKIT (MOBILITY STATUS)</label>
+                <div class="admin-mobility-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 6px;">
+                  <div class="admin-mob-card" data-mobility="Walking">
+                    <span style="font-size: 1.5rem;">🚶</span>
+                    <div>
+                      <strong style="display: block; font-size: 0.85rem;">Walking (Boleh Berjalan)</strong>
+                      <span style="font-size: 0.72rem; color: #64748B;">Pesakit boleh melangkah sendiri</span>
+                    </div>
+                  </div>
+                  <div class="admin-mob-card" data-mobility="Wheelchair">
+                    <span style="font-size: 1.5rem;">🧑‍🦽</span>
+                    <div>
+                      <strong style="display: block; font-size: 0.85rem;">Wheelchair (Kerusi Roda)</strong>
+                      <span style="font-size: 0.72rem; color: #64748B;">Perlukan bantuan kerusi tolak</span>
+                    </div>
+                  </div>
+                  <div class="admin-mob-card active" data-mobility="Stretcher">
+                    <span style="font-size: 1.5rem;">🛏️</span>
+                    <div>
+                      <strong style="display: block; font-size: 0.85rem; color: #C61E2F;">Stretcher (Usungan Terbaring)</strong>
+                      <span style="font-size: 0.72rem; color: #64748B;">Usungan ambulans standard Al-Farhain</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
+                <div>
+                  <label class="field-micro-label">NO. TELEFON WARIS / PEMOHON</label>
+                  <input type="tel" id="adminPatientPhone" class="settings-input" style="width: 100%; margin-top: 4px;" placeholder="01X-XXXXXXX" value="019-982 4511">
+                </div>
+                <div>
+                  <label class="field-micro-label">CATATAN DIAGNOSIS / KEADAAN KLINIKAL</label>
+                  <input type="text" id="adminPatientClinicalNotes" class="settings-input" style="width: 100%; margin-top: 4px;" placeholder="Cth: Discaj pasca pembedahan / stabil" value="Post-op discharge, stabil">
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; margin-top: 18px;">
+                <button type="button" class="btn-save-teal btn-admin-next" data-next="2">Teruskan ke Lokasi &rarr;</button>
+              </div>
+            </div>
+
+            <!-- STEP 2: LOKASI -->
+            <div class="admin-wiz-content-step" id="adminStep2" style="display: none;">
+              <h3 class="card-heading" style="margin-bottom: 4px;">Langkah 2: Laluan Perjalanan (Location)</h3>
+              <p style="font-size: 0.8rem; color: #526966; margin-bottom: 14px;">Tetapkan pangkalan ambulans berlepas, tempat pengambilan dan hospital tujuan.</p>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div>
+                  <label class="field-micro-label">* PANGKALAN AMBULANS BERTOLAK</label>
+                  <select id="adminBookingHub" class="settings-input" style="width: 100%; margin-top: 4px;">
+                    <option value="kok_lanas" selected>HQ Pusat Rawatan Al-Farhain (Kok Lanas, Kelantan) - VPQ 7606</option>
+                    <option value="raub">Cawangan Raub, Pahang - DFG 7606</option>
+                    <option value="jeli">Cawangan Jeli, Kelantan</option>
+                    <option value="machang">Cawangan Machang, Kelantan</option>
+                    <option value="kuala_krai">Cawangan Kuala Krai, Kelantan</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-micro-label">* ANGGARAN JARAK KESELURUHAN (KM)</label>
+                  <input type="number" id="adminBookingDistanceKm" class="settings-input" style="width: 100%; margin-top: 4px; font-weight: 700;" value="27.2" step="0.1">
+                  <span style="font-size: 0.7rem; color: #64748B;">Asas 25 KM pertama (RM250) + RM3/KM seterusnya.</span>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
+                <div>
+                  <label class="field-micro-label">* LOKASI PENGAMBILAN (PICKUP / EVENT VENUE)</label>
+                  <input type="text" id="adminBookingPickupName" class="settings-input" style="width: 100%; margin-top: 4px;" value="Kediaman Pesakit Kota Bharu (Pusat Bandar)">
+                </div>
+                <div>
+                  <label class="field-micro-label">* PUSAT PERUBATAN DESTINASI (HOSPITAL / DROP-OFF)</label>
+                  <input type="text" id="adminBookingDestName" class="settings-input" style="width: 100%; margin-top: 4px;" value="Hospital Raja Perempuan Zainab II (HRPZ II)">
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; margin-top: 18px;">
+                <button type="button" class="btn-cancel-flat btn-admin-prev" data-prev="1">&larr; Kembali</button>
+                <button type="button" class="btn-save-teal btn-admin-next" data-next="3">Teruskan ke Kategori &rarr;</button>
+              </div>
+            </div>
+
+            <!-- STEP 3: KATEGORI -->
+            <div class="admin-wiz-content-step" id="adminStep3" style="display: none;">
+              <h3 class="card-heading" style="margin-bottom: 4px;">Langkah 3: Kategori Perjalanan (Trip Category)</h3>
+              <p style="font-size: 0.8rem; color: #526966; margin-bottom: 14px;">Pilih kategori perkhidmatan ambulan mengikut jenis keperluan pesakit.</p>
+
+              <div class="admin-category-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" id="adminCategoryCardsContainer">
+                <div class="admin-cat-card active" data-cat-id="emergency_standard" data-base="250">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="font-size: 0.9rem; color: #C61E2F;">Kecemasan Standard</strong>
+                    <span class="kpi-tag-status green" style="font-weight: 800;">RM 250.00</span>
+                  </div>
+                  <p style="font-size: 0.74rem; color: #64748B; margin-top: 4px;">Perjalanan kecemasan asas dengan stretcher, bantuan pernafasan &amp; krew EMT Al-Farhain.</p>
+                </div>
+
+                <div class="admin-cat-card" data-cat-id="non_emergency" data-base="250">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="font-size: 0.9rem;">Bukan Kecemasan / Discaj</strong>
+                    <span class="kpi-tag-status green" style="font-weight: 800;">RM 250.00</span>
+                  </div>
+                  <p style="font-size: 0.74rem; color: #64748B; margin-top: 4px;">Penghantaran discaj hospital, temujanji dialisis, atau pemindahan stabil antara fasiliti.</p>
+                </div>
+
+                <div class="admin-cat-card" data-cat-id="emergency_inhouse" data-base="350">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="font-size: 0.9rem;">Kecemasan In-House</strong>
+                    <span class="kpi-tag-status yellow" style="font-weight: 800;">RM 350.00</span>
+                  </div>
+                  <p style="font-size: 0.74rem; color: #64748B; margin-top: 4px;">Stabilisasi segera dari fasiliti pesakit luar / rawatan intensif di AMC.</p>
+                </div>
+
+                <div class="admin-cat-card" data-cat-id="aed_critical" data-base="500">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="font-size: 0.9rem;">Kecemasan Kritikal + AED</strong>
+                    <span class="kpi-tag-status red" style="font-weight: 800;">RM 500.00</span>
+                  </div>
+                  <p style="font-size: 0.74rem; color: #64748B; margin-top: 4px;">Serangan jantung, henti nafas, pesakit kritikal memerlukan Defibrillator AED siap sedia.</p>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; margin-top: 18px;">
+                <button type="button" class="btn-cancel-flat btn-admin-prev" data-prev="2">&larr; Kembali</button>
+                <button type="button" class="btn-save-teal btn-admin-next" data-next="4">Teruskan ke Staf &rarr;</button>
+              </div>
+            </div>
+
+            <!-- STEP 4: STAF -->
+            <div class="admin-wiz-content-step" id="adminStep4" style="display: none;">
+              <h3 class="card-heading" style="margin-bottom: 4px;">Langkah 4: Pakej Bantuan Staf Pengiring (Staff Escort)</h3>
+              <p style="font-size: 0.8rem; color: #526966; margin-bottom: 14px;">Pilih kru klinikal yang mengiringi pesakit mengikut tahap kestabilan.</p>
+
+              <div class="admin-staff-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" id="adminStaffCardsContainer">
+                <div class="admin-cat-card" data-pkg-id="none" data-price="0">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="font-size: 0.9rem;">Krew EMT Asas (Termasuk)</strong>
+                    <span class="kpi-tag-status green">RM 0.00</span>
+                  </div>
+                  <p style="font-size: 0.74rem; color: #64748B; margin-top: 4px;">Pemandu terlatih + Pembantu EMT asas standard ambulans Al-Farhain.</p>
+                </div>
+
+                <div class="admin-cat-card" data-pkg-id="ca" data-price="100">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="font-size: 0.9rem;">Pakej C.A (Pembantu Klinikal)</strong>
+                    <span class="kpi-tag-status teal">+RM 100.00</span>
+                  </div>
+                  <p style="font-size: 0.74rem; color: #64748B; margin-top: 4px;">Pembantu klinikal bertugas memantau keselesaan dan tanda vital asas.</p>
+                </div>
+
+                <div class="admin-cat-card active" data-pkg-id="ma" data-price="200">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="font-size: 0.9rem; color: #C61E2F;">Pakej M.A (Penolong Pegawai Perubatan)</strong>
+                    <span class="kpi-tag-status teal" style="font-weight: 800;">+RM 200.00</span>
+                  </div>
+                  <p style="font-size: 0.74rem; color: #64748B; margin-top: 4px;">Paramedik berdaftar bertauliah (PPP/AMO) untuk rawatan IV, intubasi &amp; ubat kecemasan.</p>
+                </div>
+
+                <div class="admin-cat-card" data-pkg-id="dr" data-price="400">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="font-size: 0.9rem;">Pakej DR (Doktor Perubatan)</strong>
+                    <span class="kpi-tag-status red">+RM 400.00</span>
+                  </div>
+                  <p style="font-size: 0.74rem; color: #64748B; margin-top: 4px;">Pegawai perubatan doktor mengiringi sepanjang perjalanan untuk kes ICU/kritikal.</p>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; margin-top: 18px;">
+                <button type="button" class="btn-cancel-flat btn-admin-prev" data-prev="3">&larr; Kembali</button>
+                <button type="button" class="btn-save-teal btn-admin-next" data-next="5">Teruskan ke Alatan &rarr;</button>
+              </div>
+            </div>
+
+            <!-- STEP 5: ALATAN -->
+            <div class="admin-wiz-content-step" id="adminStep5" style="display: none;">
+              <h3 class="card-heading" style="margin-bottom: 4px;">Langkah 5: Keperluan Alatan Tambahan (Equipments)</h3>
+              <p style="font-size: 0.8rem; color: #526966; margin-bottom: 14px;">Pilih bilangan peralatan sokongan perubatan untuk dimuatkan ke ambulans.</p>
+
+              <div class="admin-equip-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" id="adminEquipSteppersContainer">
+                <!-- Dynamically populated via JS -->
+              </div>
+
+              <div style="display: flex; justify-content: space-between; margin-top: 18px;">
+                <button type="button" class="btn-cancel-flat btn-admin-prev" data-prev="4">&larr; Kembali</button>
+                <button type="button" class="btn-save-teal btn-admin-next" data-next="6">Teruskan ke Invois &amp; Dispatch &rarr;</button>
+              </div>
+            </div>
+
+            <!-- STEP 6: INVOIS & DISPATCH -->
+            <div class="admin-wiz-content-step" id="adminStep6" style="display: none;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div>
+                  <h3 class="card-heading" style="margin-bottom: 4px;">Langkah 6: Ringkasan Invois &amp; Pelancaran Dispatch</h3>
+                  <p style="font-size: 0.8rem; color: #526966;">Semak butiran keseluruhan sebelum melancarkan penugasan ambulans.</p>
+                </div>
+                <div class="inv-badge-official" style="background:#FFF1F2; border:1px solid #FECDD3; color:#C61E2F; font-size:0.8rem; font-weight:800; padding:4px 10px; border-radius:6px;">
+                  INVOIS RASMI AL-FARHAIN
+                </div>
+              </div>
+
+              <!-- Breakdown Card -->
+              <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding-bottom: 10px; border-bottom: 1px dashed #CBD5E1;">
+                  <div>
+                    <span class="field-micro-label">PESAKIT &amp; MOBILITI</span>
+                    <strong id="adminInvPatientText" style="display: block; font-size: 0.85rem; color: #0F172A;">Mohd Azlan bin Ismail (62 Thn)</strong>
+                    <span id="adminInvMobilityText" style="font-size: 0.72rem; color: #C61E2F; font-weight: 700;">🛏️ Usungan Stretcher</span>
+                  </div>
+                  <div>
+                    <span class="field-micro-label">LALUAN PERJALANAN</span>
+                    <strong id="adminInvRouteText" style="display: block; font-size: 0.85rem; color: #0F172A;">Kota Bharu &rarr; HRPZ II</strong>
+                    <span id="adminInvDistanceText" style="font-size: 0.72rem; color: #64748B;">27.2 KM (HQ Kok Lanas)</span>
+                  </div>
+                  <div>
+                    <span class="field-micro-label">JENIS TEMPAHAN</span>
+                    <strong id="adminInvBookingTypeText" style="display: block; font-size: 0.85rem; color: #0F172A;">Ambulance Regular Trip</strong>
+                    <span id="adminInvCategoryText" style="font-size: 0.72rem; color: #059669; font-weight: 700;">Kecemasan Standard</span>
+                  </div>
+                </div>
+
+                <!-- Fee Table -->
+                <table class="amc-data-table" style="margin-top: 10px; font-size: 0.8rem;">
+                  <thead>
+                    <tr>
+                      <th>Komponen Perkhidmatan</th>
+                      <th>Keterangan / Butiran</th>
+                      <th style="text-align: right;">Jumlah (RM)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminInvTableBody">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                  <tfoot>
+                    <tr style="background: #FFF1F2; font-weight: 900; font-size: 1rem; color: #C61E2F;">
+                      <td colspan="2" style="text-align: right;">JUMLAH KESELURUHAN (RM):</td>
+                      <td style="text-align: right;" id="adminInvGrandTotal">RM 506.60</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <!-- Dispatch Controls -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
+                <button type="button" class="btn-cancel-flat btn-admin-prev" data-prev="5">&larr; Kembali</button>
+
+                <div style="display: flex; gap: 10px;">
+                  <button type="button" class="btn-draft-action" id="btnAdminPrintBookingInvoice">
+                    <span>🖨️</span> <span>Cetak Invois</span>
+                  </button>
+                  <button type="button" class="btn-save-teal" id="btnAdminConfirmDispatch" style="background:#C61E2F; font-size:0.9rem; padding:10px 18px;">
+                    <span>🚀</span> <span>Sahkan &amp; Lancarkan Dispatch Ambulans</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 9: PENGURUSAN KATALOG & ARMADA AMBULANS (CRUD PAGE SPEC)
+             =================================================================== -->
+        <section class="portal-view-section" id="katalogArmadaView">
+          <div class="view-header-row">
+            <div>
+              <div class="view-title-wrap">
+                <h2 class="view-main-title">Katalog &amp; Armada Ambulans</h2>
+                <span class="badge-data-contoh">PENGURUSAN INVENTORI</span>
+              </div>
+              <p class="view-subtitle">Tambah, kemas kini dan padam peralatan sokongan, pakej bantuan staf dan kuantiti armada ambulans AMC.</p>
+            </div>
+            <div class="view-header-code">10 · Katalog &amp; Armada</div>
+          </div>
+
+          <!-- Top Navigation Tabs (Equipments, Assistance, Fleet) -->
+          <div class="settings-tabs-bar" id="katalogTabsBar">
+            <button type="button" class="set-tab-btn active" data-ktab="equipments">Alatan Tambahan (Equipments)</button>
+            <button type="button" class="set-tab-btn" data-ktab="assistance">Pakej Bantuan Staf</button>
+            <button type="button" class="set-tab-btn" data-ktab="fleet">Kuantiti &amp; Armada Ambulans</button>
+          </div>
+
+          <!-- TAB 1: ALATAN TAMBAHAN (EQUIPMENTS) -->
+          <div class="katalog-tab-content active" id="ktab-equipments">
+            <div class="portal-card" style="margin-top: 16px;">
+              <div class="table-card-top-bar">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <input type="text" id="searchKatalogEquipmentInput" class="topbar-search-field" style="width: 260px;" placeholder="Cari alatan tambahan...">
+                </div>
+                <button type="button" class="btn-save-teal" id="btnAddNewEquipment">
+                  <span>+ Tambah Alatan Baru</span>
+                </button>
+              </div>
+
+              <div class="records-table-scroll-container">
+                <table class="amc-data-table">
+                  <thead>
+                    <tr>
+                      <th>Kod / ID</th>
+                      <th>Nama Peralatan</th>
+                      <th>Kategori</th>
+                      <th>Harga Unit (RM)</th>
+                      <th>Unit Kuantiti</th>
+                      <th>Status Stok</th>
+                      <th style="text-align: right;">Tindakan</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tableKatalogEquipmentsBody">
+                    <!-- Populated dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: PAKEJ BANTUAN STAF (ASSISTANCE PACKAGES) -->
+          <div class="katalog-tab-content" id="ktab-assistance" style="display: none;">
+            <div class="portal-card" style="margin-top: 16px;">
+              <div class="table-card-top-bar">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <input type="text" id="searchKatalogAssistanceInput" class="topbar-search-field" style="width: 260px;" placeholder="Cari pakej bantuan staf...">
+                </div>
+                <button type="button" class="btn-save-teal" id="btnAddNewAssistance">
+                  <span>+ Tambah Pakej Staf Baru</span>
+                </button>
+              </div>
+
+              <div class="records-table-scroll-container">
+                <table class="amc-data-table">
+                  <thead>
+                    <tr>
+                      <th>Kod Pakej</th>
+                      <th>Gelaran Staf / Peranan</th>
+                      <th>Nama Penuh Pakej</th>
+                      <th>Kadar Caj (RM)</th>
+                      <th>Kemahiran Utama</th>
+                      <th>Status</th>
+                      <th style="text-align: right;">Tindakan</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tableKatalogAssistanceBody">
+                    <!-- Populated dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: KUANTITI & ARMADA AMBULANS (FLEET) -->
+          <div class="katalog-tab-content" id="ktab-fleet" style="display: none;">
+            <div class="portal-card" style="margin-top: 16px;">
+              <div class="table-card-top-bar">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <input type="text" id="searchKatalogFleetInput" class="topbar-search-field" style="width: 260px;" placeholder="Cari ambulans (No Plat / Model)...">
+                </div>
+                <button type="button" class="btn-save-teal" id="btnAddNewFleetVehicle">
+                  <span>+ Tambah Ambulans Baru</span>
+                </button>
+              </div>
+
+              <div class="records-table-scroll-container">
+                <table class="amc-data-table">
+                  <thead>
+                    <tr>
+                      <th>No. Plat Kenderaan</th>
+                      <th>Model / Jenis Ambulans</th>
+                      <th>Cawangan Hub</th>
+                      <th>Pemandu / Krew Utama</th>
+                      <th>Kuantiti / Status Operasi</th>
+                      <th style="text-align: right;">Tindakan</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tableKatalogFleetBody">
+                    <!-- Populated dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
         </section>
 
       </div>
@@ -2125,6 +2644,217 @@
       <div class="modal-footer-actions">
         <button type="button" class="btn-cancel-flat" onclick="document.getElementById('bookingDetailModal').classList.remove('show')">Tutup</button>
         <button type="button" class="btn-save-teal" id="btnPrintReceiptBtn">🖨️ Cetak Resit / Invois</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 1: ADD / EDIT ADDITIONAL EQUIPMENT
+       ========================================================================= -->
+  <div class="portal-modal-backdrop" id="modalEquipmentForm">
+    <div class="portal-modal-box" style="max-width: 520px;">
+      <div class="modal-header-banner">
+        <h2><span id="modalEquipIcon">🧪</span> <span id="modalEquipTitle">Tambah Alatan Tambahan Baru</span></h2>
+        <button type="button" class="modal-close-btn" id="closeEquipModalBtn">&times;</button>
+      </div>
+      <form id="formEquipmentCrud">
+        <input type="hidden" id="crudEquipId">
+        <input type="hidden" id="crudEquipMode" value="create">
+
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <label class="field-micro-label">* NAMA PERALATAN (EQUIPMENT NAME)</label>
+            <input type="text" id="crudEquipName" class="settings-input" style="width: 100%; margin-top: 4px;" placeholder="Cth: Tangki Oksigen Perubatan" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label class="field-micro-label">* KATEGORI</label>
+              <select id="crudEquipCategory" class="settings-input" style="width: 100%; margin-top: 4px;">
+                <option value="Sokongan Pernafasan">Sokongan Pernafasan</option>
+                <option value="Kardiak & Resusitasi">Kardiak &amp; Resusitasi</option>
+                <option value="Peralatan Kritikal">Peralatan Kritikal</option>
+                <option value="Ubatan & Konsumabel">Ubatan &amp; Konsumabel</option>
+                <option value="Imobilisasi Trauma">Imobilisasi Trauma</option>
+                <option value="Neonatal & Pediatrik">Neonatal &amp; Pediatrik</option>
+                <option value="Maternity">Maternity</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-micro-label">* HARGA UNIT (RM)</label>
+              <input type="number" id="crudEquipPrice" class="settings-input" style="width: 100%; margin-top: 4px; font-weight: 700;" placeholder="50.00" step="0.5" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label class="field-micro-label">* UNIT / KUANTITI STOK</label>
+              <input type="text" id="crudEquipUnit" class="settings-input" style="width: 100%; margin-top: 4px;" placeholder="Per Silinder / Trip" value="Per Unit / Trip" required>
+            </div>
+            <div>
+              <label class="field-micro-label">* STATUS STOK</label>
+              <select id="crudEquipStatus" class="settings-input" style="width: 100%; margin-top: 4px;">
+                <option value="in_stock" selected>Tersedia (In-Stock)</option>
+                <option value="low_stock">Stok Rendah</option>
+                <option value="out_of_stock">Habis Stok</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="field-micro-label">DESKRIPSI / SPESIFIKASI</label>
+            <textarea id="crudEquipDesc" class="settings-input" style="width: 100%; height: 60px; margin-top: 4px; resize: none;" placeholder="Keterangan klinikal peralatan"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer-actions">
+          <button type="button" class="btn-cancel-flat" id="btnCancelEquipModal">Batal</button>
+          <button type="submit" class="btn-save-teal" id="btnSaveEquipModal">💾 Simpan Alatan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 2: ADD / EDIT AMBULANCE ASSISTANCE PACKAGE
+       ========================================================================= -->
+  <div class="portal-modal-backdrop" id="modalAssistanceForm">
+    <div class="portal-modal-box" style="max-width: 520px;">
+      <div class="modal-header-banner">
+        <h2><span>👨‍⚕️</span> <span id="modalAssistTitle">Tambah Pakej Bantuan Staf Baru</span></h2>
+        <button type="button" class="modal-close-btn" id="closeAssistModalBtn">&times;</button>
+      </div>
+      <form id="formAssistanceCrud">
+        <input type="hidden" id="crudAssistId">
+        <input type="hidden" id="crudAssistMode" value="create">
+
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <label class="field-micro-label">* GELARAN STAF / PERANAN (ROLE TITLE)</label>
+            <input type="text" id="crudAssistRoleTitle" class="settings-input" style="width: 100%; margin-top: 4px;" placeholder="Cth: Penolong Pegawai Perubatan (PPP)" required>
+          </div>
+
+          <div>
+            <label class="field-micro-label">* NAMA PENUH PAKEJ</label>
+            <input type="text" id="crudAssistName" class="settings-input" style="width: 100%; margin-top: 4px;" placeholder="Cth: AMBULANS - PAKEJ M.A" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label class="field-micro-label">* KADAR CAJ PAKEJ (RM)</label>
+              <input type="number" id="crudAssistPrice" class="settings-input" style="width: 100%; margin-top: 4px; font-weight: 700;" placeholder="200.00" step="1" required>
+            </div>
+            <div>
+              <label class="field-micro-label">* STATUS PAKEJ</label>
+              <select id="crudAssistStatus" class="settings-input" style="width: 100%; margin-top: 4px;">
+                <option value="active" selected>Aktif Beroperasi</option>
+                <option value="inactive">Tidak Aktif</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="field-micro-label">SENARAI KEMAHIRAN (PISAH DENGAN KOMA)</label>
+            <input type="text" id="crudAssistSkills" class="settings-input" style="width: 100%; margin-top: 4px;" placeholder="Cth: IV Cannula, Airway Management, ECG">
+          </div>
+
+          <div>
+            <label class="field-micro-label">KES YANG DISYORKAN</label>
+            <textarea id="crudAssistRecommended" class="settings-input" style="width: 100%; height: 50px; margin-top: 4px; resize: none;" placeholder="Cth: Pesakit semi-kritikal perlukan IV drip"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer-actions">
+          <button type="button" class="btn-cancel-flat" id="btnCancelAssistModal">Batal</button>
+          <button type="submit" class="btn-save-teal" id="btnSaveAssistModal">💾 Simpan Pakej</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 3: ADD / EDIT AMBULANCE FLEET VEHICLE & QUANTITY
+       ========================================================================= -->
+  <div class="portal-modal-backdrop" id="modalFleetForm">
+    <div class="portal-modal-box" style="max-width: 520px;">
+      <div class="modal-header-banner">
+        <h2><span>🚑</span> <span id="modalFleetTitle">Tambah Armada Ambulans Baru</span></h2>
+        <button type="button" class="modal-close-btn" id="closeFleetModalBtn">&times;</button>
+      </div>
+      <form id="formFleetCrud">
+        <input type="hidden" id="crudFleetId">
+        <input type="hidden" id="crudFleetMode" value="create">
+
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label class="field-micro-label">* NO. PLAT KENDERAAN</label>
+              <input type="text" id="crudFleetPlate" class="settings-input" style="width: 100%; margin-top: 4px; font-weight: 800; text-transform: uppercase;" placeholder="Cth: VPQ 7606" required>
+            </div>
+            <div>
+              <label class="field-micro-label">* MODEL / JENIS VAN</label>
+              <input type="text" id="crudFleetModel" class="settings-input" style="width: 100%; margin-top: 4px;" placeholder="Toyota Hiace High-Roof Type B" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label class="field-micro-label">* CAWANGAN HUB PANGKALAN</label>
+              <select id="crudFleetHub" class="settings-input" style="width: 100%; margin-top: 4px;">
+                <option value="HQ Kok Lanas (Kelantan)" selected>HQ Kok Lanas (Kelantan)</option>
+                <option value="Cawangan Raub (Pahang)">Cawangan Raub (Pahang)</option>
+                <option value="Cawangan Jeli (Kelantan)">Cawangan Jeli (Kelantan)</option>
+                <option value="Cawangan Machang (Kelantan)">Cawangan Machang (Kelantan)</option>
+                <option value="Cawangan Kuala Krai (Kelantan)">Cawangan Kuala Krai (Kelantan)</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-micro-label">* STATUS OPERASI / KUANTITI</label>
+              <select id="crudFleetStatus" class="settings-input" style="width: 100%; margin-top: 4px;">
+                <option value="Siap Sedia" selected>Siap Sedia (Standby)</option>
+                <option value="Dalam Misi">Dalam Misi Bertugas</option>
+                <option value="Selenggara">Dalam Selenggaraan</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label class="field-micro-label">PEMANDU EMT UTAMA</label>
+              <input type="text" id="crudFleetDriver" class="settings-input" style="width: 100%; margin-top: 4px;" placeholder="Abe Di / Syalihan" value="Abe Di / Syalihan">
+            </div>
+            <div>
+              <label class="field-micro-label">NO. TELEFON UNIT</label>
+              <input type="tel" id="crudFleetPhone" class="settings-input" style="width: 100%; margin-top: 4px;" placeholder="013-914 7606" value="013-914 7606">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer-actions">
+          <button type="button" class="btn-cancel-flat" id="btnCancelFleetModal">Batal</button>
+          <button type="submit" class="btn-save-teal" id="btnSaveFleetModal">💾 Simpan Ambulans</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 4: DELETE CONFIRMATION MODAL
+       ========================================================================= -->
+  <div class="portal-modal-backdrop" id="modalDeleteConfirm">
+    <div class="portal-modal-box" style="max-width: 420px; text-align: center;">
+      <div style="padding: 24px 20px;">
+        <span style="font-size: 2.8rem; display: block; margin-bottom: 8px;">🗑️</span>
+        <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: #0F172A; font-weight: 800;">
+          Sahkan Pemadaman Item?
+        </h3>
+        <p style="font-size: 0.82rem; color: #64748B; margin-top: 6px;" id="modalDeletePromptText">
+          Adakah anda pasti ingin memadam item ini dari pangkalan data sistem?
+        </p>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 18px;">
+          <button type="button" class="btn-cancel-flat" id="btnCancelDeleteAction">Batal</button>
+          <button type="button" class="btn-save-teal" id="btnConfirmDeleteAction" style="background:#DC2626;">Ya, Padam Sekarang</button>
+        </div>
       </div>
     </div>
   </div>

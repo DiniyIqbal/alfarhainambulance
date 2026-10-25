@@ -102,6 +102,26 @@ body.driver-body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 58px;
+}
+
+.driver-nav-brand-wrap {
+  display: flex;
+  align-items: center;
+  height: 40px;
+}
+
+.driver-top-logo {
+  height: 38px;
+  width: auto;
+  max-width: 250px;
+  object-fit: contain;
+}
+
+.driver-nav-sub-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .driver-nav-left {
@@ -1025,3 +1045,609 @@ body.driver-body {
   display: flex;
   gap: 8px;
 }
+
+/* =====================================================================
+   SCREEN 01: UTAMA / PORTAL PEMANDU DASHBOARD STYLES (EXACT REFERENCE DESIGN)
+   ===================================================================== */
+.driver-greeting-card {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 4px 2px 2px;
+  overflow: hidden;
+}
+
+.driver-greeting-text {
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+}
+
+.driver-greeting-sub {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--driver-text-body);
+}
+
+.driver-greeting-name {
+  font-size: 1.85rem;
+  font-weight: 900;
+  color: var(--driver-text-heading);
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin: 1px 0 4px;
+}
+
+.driver-greeting-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--driver-text-heading);
+}
+
+.driver-greeting-location svg {
+  color: #1E293B;
+}
+
+.driver-greeting-waves {
+  position: absolute;
+  right: -15px;
+  top: -15px;
+  width: 170px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Hero Card: Ambulans Anda VPQ 7606 */
+.driver-hero-card {
+  background: linear-gradient(135deg, #C61E2F 0%, #B91C1C 100%);
+  border-radius: 20px;
+  padding: 18px 18px 14px;
+  color: #FFFFFF;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(198, 30, 47, 0.28);
+}
+
+.driver-hero-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(ellipse at top right, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.driver-hero-card-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  min-height: 116px;
+  position: relative;
+  z-index: 2;
+}
+
+.driver-hero-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.driver-hero-subtag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
+}
+
+.driver-hero-plate {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: 2px;
+}
+
+.driver-hero-pill-ready {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFFFF;
+  color: #059669;
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: var(--driver-radius-pill);
+  width: fit-content;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.driver-pill-check {
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.driver-hero-duty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-top: 4px;
+}
+
+.driver-duty-indicator {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #10B981;
+  box-shadow: 0 0 8px #10B981;
+}
+
+.driver-hero-right {
+  position: relative;
+  width: 175px;
+  height: 114px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.driver-hero-van-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: right bottom;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.3));
+}
+
+.driver-hero-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+  position: relative;
+  z-index: 2;
+}
+
+.driver-hero-link-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.76rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 2px 0;
+  transition: opacity 0.15s ease;
+}
+
+.driver-hero-link-btn:hover {
+  opacity: 0.8;
+}
+
+/* 3 Quick Telemetry / Status Cards */
+.driver-quick-status-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.driver-status-card {
+  background: var(--driver-bg-card);
+  border: 1px solid var(--driver-border);
+  border-radius: 14px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--driver-shadow-card);
+}
+
+.driver-status-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.driver-status-icon-wrap {
+  color: #10B981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.driver-status-texts {
+  display: flex;
+  flex-direction: column;
+}
+
+.driver-status-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--driver-text-muted);
+  line-height: 1.1;
+}
+
+.driver-status-value {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--driver-text-heading);
+  line-height: 1.2;
+}
+
+.driver-status-green-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10B981;
+  flex-shrink: 0;
+}
+
+/* Tugasan Seterusnya */
+.driver-next-task-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.driver-next-task-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.driver-next-task-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.driver-red-clipboard-icon {
+  color: var(--driver-red);
+  display: flex;
+  align-items: center;
+}
+
+.driver-next-task-title {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: var(--driver-text-heading);
+  letter-spacing: -0.01em;
+}
+
+.driver-badge-new {
+  background: #FEE2E2;
+  color: var(--driver-red);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: var(--driver-radius-pill);
+}
+
+.driver-mission-card-box {
+  padding: 14px;
+  gap: 12px;
+}
+
+.driver-mission-doc-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background-color: var(--driver-red-light);
+  color: var(--driver-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.driver-mission-code {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--driver-text-heading);
+  line-height: 1.15;
+}
+
+.driver-mission-meta-time {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--driver-text-muted);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* Route Timeline in Dashboard Preview */
+.driver-preview-route-timeline {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  gap: 4px;
+  padding-left: 6px;
+  margin: 4px 0;
+}
+
+.driver-preview-route-node {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.driver-preview-dot-red {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--driver-red);
+  flex-shrink: 0;
+  margin-left: 1px;
+}
+
+.driver-preview-hospital-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background-color: var(--driver-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.driver-preview-route-connector {
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 13px;
+  width: 2px;
+  border-left: 2px dashed #94A3B8;
+  z-index: 1;
+}
+
+.driver-preview-route-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.driver-preview-route-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--driver-text-muted);
+  line-height: 1.1;
+}
+
+.driver-preview-route-city {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: var(--driver-text-heading);
+}
+
+/* Equipment boxes */
+.driver-equip-box {
+  background-color: var(--driver-border-subtle);
+  border: 1px solid var(--driver-border);
+  border-radius: var(--driver-radius-sm);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.driver-equip-icon-wrap {
+  color: var(--driver-text-heading);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.driver-equip-text-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.driver-equip-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--driver-text-heading);
+  line-height: 1.15;
+}
+
+.driver-equip-desc {
+  font-size: 0.68rem;
+  color: var(--driver-text-muted);
+  font-weight: 600;
+}
+
+.driver-btn-view-task {
+  width: 100%;
+  background: var(--driver-red);
+  color: #FFFFFF;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(198, 30, 47, 0.3);
+  transition: all 0.15s ease;
+}
+
+.driver-btn-view-task:hover {
+  background-color: var(--driver-red-dark);
+  transform: translateY(-1px);
+}
+
+/* Akses Pantas */
+.driver-quick-access-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.driver-block-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--driver-text-heading);
+  letter-spacing: -0.01em;
+}
+
+.driver-qa-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.driver-qa-card {
+  background-color: var(--driver-bg-card);
+  border: 1px solid var(--driver-border);
+  border-radius: 14px;
+  padding: 12px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: var(--driver-shadow-card);
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.driver-qa-card:hover {
+  border-color: var(--driver-red-border);
+  transform: translateY(-1px);
+}
+
+.driver-qa-icon-circle {
+  color: #1E293B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.driver-qa-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--driver-text-heading);
+}
+
+/* Action list group (Ringkasan & HQ) */
+.driver-action-list-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.driver-row-action-card {
+  background-color: var(--driver-bg-card);
+  border: 1px solid var(--driver-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  box-shadow: var(--driver-shadow-card);
+  transition: all 0.15s ease;
+  outline: none;
+  width: 100%;
+}
+
+.driver-row-action-card:hover {
+  border-color: var(--driver-red-border);
+}
+
+.driver-row-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.driver-row-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.driver-row-card-icon.red-stat {
+  color: var(--driver-red);
+}
+
+.driver-row-card-icon.red-headset {
+  color: var(--driver-red);
+}
+
+.driver-row-card-title {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--driver-text-heading);
+}
+
+.driver-row-texts {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.driver-row-card-desc {
+  font-size: 0.7rem;
+  color: var(--driver-text-muted);
+}
+
+.driver-row-card-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.driver-summary-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: var(--driver-radius-pill);
+}
+
+.driver-summary-badge.green {
+  background-color: #D1FAE5;
+  color: #047857;
+}
+
+.driver-summary-badge.red {
+  background-color: #FEE2E2;
+  color: var(--driver-red);
+}
+
+.driver-summary-badge .badge-sub {
+  font-weight: 600;
+  font-size: 0.68rem;
+}
+
+.driver-row-arrow {
+  font-size: 1.15rem;
+  color: #94A3B8;
+  font-weight: 700;
+}
+

@@ -3750,5 +3750,369 @@ html, body {
   gap: 6px;
 }
 
+/* =========================================================================
+   23. EMERGENCY DIRECT CALL BUTTON (LOGIN PAGE SPEC)
+   ========================================================================= */
+.login-emergency-call-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%);
+  border: 2px solid #E11D48;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  text-decoration: none;
+  color: inherit;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.16);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-emergency-call-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(225, 29, 72, 0.28);
+  border-color: #BE123C;
+  background: linear-gradient(135deg, #FFE4E6 0%, #FECDD3 100%);
+}
+
+.login-emergency-call-card:active {
+  transform: translateY(0);
+}
+
+.emergency-call-pulse-dot {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #E11D48;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+  animation: pulseCrisis 1.8s infinite;
+}
+
+@keyframes pulseCrisis {
+  0% {
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(225, 29, 72, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
+  }
+}
+
+.emergency-call-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.emergency-call-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.emergency-tag-red {
+  background: #E11D48;
+  color: #FFFFFF;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+}
+
+.emergency-fast-call {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #BE123C;
+}
+
+.emergency-call-number {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #9F1239;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.emergency-call-desc {
+  font-size: 0.68rem;
+  color: #881337;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.emergency-call-btn-action {
+  background: #E11D48;
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 8px 10px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.35);
+}
+
+/* =========================================================================
+   24. BOOKING SECTION & PATIENT INFORMATION (LANDING PAGE SPEC)
+   ========================================================================= */
+.card-mini-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--amc-red);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.field-micro-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  display: block;
+}
+
+.booking-type-toggle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 360px) {
+  .booking-type-toggle-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.booking-type-card {
+  background: #F8FAFC;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.booking-type-card:hover {
+  background: #FFFFFF;
+  border-color: var(--amc-red-border);
+}
+
+.booking-type-card.active {
+  background: #FFF1F2;
+  border-color: var(--amc-red);
+  box-shadow: 0 2px 10px rgba(198, 30, 47, 0.12);
+}
+
+.btype-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.btype-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.btype-title {
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-heading);
+  line-height: 1.2;
+}
+
+.booking-type-card.active .btype-title {
+  color: var(--amc-red);
+}
+
+.btype-sub {
+  font-size: 0.64rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.btype-radio-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-light);
+  background: #FFFFFF;
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 900;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.booking-type-card.active .btype-radio-circle {
+  background: var(--amc-red);
+  border-color: var(--amc-red);
+  color: #FFFFFF;
+}
+
+.standby-event-options-box {
+  background: #FFFBEB;
+  border: 1px dashed #F59E0B;
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  margin-top: 10px;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Patient Info Form & Mobility Buttons */
+.patient-fields-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pfield-full {
+  width: 100%;
+}
+
+.mobility-pills-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.mobility-pill-btn {
+  background: #F8FAFC;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mobility-pill-btn:hover {
+  background: #FFFFFF;
+  border-color: var(--amc-red-border);
+}
+
+.mobility-pill-btn.active {
+  background: #FFF1F2;
+  border-color: var(--amc-red);
+  box-shadow: 0 2px 8px rgba(198, 30, 47, 0.15);
+}
+
+.mob-icon {
+  font-size: 1.25rem;
+}
+
+.mob-title {
+  font-family: var(--font-heading);
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--text-heading);
+}
+
+.mobility-pill-btn.active .mob-title {
+  color: var(--amc-red);
+}
+
+.mob-sub {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+}
+
+/* Patient Summary Overview Card in Step 5 */
+.patient-summary-overview-card {
+  background: #FFFFFF;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-light);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.patient-summary-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed var(--border-light);
+}
+
+.summary-btype-badge {
+  background: var(--amc-red-light);
+  border: 1px solid var(--amc-red-border);
+  color: var(--amc-red);
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.summary-mobility-badge {
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  color: #334155;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.patient-summary-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.sum-micro-lbl {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  display: block;
+}
+
+.sum-bold-val {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-heading);
+  margin-top: 1px;
+  display: block;
+}
+
 
 

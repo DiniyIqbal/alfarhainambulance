@@ -21,7 +21,7 @@ const COORDS = {
 // Application State
 const state = {
   currentStep: 2, // 2: Tugasan Baharu, 3: Pra-perjalanan, 4: Ke Pengambilan, 5: Di Lokasi, 6: Ke Hospital, 7: Serahan, 8: Rekod
-  activeTab: 'tugasan', // 'utama' | 'tugasan' | 'rekod' | 'profil'
+  activeTab: 'utama', // 'utama' | 'tugasan' | 'rekod' | 'profil'
   activeMission: {
     code: 'AMC-1043',
     patientName: 'Pesakit 01',
@@ -80,11 +80,7 @@ async function enforceDriverRole() {
     if (driverEmailEl) driverEmailEl.textContent = email;
     if (driverNameEl) driverNameEl.textContent = name;
 
-    // If a patient visits driver page, allow testing or offer return
-    if (role === 'patient') {
-      const banner = document.getElementById('driverRoleNoticeBanner');
-      if (banner) banner.style.display = 'flex';
-    }
+
   } else {
     // Demo auto-assign driver identity
     if (driverEmailEl) driverEmailEl.textContent = 'diniy-driver@gmail.com';
@@ -113,11 +109,11 @@ function initNavigationTabs() {
   if (backBtn) {
     backBtn.addEventListener('click', () => {
       playClickSound();
-      if (state.activeTab !== 'tugasan') {
-        switchTab('tugasan');
-      } else if (state.currentStep > 2) {
+      if (state.activeTab === 'tugasan' && state.currentStep > 2) {
         state.currentStep--;
         renderActiveView();
+      } else {
+        switchTab('utama');
       }
     });
   }
@@ -277,6 +273,55 @@ function initStepActions() {
       window.location.href = '/index.html';
     });
   }
+
+  // Dashboard (Screen 01) Quick Access & Action Bindings
+  const btnViewMissionDetail = document.getElementById('btnViewMissionDetail');
+  if (btnViewMissionDetail) {
+    btnViewMissionDetail.addEventListener('click', () => {
+      playClickSound();
+      switchTab('tugasan');
+    });
+  }
+
+  const btnVehicleDetails = document.getElementById('btnVehicleDetails');
+  if (btnVehicleDetails) {
+    btnVehicleDetails.addEventListener('click', () => {
+      playClickSound();
+      switchTab('profil');
+    });
+  }
+
+  const btnSummaryToday = document.getElementById('btnSummaryToday');
+  if (btnSummaryToday) {
+    btnSummaryToday.addEventListener('click', () => {
+      playClickSound();
+      switchTab('rekod');
+    });
+  }
+
+  const btnQARekod = document.getElementById('btnQARekod');
+  if (btnQARekod) {
+    btnQARekod.addEventListener('click', () => {
+      playClickSound();
+      switchTab('rekod');
+    });
+  }
+
+  const btnQASayakan = document.getElementById('btnQASayakan');
+  if (btnQASayakan) {
+    btnQASayakan.addEventListener('click', () => {
+      playClickSound();
+      switchTab('tugasan');
+    });
+  }
+
+  const btnQAJadual = document.getElementById('btnQAJadual');
+  if (btnQAJadual) {
+    btnQAJadual.addEventListener('click', () => {
+      playClickSound();
+      switchTab('rekod');
+    });
+  }
 }
 
 // =====================================================================
@@ -403,13 +448,17 @@ function renderActiveView() {
   });
 
   const headerTitleEl = document.getElementById('driverHeaderTitle');
+  const navBrandEl = document.getElementById('driverNavBrand');
+  const navSubEl = document.getElementById('driverNavSub');
 
   if (state.activeTab === 'utama') {
-    // Show active step in mission
-    const targetScreen = document.getElementById(`screen0${state.currentStep}`);
-    if (targetScreen) targetScreen.classList.add('active');
-    updateHeaderTitle(state.currentStep);
+    const screenUtama = document.getElementById('screenUtama');
+    if (screenUtama) screenUtama.classList.add('active');
+    if (navBrandEl) navBrandEl.style.display = 'flex';
+    if (navSubEl) navSubEl.style.display = 'none';
   } else if (state.activeTab === 'tugasan') {
+    if (navBrandEl) navBrandEl.style.display = 'none';
+    if (navSubEl) navSubEl.style.display = 'flex';
     const targetScreen = document.getElementById(`screen0${state.currentStep}`);
     if (targetScreen) targetScreen.classList.add('active');
     updateHeaderTitle(state.currentStep);
@@ -425,10 +474,14 @@ function renderActiveView() {
       }, 100);
     }
   } else if (state.activeTab === 'rekod') {
+    if (navBrandEl) navBrandEl.style.display = 'none';
+    if (navSubEl) navSubEl.style.display = 'flex';
     const screen08 = document.getElementById('screen08');
     if (screen08) screen08.classList.add('active');
     if (headerTitleEl) headerTitleEl.textContent = 'Rekod tugasan';
   } else if (state.activeTab === 'profil') {
+    if (navBrandEl) navBrandEl.style.display = 'none';
+    if (navSubEl) navSubEl.style.display = 'flex';
     const screenProfil = document.getElementById('screenProfil');
     if (screenProfil) screenProfil.classList.add('active');
     if (headerTitleEl) headerTitleEl.textContent = 'Profil Pemandu';
