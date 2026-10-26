@@ -29,8 +29,15 @@ import {
   getCurrentAuthUser
 } from '../services/supabaseClient.js';
 
-import { haversineKm, estimateDurationMin } from '../services/routingService.js';
+import { fetchRoadRoute, haversineKm, estimateDurationMin } from '../services/routingService.js';
 import { playCalculateChime, playEmergencyAlertSiren, playSuccessChime } from '../utils/soundFx.js';
+import {
+  createAmcMap,
+  toLngLat,
+  toLatLng,
+  AMC_MAP_COLORS,
+  isMapLibreSupported
+} from '../services/mapLibreService.js';
 
 /* -------------------------------------------------------------------------
    PORTAL STATE & EXACT SAMPLE DATA FROM SPECIFICATION SCREENSHOTS
@@ -217,7 +224,9 @@ const portalState = {
 };
 
 // Map references
-let tacticalRadarMap = null;
+let tacticalRadarMap = null; // MapLibre GL Controller for Peta Radar & Telemetri Armada
+let radarTelemetryInterval = null;
+let realtimeBookingChannel = null;
 let dispatchRouteMap = null;
 let branchMapKokLanasObj = null;
 let branchMapRaubObj = null;
@@ -234,7 +243,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   initRecordsView();
   initDispatchView();
   initBranchView();
-  initTacticalRadarMap();
+  if (portalState.activeTab === 'petaFleetView') {
+    initTacticalRadarMap();
+  }
   initDashboardView();
   renderDashboardFleet();
   renderRevenueTable();
@@ -468,6 +479,15 @@ function initSidebarNavigation() {
 
       if (breadcrumbCurrent && viewTitles[targetId]) {
         breadcrumbCurrent.textContent = viewTitles[targetId];
+      }
+
+      // Handle Peta & Fleet tab activation for MapLibre GL
+      if (targetId === 'petaFleetView') {
+        if (!tacticalRadarMap) {
+          setTimeout(() => initTacticalRadarMap(), 60);
+        } else {
+          setTimeout(() => tacticalRadarMap.resize(), 120);
+        }
       }
 
       // Map invalidation for active map views
@@ -915,60 +935,186 @@ function initBranchMaps() {
 }
 
 /* -------------------------------------------------------------------------
-   7. TACTICAL RADAR MAP (PETA & FLEET)
+   7. TACTICAL RADAR MAP (PETA & FLEET - MAPLIBRE GL JS MIGRATION)
    ------------------------------------------------------------------------- */
-function initTacticalRadarMap() {
+async function initTacticalRadarMap() {
   const mapEl = document.getElementById('portalRadarMap');
-  if (!mapEl || typeof L === 'undefined') return;
+  if (!mapEl) return;
+
+  // Cleanup old MapLibre instance if previously initialized
+  if (tacticalRadarMap) {
+    tacticalRadarMap.destroy();
+    tacticalRadarMap = null;
+  }
 
   try {
-    tacticalRadarMap = L.map('portalRadarMap', {
-      zoomControl: true,
-      attributionControl: false
-    }).setView([5.0, 102.0], 7);
+    // 1. Initialize MapLibre GL Controller with OpenFreeMap Liberty Basemap
+    tacticalRadarMap = createAmcMap('portalRadarMap', {
+      center: [5.2, 102.1], // Strategic midpoint across Kelantan & Pahang corridors
+      zoom: 7.2,
+      showNavigation: true,
+      showAttribution: true,
+      onReady: async (mapCtrl) => {
+        // 2. Display verified AMC network points (Hubs, Other Branches, Hospitals)
+        mapCtrl.displayVerifiedNetworkPoints({
+          includeAllBranches: true,
+          includeTopHospitals: true
+        });
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18
-    }).addTo(tacticalRadarMap);
+        // 3. Render Fleet Ambulance Markers
+        renderTacticalFleetMarkers();
 
-    // Fleet Ambulance Markers
-    portalState.fleet.forEach(van => {
-      const marker = L.circleMarker(van.coords, {
-        radius: 9,
-        fillColor: van.status === 'Bersedia' ? '#10B981' : '#F59E0B',
-        color: '#FFFFFF',
-        weight: 2.5,
-        fillOpacity: 1
-      }).addTo(tacticalRadarMap);
+        // 4. Draw Real Road Route Geometry from OSRM (Never a straight line!)
+        try {
+          const kokLanasCoords = [5.9176965, 102.2446687]; // Kok Lanas HQ
+          const kbPickupCoords = [6.1254, 102.2381];       // Kota Bharu
+          const hrpzCoords = [6.1332, 102.2483];          // Hospital Raja Perempuan Zainab II
 
-      marker.bindPopup(`
-        <div style="font-family: var(--font-sans); padding: 4px;">
-          <strong style="color: #007D77;">${van.plate}</strong><br>
-          <span style="font-size: 0.75rem; color: #526966;">Pemandu: ${van.driver}</span><br>
-          <span style="font-size: 0.75rem;">Status: <b>${van.status}</b></span>
-        </div>
-      `);
+          const roadRoute = await fetchRoadRoute(kokLanasCoords, kbPickupCoords, hrpzCoords);
+          if (roadRoute && roadRoute.fullGeometry && roadRoute.fullGeometry.length > 1) {
+            mapCtrl.setRoute('activeRadarMission', roadRoute.fullGeometry, {
+              color: '#C61E2F',
+              width: 5,
+              opacity: 0.92,
+              autoFit: false // Retain broad regional radar overview
+            });
+          }
+        } catch (routeErr) {
+          console.warn('[TacticalRadarMap] Road routing fetch warning:', routeErr);
+        }
+      }
     });
 
-    // Floating map focus controls
-    document.getElementById('btnMapFocusBranch')?.addEventListener('click', () => {
-      tacticalRadarMap.setView([5.9176965, 102.2446687], 12);
+    // 5. Floating Focus Controls (Preserve existing control bindings)
+    const btnBranch = document.getElementById('btnMapFocusBranch');
+    const btnRaub = document.getElementById('btnMapFocusRaub');
+    const btnAll = document.getElementById('btnMapFocusAll');
+
+    const updateActiveButton = (activeBtn) => {
+      [btnBranch, btnRaub, btnAll].forEach(b => b?.classList.remove('active'));
+      activeBtn?.classList.add('active');
+    };
+
+    btnBranch?.addEventListener('click', () => {
+      updateActiveButton(btnBranch);
+      tacticalRadarMap?.flyTo([5.9176965, 102.2446687], 12);
     });
-    document.getElementById('btnMapFocusRaub')?.addEventListener('click', () => {
-      tacticalRadarMap.setView([3.7915, 101.8590], 12);
+
+    btnRaub?.addEventListener('click', () => {
+      updateActiveButton(btnRaub);
+      tacticalRadarMap?.flyTo([3.7915, 101.8590], 12);
     });
-    document.getElementById('btnMapFocusAll')?.addEventListener('click', () => {
-      tacticalRadarMap.setView([4.5, 102.0], 7);
+
+    btnAll?.addEventListener('click', () => {
+      updateActiveButton(btnAll);
+      const points = [
+        [5.9176965, 102.2446687], // Kok Lanas
+        [3.7915, 101.8590],        // Raub
+        [6.1332, 102.2483]         // Kota Bharu
+      ];
+      tacticalRadarMap?.fitBounds(points, { top: 60, bottom: 60, left: 60, right: 60 });
     });
+
+    // 6. Connect Authorized GPS Subscriptions & Realtime Updates
+    initRadarGpsSubscriptions();
+
   } catch (err) {
     console.warn('Tactical radar map error:', err);
   }
 }
 
+function renderTacticalFleetMarkers() {
+  if (!tacticalRadarMap) return;
+
+  portalState.fleet.forEach(van => {
+    tacticalRadarMap.addOrUpdateMarker(`van_${van.plate}`, {
+      coords: van.coords,
+      type: 'ambulance',
+      plate: van.plate,
+      driver: van.driver,
+      status: van.status,
+      hubName: van.hubName,
+      timestamp: van.lastUpdated || new Date(),
+      isSelected: van.status !== 'Bersedia'
+    });
+  });
+}
+
+function initRadarGpsSubscriptions() {
+  if (radarTelemetryInterval) clearInterval(radarTelemetryInterval);
+
+  // Authorised Realtime Supabase changes for live dispatching
+  if (!realtimeBookingChannel) {
+    try {
+      realtimeBookingChannel = subscribeToRealtimeBookings(
+        (newBooking) => {
+          if (newBooking?.plate_number) {
+            const van = portalState.fleet.find(v => v.plate === newBooking.plate_number);
+            if (van) {
+              van.status = newBooking.status || 'Dalam perjalanan';
+              van.lastUpdated = new Date();
+              tacticalRadarMap?.addOrUpdateMarker(`van_${van.plate}`, {
+                coords: van.coords,
+                status: van.status,
+                timestamp: van.lastUpdated,
+                isSelected: van.status !== 'Bersedia'
+              });
+            }
+          }
+        },
+        (updatedBooking) => {
+          if (updatedBooking?.plate_number) {
+            const van = portalState.fleet.find(v => v.plate === updatedBooking.plate_number);
+            if (van) {
+              van.status = updatedBooking.status;
+              van.lastUpdated = new Date();
+              tacticalRadarMap?.addOrUpdateMarker(`van_${van.plate}`, {
+                coords: van.coords,
+                status: van.status,
+                timestamp: van.lastUpdated,
+                isSelected: van.status !== 'Bersedia'
+              });
+            }
+          }
+        }
+      );
+    } catch (subErr) {
+      console.warn('[TacticalRadarMap] Realtime subscription notice:', subErr);
+    }
+  }
+
+  // Micro-telemetry refresh: updates GPS timestamp and coordinates without rebuilding the map
+  radarTelemetryInterval = setInterval(() => {
+    if (!tacticalRadarMap) return;
+
+    portalState.fleet.forEach(van => {
+      // Subtly update coordinate jitter for vehicle in transit (~10m)
+      if (van.status !== 'Bersedia' && Array.isArray(van.coords)) {
+        van.coords[0] += (Math.random() - 0.48) * 0.00015;
+        van.coords[1] += (Math.random() - 0.48) * 0.00015;
+      }
+      van.lastUpdated = new Date();
+
+      tacticalRadarMap.addOrUpdateMarker(`van_${van.plate}`, {
+        coords: van.coords,
+        type: 'ambulance',
+        plate: van.plate,
+        driver: van.driver,
+        status: van.status,
+        hubName: van.hubName,
+        timestamp: van.lastUpdated,
+        isSelected: van.status !== 'Bersedia'
+      });
+    });
+  }, 10000);
+}
+
 function invalidateAllMaps() {
   setTimeout(() => {
+    if (tacticalRadarMap) {
+      tacticalRadarMap.resize();
+    }
     if (dashboardArmadaMap) dashboardArmadaMap.invalidateSize();
-    if (tacticalRadarMap) tacticalRadarMap.invalidateSize();
     if (dispatchRouteMap) {
       dispatchRouteMap.invalidateSize();
       const stop1 = [5.9176965, 102.2446687];

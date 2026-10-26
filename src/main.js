@@ -47,6 +47,13 @@ import {
   searchAddressGeocode
 } from './services/routingService.js';
 
+import {
+  createAmcMap,
+  toLngLat,
+  toLatLng,
+  AMC_MAP_COLORS
+} from './services/mapLibreService.js';
+
 /* =========================================================================
    APPLICATION STATE (MATCHES MOCKUP DEFAULTS)
    ========================================================================= */
@@ -455,24 +462,15 @@ function initNavigationTabs() {
 let tugasanMap = null;
 function initTugasanMissionMap() {
   const container = document.getElementById('tugasanMapCanvas');
-  if (!container || !window.L) return;
+  if (!container) return;
 
   if (tugasanMap) {
-    tugasanMap.invalidateSize();
+    tugasanMap.resize();
     return;
   }
 
   const startCoords = [6.1254, 102.2381]; // Kota Bharu
   const endCoords = [6.1265, 102.2464];   // HRPZ II
-
-  tugasanMap = window.L.map('tugasanMapCanvas', {
-    zoomControl: false,
-    attributionControl: false
-  }).setView(startCoords, 14);
-
-  window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19
-  }).addTo(tugasanMap);
 
   const routePoints = [
     startCoords,
@@ -481,31 +479,32 @@ function initTugasanMissionMap() {
     endCoords
   ];
 
-  window.L.polyline(routePoints, {
+  tugasanMap = createAmcMap('tugasanMapCanvas', {
+    zoom: 14,
+    center: startCoords,
+    interactive: true,
+    showNavigation: false,
+    showAttribution: false
+  });
+
+  tugasanMap.setRoute('tugasanRoute', routePoints, {
     color: '#C61E2F',
-    weight: 5,
-    opacity: 0.95
-  }).addTo(tugasanMap);
-
-  // Custom Ambulance Marker
-  const ambulanceIcon = window.L.divIcon({
-    className: 'custom-driver-amb-icon',
-    html: `<div style="background:#C61E2F;color:#fff;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(198,30,47,0.45);border:2px solid #fff;font-size:16px;">🚑</div>`,
-    iconSize: [34, 34],
-    iconAnchor: [17, 17]
+    width: 5,
+    opacity: 0.95,
+    autoFit: false
   });
-  window.L.marker(startCoords, { icon: ambulanceIcon }).addTo(tugasanMap);
 
-  // Target Marker (HRPZ II)
-  const hospitalIcon = window.L.divIcon({
-    className: 'custom-driver-target-icon',
-    html: `<div style="background:#1E293B;color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,0.3);border:2px solid #fff;font-size:14px;">🏥</div>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15]
+  tugasanMap.addOrUpdateMarker('ambTugasan', {
+    coords: startCoords,
+    customHtml: `<div style="background:#C61E2F;color:#fff;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(198,30,47,0.45);border:2px solid #fff;font-size:16px;">🚑</div>`
   });
-  window.L.marker(endCoords, { icon: hospitalIcon }).addTo(tugasanMap);
 
-  tugasanMap.fitBounds(window.L.latLngBounds(routePoints), { padding: [25, 25] });
+  tugasanMap.addOrUpdateMarker('hospTugasan', {
+    coords: endCoords,
+    customHtml: `<div style="background:#1E293B;color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,0.3);border:2px solid #fff;font-size:14px;">🏥</div>`
+  });
+
+  tugasanMap.fitBounds(routePoints, { top: 25, bottom: 25, left: 25, right: 25 });
 
   // Attach button action handlers
   const btnNav = document.getElementById('btnTugasanOpenNav');
@@ -1358,24 +1357,23 @@ function initEquipmentList() {
 }
 
 /* =========================================================================
-   13. LEAFLET MAPS: MINI PREVIEW & FULL INTERACTIVE MAP
+   13. MAPLIBRE GL JS MAPS: MINI PREVIEW & FULL INTERACTIVE MAP
    ======================================================================== */
 function initMiniLeafletMap() {
   const container = document.getElementById('miniLeafletMap');
-  if (!container || miniMap) return;
+  if (!container) return;
+  if (miniMap) {
+    updateMiniMap();
+    return;
+  }
 
-  miniMap = L.map('miniLeafletMap', {
-    zoomControl: false,
-    attributionControl: false,
-    dragging: false,
-    touchZoom: false,
-    doubleClickZoom: false,
-    scrollWheelZoom: false
+  miniMap = createAmcMap('miniLeafletMap', {
+    interactive: false,
+    showNavigation: false,
+    showAttribution: false,
+    zoom: 11,
+    center: state.pickupCoords
   });
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18
-  }).addTo(miniMap);
 
   updateMiniMap();
 }
@@ -1383,11 +1381,8 @@ function initMiniLeafletMap() {
 function updateMiniMap() {
   if (!miniMap) return;
 
-  if (miniRouteLeg1) miniMap.removeLayer(miniRouteLeg1);
-  if (miniRouteLeg2) miniMap.removeLayer(miniRouteLeg2);
-  if (miniRouteLeg3) miniMap.removeLayer(miniRouteLeg3);
-  miniMarkers.forEach(m => miniMap.removeLayer(m));
-  miniMarkers = [];
+  miniMap.clearAllRoutes();
+  miniMap.clearAllMarkers();
 
   const leg1Points = state.leg1Geometry && state.leg1Geometry.length > 1
     ? state.leg1Geometry
@@ -1397,49 +1392,62 @@ function updateMiniMap() {
     ? state.leg2Geometry
     : [state.pickupCoords, state.destinationCoords];
 
-  miniRouteLeg1 = L.polyline(leg1Points, {
+  // Draw Leg 1 (solid #C61E2F)
+  miniMap.setRoute('miniLeg1', leg1Points, {
     color: '#C61E2F',
-    weight: 4.5,
+    width: 4.5,
     opacity: 0.9,
-    smoothFactor: 1
-  }).addTo(miniMap);
+    autoFit: false
+  });
 
-  miniRouteLeg2 = L.polyline(leg2Points, {
+  // Draw Leg 2 (dashed #C61E2F)
+  miniMap.setRoute('miniLeg2', leg2Points, {
     color: '#C61E2F',
-    weight: 4.5,
+    width: 4.5,
     opacity: 0.9,
-    dashArray: '6, 6',
-    smoothFactor: 1
-  }).addTo(miniMap);
+    dashArray: [2, 2],
+    autoFit: false
+  });
 
-  const m1 = L.circleMarker(state.originCoords, { radius: 5, color: '#C61E2F', fillColor: '#FFFFFF', fillOpacity: 1, weight: 2.5 }).addTo(miniMap);
-  const m2 = L.circleMarker(state.pickupCoords, { radius: 6, color: '#C61E2F', fillColor: '#FFF0F2', fillOpacity: 1, weight: 2.5 }).addTo(miniMap);
-  const m3 = L.circleMarker(state.destinationCoords, { radius: 5, color: '#C61E2F', fillColor: '#FFFFFF', fillOpacity: 1, weight: 2.5 }).addTo(miniMap);
+  // Dot markers
+  miniMap.addOrUpdateMarker('miniOrigin', {
+    coords: state.originCoords,
+    customHtml: '<div style="width:10px;height:10px;background:#FFFFFF;border:2.5px solid #C61E2F;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>'
+  });
 
-  miniMarkers = [m1, m2, m3];
-  const activeRoutes = [miniRouteLeg1, miniRouteLeg2];
+  miniMap.addOrUpdateMarker('miniPickup', {
+    coords: state.pickupCoords,
+    customHtml: '<div style="width:12px;height:12px;background:#FFF0F2;border:2.5px solid #C61E2F;border-radius:50%;box-shadow:0 1px 6px rgba(198,30,47,0.4);"></div>'
+  });
+
+  miniMap.addOrUpdateMarker('miniDest', {
+    coords: state.destinationCoords,
+    customHtml: '<div style="width:10px;height:10px;background:#FFFFFF;border:2.5px solid #C61E2F;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>'
+  });
+
+  const allPoints = [...leg1Points, ...leg2Points];
 
   if (state.hasStop4 && state.returnCoords && state.returnCoords.length >= 2) {
     const leg3Points = state.leg3Geometry && state.leg3Geometry.length > 1
       ? state.leg3Geometry
       : [state.destinationCoords, state.returnCoords];
 
-    miniRouteLeg3 = L.polyline(leg3Points, {
+    miniMap.setRoute('miniLeg3', leg3Points, {
       color: '#7C3AED',
-      weight: 4.5,
+      width: 4.5,
       opacity: 0.9,
-      smoothFactor: 1
-    }).addTo(miniMap);
+      autoFit: false
+    });
 
-    const m4 = L.circleMarker(state.returnCoords, { radius: 5, color: '#7C3AED', fillColor: '#EDE9FE', fillOpacity: 1, weight: 2.5 }).addTo(miniMap);
-    miniMarkers.push(m4);
-    activeRoutes.push(miniRouteLeg3);
+    miniMap.addOrUpdateMarker('miniReturn', {
+      coords: state.returnCoords,
+      customHtml: '<div style="width:10px;height:10px;background:#EDE9FE;border:2.5px solid #7C3AED;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>'
+    });
+
+    allPoints.push(...leg3Points);
   }
 
-  const allBounds = L.featureGroup(activeRoutes).getBounds();
-  if (allBounds.isValid()) {
-    miniMap.fitBounds(allBounds, { padding: [15, 15] });
-  }
+  miniMap.fitBounds(allPoints, { top: 15, bottom: 15, left: 15, right: 15 });
 }
 
 function initFullLeafletMap() {
@@ -1451,25 +1459,23 @@ function initFullLeafletMap() {
     return;
   }
 
-  fullMap = L.map('leafletMapFull', {
-    zoomControl: true
-  });
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap • Al-Farhain AMC Ambulans'
-  }).addTo(fullMap);
-
-  // Enable click on full map to set patient location directly!
-  fullMap.on('click', (e) => {
-    const lat = Math.round(e.latlng.lat * 100000) / 100000;
-    const lng = Math.round(e.latlng.lng * 100000) / 100000;
-    playClickSound();
-    setPatientPickupLocation(
-      'Lokasi Dipilih Pada Peta',
-      `Koordinat: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-      [lat, lng],
-      'custom_map_click'
-    );
+  fullMap = createAmcMap('leafletMapFull', {
+    interactive: true,
+    showNavigation: true,
+    showAttribution: true,
+    zoom: 12,
+    center: state.pickupCoords,
+    onClick: ({ coords }) => {
+      const lat = Math.round(coords[0] * 100000) / 100000;
+      const lng = Math.round(coords[1] * 100000) / 100000;
+      playClickSound();
+      setPatientPickupLocation(
+        'Lokasi Dipilih Pada Peta',
+        `Koordinat: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+        [lat, lng],
+        'custom_map_click'
+      );
+    }
   });
 
   updateFullMap();
@@ -1478,11 +1484,7 @@ function initFullLeafletMap() {
 function updateFullMap() {
   if (!fullMap) return;
 
-  if (fullRouteLeg1) fullMap.removeLayer(fullRouteLeg1);
-  if (fullRouteLeg2) fullMap.removeLayer(fullRouteLeg2);
-  if (fullRouteLeg3) fullMap.removeLayer(fullRouteLeg3);
-  fullMarkers.forEach(m => fullMap.removeLayer(m));
-  fullMarkers = [];
+  fullMap.clearAllRoutes();
 
   const leg1Points = state.leg1Geometry && state.leg1Geometry.length > 1
     ? state.leg1Geometry
@@ -1493,98 +1495,101 @@ function updateFullMap() {
     : [state.pickupCoords, state.destinationCoords];
 
   // Draw Leg 1 (Pangkalan ➔ Pesakit)
-  fullRouteLeg1 = L.polyline(leg1Points, {
+  fullMap.setRoute('fullLeg1', leg1Points, {
     color: '#C61E2F',
-    weight: 5.5,
+    width: 5.5,
     opacity: 0.9,
-    smoothFactor: 1
-  }).addTo(fullMap);
+    autoFit: false
+  });
 
   // Draw Leg 2 (Pesakit ➔ Hospital)
-  fullRouteLeg2 = L.polyline(leg2Points, {
+  fullMap.setRoute('fullLeg2', leg2Points, {
     color: '#C61E2F',
-    weight: 5.5,
+    width: 5.5,
     opacity: 0.9,
-    dashArray: '8, 8',
-    smoothFactor: 1
-  }).addTo(fullMap);
-
-  // Custom DivIcons
-  const hubIcon = L.divIcon({
-    className: 'custom-leaflet-marker marker-hub',
-    html: '<div class="marker-emoji-box">🏛️</div><div class="marker-tag-label">1. Pangkalan</div>',
-    iconSize: [40, 52],
-    iconAnchor: [20, 26]
-  });
-
-  const pickupIcon = L.divIcon({
-    className: 'custom-leaflet-marker marker-pickup',
-    html: '<div class="marker-emoji-box">📍</div><div class="marker-tag-label">2. Pesakit</div>',
-    iconSize: [40, 52],
-    iconAnchor: [20, 26]
-  });
-
-  const destIcon = L.divIcon({
-    className: 'custom-leaflet-marker marker-dest',
-    html: '<div class="marker-emoji-box">🏥</div><div class="marker-tag-label">3. Destinasi 1</div>',
-    iconSize: [40, 52],
-    iconAnchor: [20, 26]
+    dashArray: [2, 2],
+    autoFit: false
   });
 
   // Marker 1: Starting Hub
-  const m1 = L.marker(state.originCoords, { icon: hubIcon }).bindPopup(`
-    <div style="font-family: var(--font-body); font-size: 0.8rem;">
-      <strong style="color: #007D77; font-size: 0.88rem;">🏛️ 1. Pangkalan Bertolak</strong>
-      <div style="font-weight: 700; margin-top: 3px;">${state.currentHub.name}</div>
-      <div style="color: #64748B; font-size: 0.72rem; margin-top: 2px;">${state.currentHub.address}</div>
-      <div style="margin-top: 6px; font-size: 0.72rem; background: #F0FDFA; padding: 4px 8px; border-radius: 4px;">
-        Ambulan: <b>${state.currentHub.ambulancePlate}</b> (${state.currentHub.primaryDriver || 'Pemandu Bertugas'})
+  fullMap.addOrUpdateMarker('hub', {
+    coords: state.originCoords,
+    customHtml: `
+      <div class="custom-leaflet-marker marker-hub">
+        <div class="marker-emoji-box">🏛️</div>
+        <div class="marker-tag-label">1. Pangkalan</div>
       </div>
-    </div>
-  `).addTo(fullMap);
+    `,
+    customPopupHtml: `
+      <div style="font-family: var(--font-body, sans-serif); font-size: 0.8rem; padding: 4px;">
+        <strong style="color: #007D77; font-size: 0.88rem;">🏛️ 1. Pangkalan Bertolak</strong>
+        <div style="font-weight: 700; margin-top: 3px;">${state.currentHub.name}</div>
+        <div style="color: #64748B; font-size: 0.72rem; margin-top: 2px;">${state.currentHub.address}</div>
+        <div style="margin-top: 6px; font-size: 0.72rem; background: #F0FDFA; padding: 4px 8px; border-radius: 4px;">
+          Ambulan: <b>${state.currentHub.ambulancePlate}</b> (${state.currentHub.primaryDriver || 'Pemandu Bertugas'})
+        </div>
+      </div>
+    `
+  });
 
   // Marker 2: Patient Pickup (DRAGGABLE!)
-  const m2 = L.marker(state.pickupCoords, { icon: pickupIcon, draggable: true }).bindPopup(`
-    <div style="font-family: var(--font-body); font-size: 0.8rem;">
-      <strong style="color: #0284C7; font-size: 0.88rem;">📍 2. Lokasi Pesakit (Pengambilan)</strong>
-      <div style="font-weight: 700; margin-top: 3px;">${state.pickupName}</div>
-      <div style="color: #64748B; font-size: 0.72rem; margin-top: 2px;">${state.pickupAddress}</div>
-      <div style="margin-top: 6px; font-size: 0.75rem; background: #E0F2FE; color: #0369A1; padding: 4px 8px; border-radius: 4px;">
-        🛣️ Jarak dari Pangkalan: <b>${state.leg1Km.toFixed(1)} km</b> (~${state.leg1DurationMin} min)
+  fullMap.addOrUpdateMarker('pickup', {
+    coords: state.pickupCoords,
+    draggable: true,
+    customHtml: `
+      <div class="custom-leaflet-marker marker-pickup">
+        <div class="marker-emoji-box">📍</div>
+        <div class="marker-tag-label">2. Pesakit</div>
       </div>
-      <div style="font-size: 0.68rem; color: #94A3B8; margin-top: 4px;">
-        💡 <i>Tip: Anda boleh seret pin ini untuk melaraskan kedudukan rumah pesakit.</i>
+    `,
+    customPopupHtml: `
+      <div style="font-family: var(--font-body, sans-serif); font-size: 0.8rem; padding: 4px;">
+        <strong style="color: #0284C7; font-size: 0.88rem;">📍 2. Lokasi Pesakit (Pengambilan)</strong>
+        <div style="font-weight: 700; margin-top: 3px;">${state.pickupName}</div>
+        <div style="color: #64748B; font-size: 0.72rem; margin-top: 2px;">${state.pickupAddress}</div>
+        <div style="margin-top: 6px; font-size: 0.75rem; background: #E0F2FE; color: #0369A1; padding: 4px 8px; border-radius: 4px;">
+          🛣️ Jarak dari Pangkalan: <b>${state.leg1Km.toFixed(1)} km</b> (~${state.leg1DurationMin} min)
+        </div>
+        <div style="font-size: 0.68rem; color: #94A3B8; margin-top: 4px;">
+          💡 <i>Tip: Anda boleh seret pin ini untuk melaraskan kedudukan rumah pesakit.</i>
+        </div>
       </div>
-    </div>
-  `).addTo(fullMap);
-
-  m2.on('dragend', (e) => {
-    const pos = e.target.getLatLng();
-    const lat = Math.round(pos.lat * 100000) / 100000;
-    const lng = Math.round(pos.lng * 100000) / 100000;
-    playClickSound();
-    setPatientPickupLocation(
-      'Lokasi Pin Dilaras',
-      `Koordinat: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-      [lat, lng],
-      'custom_drag'
-    );
+    `,
+    onDragEnd: (newCoords) => {
+      const lat = Math.round(newCoords[0] * 100000) / 100000;
+      const lng = Math.round(newCoords[1] * 100000) / 100000;
+      playClickSound();
+      setPatientPickupLocation(
+        'Lokasi Pin Dilaras',
+        `Koordinat: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+        [lat, lng],
+        'custom_drag'
+      );
+    }
   });
 
   // Marker 3: Destination Medical Center
-  const m3 = L.marker(state.destinationCoords, { icon: destIcon }).bindPopup(`
-    <div style="font-family: var(--font-body); font-size: 0.8rem;">
-      <strong style="color: #DC2626; font-size: 0.88rem;">🏥 3. Pusat Perubatan Tujuan (Destinasi 1)</strong>
-      <div style="font-weight: 700; margin-top: 3px;">${state.destinationName}</div>
-      <div style="color: #64748B; font-size: 0.72rem; margin-top: 2px;">${state.destinationAddress}</div>
-      <div style="margin-top: 6px; font-size: 0.75rem; background: #FEE2E2; color: #991B1B; padding: 4px 8px; border-radius: 4px;">
-        🚑 Jarak dari Pesakit: <b>${state.leg2Km.toFixed(1)} km</b> (~${state.leg2DurationMin} min)
+  fullMap.addOrUpdateMarker('dest', {
+    coords: state.destinationCoords,
+    customHtml: `
+      <div class="custom-leaflet-marker marker-dest">
+        <div class="marker-emoji-box">🏥</div>
+        <div class="marker-tag-label">3. Destinasi 1</div>
       </div>
-    </div>
-  `).addTo(fullMap);
+    `,
+    customPopupHtml: `
+      <div style="font-family: var(--font-body, sans-serif); font-size: 0.8rem; padding: 4px;">
+        <strong style="color: #DC2626; font-size: 0.88rem;">🏥 3. Pusat Perubatan Tujuan (Destinasi 1)</strong>
+        <div style="font-weight: 700; margin-top: 3px;">${state.destinationName}</div>
+        <div style="color: #64748B; font-size: 0.72rem; margin-top: 2px;">${state.destinationAddress}</div>
+        <div style="margin-top: 6px; font-size: 0.75rem; background: #FEE2E2; color: #991B1B; padding: 4px 8px; border-radius: 4px;">
+          🚑 Jarak dari Pesakit: <b>${state.leg2Km.toFixed(1)} km</b> (~${state.leg2DurationMin} min)
+        </div>
+      </div>
+    `
+  });
 
-  fullMarkers = [m1, m2, m3];
-  const activeFullRoutes = [fullRouteLeg1, fullRouteLeg2];
+  const allFullPoints = [...leg1Points, ...leg2Points];
 
   // Draw Leg 3 and Marker 4 if Stop 4 is active
   if (state.hasStop4 && state.returnCoords && state.returnCoords.length >= 2) {
@@ -1592,45 +1597,43 @@ function updateFullMap() {
       ? state.leg3Geometry
       : [state.destinationCoords, state.returnCoords];
 
-    fullRouteLeg3 = L.polyline(leg3Points, {
+    fullMap.setRoute('fullLeg3', leg3Points, {
       color: '#7C3AED',
-      weight: 6,
+      width: 6,
       opacity: 0.92,
-      smoothFactor: 1
-    }).addTo(fullMap);
-
-    const returnIcon = L.divIcon({
-      className: 'custom-leaflet-marker marker-return',
-      html: `
-        <div class="marker-emoji-box">${state.stop4Type === 'return' ? '🔄' : '🏥'}</div>
-        <div class="marker-tag-label" style="background:#7C3AED;">4. ${state.stop4Type === 'return' ? 'Pulang' : 'Destinasi 2'}</div>
-      `,
-      iconSize: [40, 52],
-      iconAnchor: [20, 26]
+      autoFit: false
     });
 
-    const m4 = L.marker(state.returnCoords, { icon: returnIcon }).bindPopup(`
-      <div style="font-family: var(--font-body); font-size: 0.8rem;">
-        <strong style="color: #7C3AED; font-size: 0.88rem;">${state.stop4Type === 'return' ? '🔄 4. Hantar Pulang (Kediaman)' : '🏥 4. Fasiliti Perubatan Ke-2'}</strong>
-        <div style="font-weight: 700; margin-top: 3px;">${state.returnName}</div>
-        <div style="color: #64748B; font-size: 0.72rem; margin-top: 2px;">${state.returnAddress}</div>
-        <div style="margin-top: 6px; font-size: 0.75rem; background: #F3E8FF; color: #6D28D9; padding: 4px 8px; border-radius: 4px;">
-          🛣️ Jarak dari Destinasi 1: <b>${state.leg3Km.toFixed(1)} km</b> (~${state.leg3DurationMin} min)
+    fullMap.addOrUpdateMarker('stop4', {
+      coords: state.returnCoords,
+      customHtml: `
+        <div class="custom-leaflet-marker marker-return">
+          <div class="marker-emoji-box">${state.stop4Type === 'return' ? '🔄' : '🏥'}</div>
+          <div class="marker-tag-label" style="background:#7C3AED;">4. ${state.stop4Type === 'return' ? 'Pulang' : 'Destinasi 2'}</div>
         </div>
-        <div style="margin-top: 4px; font-size: 0.78rem; font-weight: 800; color: #007D77;">
-          🛣️ Jumlah Keseluruhan Perjalanan: ${state.distanceKm.toFixed(1)} km (~${state.totalDurationMin} min)
+      `,
+      customPopupHtml: `
+        <div style="font-family: var(--font-body, sans-serif); font-size: 0.8rem; padding: 4px;">
+          <strong style="color: #7C3AED; font-size: 0.88rem;">${state.stop4Type === 'return' ? '🔄 4. Hantar Pulang (Kediaman)' : '🏥 4. Fasiliti Perubatan Ke-2'}</strong>
+          <div style="font-weight: 700; margin-top: 3px;">${state.returnName}</div>
+          <div style="color: #64748B; font-size: 0.72rem; margin-top: 2px;">${state.returnAddress}</div>
+          <div style="margin-top: 6px; font-size: 0.75rem; background: #F3E8FF; color: #6D28D9; padding: 4px 8px; border-radius: 4px;">
+            🛣️ Jarak dari Destinasi 1: <b>${state.leg3Km.toFixed(1)} km</b> (~${state.leg3DurationMin} min)
+          </div>
+          <div style="margin-top: 4px; font-size: 0.78rem; font-weight: 800; color: #007D77;">
+            🛣️ Jumlah Keseluruhan Perjalanan: ${state.distanceKm.toFixed(1)} km (~${state.totalDurationMin} min)
+          </div>
         </div>
-      </div>
-    `).addTo(fullMap);
+      `
+    });
 
-    fullMarkers.push(m4);
-    activeFullRoutes.push(fullRouteLeg3);
+    allFullPoints.push(...leg3Points);
+  } else {
+    fullMap.removeMarker('stop4');
+    fullMap.removeRoute('fullLeg3');
   }
 
-  const allBounds = L.featureGroup(activeFullRoutes).getBounds();
-  if (allBounds.isValid()) {
-    fullMap.fitBounds(allBounds, { padding: [35, 35] });
-  }
+  fullMap.fitBounds(allFullPoints, { top: 35, bottom: 35, left: 35, right: 35 });
 }
 
 function updateMapMarkers() {
