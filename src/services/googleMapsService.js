@@ -1,10 +1,9 @@
 // =========================================================================
 // AL-FARHAIN MEDICAL CENTER (AMC) - REUSABLE GOOGLE MAPS JAVASCRIPT SERVICE
-// High-Performance Map Engine powered by Google Maps JavaScript API & Places API (New)
-// Uses official @googlemaps/js-api-loader with singleton lifecycle management.
+// High-Performance Map Engine powered by Google Maps JavaScript API & Places API
+// Resilient loader with lifecycle management, operation queueing, and fallback.
 // =========================================================================
 
-import { Loader } from '@googlemaps/js-api-loader';
 import { HUBS, OTHER_BRANCHES, PRESET_DESTINATIONS } from '../data/pricingData.js';
 
 // Configuration from Vite environment variables (with safe fallback for Node.js test runners)
@@ -34,12 +33,25 @@ export const AMC_MAP_COLORS = {
 let googleMapsLoaderPromise = null;
 let googleMapsLoaded = false;
 
+// Global auth failure handler for immediate diagnostic feedback in UI
+if (typeof window !== 'undefined') {
+  const previousAuthFailure = window.gm_authFailure;
+  window.gm_authFailure = () => {
+    console.error('[GoogleMapsService] Google Maps Authentication Failure: Invalid key or unauthorized HTTP Referer.');
+    window.dispatchEvent(new CustomEvent('amc-gmaps-auth-failure'));
+    if (typeof previousAuthFailure === 'function') previousAuthFailure();
+  };
+}
+
 /**
- * Loads the Google Maps JavaScript API SDK once per page using @googlemaps/js-api-loader.
+ * Loads the Google Maps JavaScript API SDK once per page using dynamic script injection.
+ * Fully compatible with Vite, browsers, and Android TWA / Bubblewrap WebViews.
  * @returns {Promise<typeof google>}
  */
 export async function loadGoogleMaps() {
-  if (window.google?.maps) {
+  if (typeof window === 'undefined') return null;
+
+  if (window.google?.maps?.Map) {
     googleMapsLoaded = true;
     return window.google;
   }
@@ -48,31 +60,69 @@ export async function loadGoogleMaps() {
     return googleMapsLoaderPromise;
   }
 
-  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === 'REPLACE_WITH_DEVELOPMENT_BROWSER_KEY') {
+  const apiKey = GOOGLE_MAPS_API_KEY;
+  if (!apiKey || apiKey === 'REPLACE_WITH_DEVELOPMENT_BROWSER_KEY') {
     console.warn('[GoogleMapsService] VITE_GOOGLE_MAPS_API_KEY is not configured or using placeholder.');
     return null;
   }
 
-  const loaderOptions = {
-    apiKey: GOOGLE_MAPS_API_KEY,
-    version: 'weekly',
-    libraries: ['maps', 'marker', 'places', 'geometry']
-  };
+  googleMapsLoaderPromise = new Promise((resolve) => {
+    if (window.google?.maps?.Map) {
+      googleMapsLoaded = true;
+      resolve(window.google);
+      return;
+    }
 
-  // If a production Map ID is configured, pass it to the loader
-  if (GOOGLE_MAPS_MAP_ID) {
-    loaderOptions.mapIds = [GOOGLE_MAPS_MAP_ID];
-  }
+    const existingScript = document.querySelector('script[data-gmaps-script="true"]');
+    if (existingScript) {
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        if (window.google?.maps?.Map) {
+          clearInterval(interval);
+          googleMapsLoaded = true;
+          resolve(window.google);
+        } else if (attempts > 80) {
+          clearInterval(interval);
+          console.error('[GoogleMapsService] Timeout waiting for existing Google Maps script.');
+          resolve(null);
+        }
+      }, 100);
+      return;
+    }
 
-  const loader = new Loader(loaderOptions);
+    const callbackName = '__amcGoogleMapsLoadedCallback__';
+    window[callbackName] = () => {
+      try { delete window[callbackName]; } catch {}
+      googleMapsLoaded = true;
+      resolve(window.google);
+    };
 
-  googleMapsLoaderPromise = loader.load().then(() => {
-    googleMapsLoaded = true;
-    return window.google;
-  }).catch((err) => {
-    console.error('[GoogleMapsService] Failed to load Google Maps SDK:', err);
-    googleMapsLoaderPromise = null;
-    return null;
+    const script = document.createElement('script');
+    script.dataset.gmapsScript = 'true';
+    script.async = true;
+    script.defer = true;
+
+    const params = new URLSearchParams({
+      key: apiKey,
+      libraries: 'places,geometry,marker',
+      v: 'weekly',
+      callback: callbackName,
+      loading: 'async'
+    });
+
+    if (GOOGLE_MAPS_MAP_ID) {
+      params.append('map_ids', GOOGLE_MAPS_MAP_ID);
+    }
+
+    script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
+    script.onerror = (err) => {
+      console.error('[GoogleMapsService] Failed to load Google Maps script tag:', err);
+      googleMapsLoaderPromise = null;
+      resolve(null);
+    };
+
+    document.head.appendChild(script);
   });
 
   return googleMapsLoaderPromise;
@@ -82,7 +132,7 @@ export async function loadGoogleMaps() {
  * Check if Google Maps is successfully configured and loaded.
  */
 export function isGoogleMapsAvailable() {
-  return Boolean(window.google?.maps);
+  return Boolean(typeof window !== 'undefined' && window.google?.maps?.Map);
 }
 
 /**
@@ -153,7 +203,8 @@ export function toLatLngArray(coord) {
 /**
  * Reusable Google Maps Controller
  * Preserves the exact API methods of the legacy controller (setRoute, addOrUpdateMarker,
- * fitBounds, clearAllRoutes, clearAllMarkers, resize, destroy).
+ * fitBounds, clearAllRoutes, clearAllMarkers, resize, invalidateSize, destroy).
+ * Buffers calls before map readiness to guarantee 100% reliable initialization.
  */
 export class AmcGoogleMapsController {
   /**
@@ -176,8 +227,17 @@ export class AmcGoogleMapsController {
     this.routes = new Map();   // Map<routeId, google.maps.Polyline>
     this.markers = new Map();  // Map<markerId, { marker, infoWindow, listeners: [] }>
     this.eventListeners = [];  // Array of google.maps.event listeners for cleanup
+    this.queuedOperations = [];// Buffered operations called before Google Maps finishes loading
     this.resizeObserver = null;
     this.isReady = false;
+    this._lastFitBounds = null;
+
+    if (typeof window !== 'undefined') {
+      this._authFailureHandler = () => {
+        this._renderFallbackMessage('Ralat Pengesahan Kunci Google Maps API. Sila pastikan domain atau localhost ini dibenarkan dalam Google Cloud Console (HTTP Referrers).');
+      };
+      window.addEventListener('amc-gmaps-auth-failure', this._authFailureHandler);
+    }
 
     if (this.container) {
       this._init();
@@ -188,6 +248,7 @@ export class AmcGoogleMapsController {
     const google = await loadGoogleMaps();
     if (!google || !this.container) {
       console.warn('[GoogleMapsController] Google Maps SDK unavailable for container:', this.container?.id);
+      this._renderFallbackMessage('Peta Google tidak dapat dimuatkan. Sila semak sambungan internet dan konfigurasi API key.');
       return;
     }
 
@@ -230,6 +291,18 @@ export class AmcGoogleMapsController {
     this._setupResizeObserver();
 
     this.isReady = true;
+
+    // Flush all queued operations
+    const ops = [...this.queuedOperations];
+    this.queuedOperations = [];
+    for (const op of ops) {
+      try {
+        op();
+      } catch (err) {
+        console.warn('[GoogleMapsController] Error executing queued op:', err);
+      }
+    }
+
     if (typeof this.options.onReady === 'function') {
       this.options.onReady(this);
     }
@@ -249,18 +322,43 @@ export class AmcGoogleMapsController {
     this.resizeObserver.observe(this.container);
   }
 
+  _renderFallbackMessage(msg) {
+    if (!this.container) return;
+    this.container.innerHTML = `
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; min-height:110px; padding:16px; text-align:center; background:#FFF0F2; color:#C61E2F; border-radius:12px; font-family:sans-serif; border:1px solid #FECDD3;">
+        <div style="font-size:1.5rem; margin-bottom:4px;">⚠️</div>
+        <div style="font-weight:700; font-size:13px; margin-bottom:2px;">Paparan Peta Tidak Tersedia</div>
+        <div style="font-size:11px; color:#526966; max-width:300px; line-height:1.4;">${msg}</div>
+      </div>
+    `;
+  }
+
   /**
    * Triggers map resize and repositioning.
    */
   resize() {
-    if (!this.map || !window.google?.maps) return;
+    if (!this.isReady || !this.map || !window.google?.maps) return;
     window.google.maps.event.trigger(this.map, 'resize');
+    if (this._lastFitBounds) {
+      this.fitBounds(this._lastFitBounds.points, this._lastFitBounds.padding);
+    }
+  }
+
+  /**
+   * Alias for Leaflet/MapLibre invalidateSize compatibility.
+   */
+  invalidateSize() {
+    return this.resize();
   }
 
   /**
    * Clears a specific polyline route.
    */
   clearRoute(routeId) {
+    if (!this.isReady) {
+      this.queuedOperations.push(() => this.clearRoute(routeId));
+      return;
+    }
     const existing = this.routes.get(routeId);
     if (existing) {
       existing.setMap(null);
@@ -269,9 +367,20 @@ export class AmcGoogleMapsController {
   }
 
   /**
+   * Alias for MapLibre removeRoute compatibility.
+   */
+  removeRoute(routeId) {
+    return this.clearRoute(routeId);
+  }
+
+  /**
    * Clears all drawn polyline routes.
    */
   clearAllRoutes() {
+    if (!this.isReady) {
+      this.queuedOperations.push(() => this.clearAllRoutes());
+      return;
+    }
     for (const [id, polyline] of this.routes.entries()) {
       polyline.setMap(null);
     }
@@ -285,6 +394,10 @@ export class AmcGoogleMapsController {
    * @param {Object} [options]
    */
   setRoute(routeId, latLngPoints, options = {}) {
+    if (!this.isReady) {
+      this.queuedOperations.push(() => this.setRoute(routeId, latLngPoints, options));
+      return;
+    }
     if (!this.map || !window.google?.maps) return;
     this.clearRoute(routeId);
 
@@ -338,6 +451,10 @@ export class AmcGoogleMapsController {
    * @param {Object} options
    */
   addOrUpdateMarker(markerId, options = {}) {
+    if (!this.isReady) {
+      this.queuedOperations.push(() => this.addOrUpdateMarker(markerId, options));
+      return;
+    }
     if (!this.map || !window.google?.maps) return;
     this.removeMarker(markerId);
 
@@ -346,7 +463,7 @@ export class AmcGoogleMapsController {
     let marker = null;
     let infoWindow = null;
 
-    // Standard OverlayView for 100% custom HTML pins with pixel-perfect styling
+    // OverlayView for 100% custom HTML pins with pixel-perfect styling
     class CustomHtmlMarker extends window.google.maps.OverlayView {
       constructor(pos, html, isDraggable, onDragCallback, onClickCallback) {
         super();
@@ -368,33 +485,68 @@ export class AmcGoogleMapsController {
 
         if (this.isDraggable) {
           let isDragging = false;
-          let startX, startY;
+          const onMove = (clientX, clientY) => {
+            const projection = this.getProjection();
+            const panes = this.getPanes();
+            const targetPane = panes?.overlayMouseTarget || panes?.overlayLayer;
+            if (projection && targetPane) {
+              const mapRect = targetPane.getBoundingClientRect();
+              const pixelX = clientX - mapRect.left;
+              const pixelY = clientY - mapRect.top;
+              const newLatLng = projection.fromContainerPixelToLatLng(new window.google.maps.Point(pixelX, pixelY));
+              if (newLatLng) {
+                this.pos = newLatLng;
+                this.draw();
+              }
+            }
+          };
 
           div.addEventListener('mousedown', (e) => {
             isDragging = true;
             div.style.cursor = 'grabbing';
-            startX = e.clientX;
-            startY = e.clientY;
             e.stopPropagation();
           });
 
-          window.addEventListener('mouseup', (e) => {
+          const mouseMoveHandler = (e) => {
+            if (!isDragging) return;
+            onMove(e.clientX, e.clientY);
+          };
+
+          const mouseUpHandler = () => {
             if (!isDragging) return;
             isDragging = false;
             div.style.cursor = 'grab';
-            const projection = this.getProjection();
-            if (projection) {
-              const rect = div.getBoundingClientRect();
-              const mapRect = this.getPanes().overlayMouseTarget.getBoundingClientRect();
-              const pixelX = rect.left - mapRect.left + (rect.width / 2);
-              const pixelY = rect.top - mapRect.top + (rect.height / 2);
-              const newLatLng = projection.fromContainerPixelToLatLng(new window.google.maps.Point(pixelX, pixelY));
-              if (newLatLng && typeof this.onDragCallback === 'function') {
-                this.pos = newLatLng;
-                this.onDragCallback([newLatLng.lat(), newLatLng.lng()]);
-              }
+            if (typeof this.onDragCallback === 'function') {
+              this.onDragCallback([this.pos.lat(), this.pos.lng()]);
             }
-          });
+          };
+
+          window.addEventListener('mousemove', mouseMoveHandler);
+          window.addEventListener('mouseup', mouseUpHandler);
+
+          // Touch support for mobile & Android TWA / Bubblewrap
+          div.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+              isDragging = true;
+              e.stopPropagation();
+            }
+          }, { passive: true });
+
+          const touchMoveHandler = (e) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            onMove(e.touches[0].clientX, e.touches[0].clientY);
+          };
+
+          const touchEndHandler = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            if (typeof this.onDragCallback === 'function') {
+              this.onDragCallback([this.pos.lat(), this.pos.lng()]);
+            }
+          };
+
+          window.addEventListener('touchmove', touchMoveHandler, { passive: true });
+          window.addEventListener('touchend', touchEndHandler, { passive: true });
         }
 
         if (typeof this.onClickCallback === 'function') {
@@ -406,7 +558,10 @@ export class AmcGoogleMapsController {
 
         this.div = div;
         const panes = this.getPanes();
-        panes.overlayMouseTarget.appendChild(div);
+        const targetPane = panes?.overlayMouseTarget || panes?.overlayLayer;
+        if (targetPane) {
+          targetPane.appendChild(div);
+        }
       }
 
       draw() {
@@ -415,8 +570,8 @@ export class AmcGoogleMapsController {
 
         const point = overlayProjection.fromLatLngToDivPixel(this.pos);
         if (point) {
-          this.div.style.left = point.x + 'px';
-          this.div.style.top = point.y + 'px';
+          this.div.style.left = Math.round(point.x) + 'px';
+          this.div.style.top = Math.round(point.y) + 'px';
         }
       }
 
@@ -445,20 +600,14 @@ export class AmcGoogleMapsController {
         options.onDragEnd,
         () => {
           if (infoWindow) {
-            infoWindow.open({
-              anchor: {
-                getPosition: () => overlay.getPosition()
-              },
-              map: this.map,
-              shouldFocus: false
-            });
+            infoWindow.setPosition(overlay.getPosition());
+            infoWindow.open(this.map);
           }
         }
       );
       overlay.setMap(this.map);
       marker = overlay;
     } else {
-      // Standard Marker fallback
       marker = new window.google.maps.Marker({
         position,
         map: this.map,
@@ -480,10 +629,10 @@ export class AmcGoogleMapsController {
     if (options.customPopupHtml) {
       infoWindow = new window.google.maps.InfoWindow({
         content: options.customPopupHtml,
-        disableAutoPan: false
+        maxWidth: 320
       });
 
-      if (!options.customHtml) {
+      if (!options.customHtml && marker) {
         const clickListener = marker.addListener('click', () => {
           infoWindow.open({
             anchor: marker,
@@ -503,9 +652,13 @@ export class AmcGoogleMapsController {
    * Removes a specific marker.
    */
   removeMarker(markerId) {
+    if (!this.isReady) {
+      this.queuedOperations.push(() => this.removeMarker(markerId));
+      return;
+    }
     const item = this.markers.get(markerId);
     if (item) {
-      item.listeners?.forEach(l => window.google.maps.event.removeListener(l));
+      item.listeners?.forEach(l => window.google?.maps?.event?.removeListener(l));
       if (typeof item.marker.setMap === 'function') {
         item.marker.setMap(null);
       }
@@ -518,6 +671,10 @@ export class AmcGoogleMapsController {
    * Clears all markers from the map.
    */
   clearAllMarkers() {
+    if (!this.isReady) {
+      this.queuedOperations.push(() => this.clearAllMarkers());
+      return;
+    }
     for (const [id] of this.markers.entries()) {
       this.removeMarker(id);
     }
@@ -526,23 +683,36 @@ export class AmcGoogleMapsController {
   /**
    * Fits the map viewport to contain all given coordinate points.
    * @param {Array<[number, number]>} latLngPoints
-   * @param {Object} [padding] - { top, bottom, left, right }
+   * @param {Object|number} [padding] - { top, bottom, left, right } or number in px
    */
   fitBounds(latLngPoints, padding = { top: 25, bottom: 25, left: 25, right: 25 }) {
+    if (!this.isReady) {
+      this.queuedOperations.push(() => this.fitBounds(latLngPoints, padding));
+      return;
+    }
     if (!this.map || !window.google?.maps || !Array.isArray(latLngPoints) || !latLngPoints.length) return;
 
+    this._lastFitBounds = { points: latLngPoints, padding };
     const bounds = new window.google.maps.LatLngBounds();
     latLngPoints.forEach(pt => {
       bounds.extend(toGoogleLatLng(pt));
     });
 
-    this.map.fitBounds(bounds, padding);
+    const pad = typeof padding === 'number'
+      ? { top: padding, right: padding, bottom: padding, left: padding }
+      : { top: padding?.top ?? 25, right: padding?.right ?? 25, bottom: padding?.bottom ?? 25, left: padding?.left ?? 25 };
+
+    this.map.fitBounds(bounds, pad);
   }
 
   /**
    * Smoothly pans the map to a center point.
    */
   panTo(coord) {
+    if (!this.isReady) {
+      this.queuedOperations.push(() => this.panTo(coord));
+      return;
+    }
     if (!this.map) return;
     this.map.panTo(toGoogleLatLng(coord));
   }
@@ -551,6 +721,10 @@ export class AmcGoogleMapsController {
    * Smoothly fly/zoom to point.
    */
   flyTo(coord, zoom = 12) {
+    if (!this.isReady) {
+      this.queuedOperations.push(() => this.flyTo(coord, zoom));
+      return;
+    }
     if (!this.map) return;
     this.map.setZoom(zoom);
     this.map.panTo(toGoogleLatLng(coord));
@@ -560,6 +734,11 @@ export class AmcGoogleMapsController {
    * Displays verified Al-Farhain network points (Hubs, Branches, Hospitals).
    */
   displayVerifiedNetworkPoints(options = {}) {
+    if (!this.isReady) {
+      this.queuedOperations.push(() => this.displayVerifiedNetworkPoints(options));
+      return;
+    }
+
     // 1. Hubs
     Object.values(HUBS).forEach(hub => {
       this.addOrUpdateMarker(`hub_${hub.id}`, {
@@ -598,6 +777,26 @@ export class AmcGoogleMapsController {
         });
       });
     }
+
+    // 3. Key Hospitals
+    if (options.includeTopHospitals) {
+      PRESET_DESTINATIONS.slice(0, 5).forEach(h => {
+        this.addOrUpdateMarker(`dest_${h.id}`, {
+          coords: h.coords,
+          customHtml: `
+            <div style="background:#C61E2F; color:#fff; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(198,30,47,0.4); border:2px solid #fff; font-size:11px;">
+              🚑
+            </div>
+          `,
+          customPopupHtml: `
+            <div style="font-size:0.8rem; padding:4px;">
+              <strong style="color:#C61E2F;">${h.name}</strong>
+              <div style="font-size:0.72rem; color:#64748B;">${h.address}</div>
+            </div>
+          `
+        });
+      });
+    }
   }
 
   /**
@@ -610,6 +809,10 @@ export class AmcGoogleMapsController {
     this.eventListeners.forEach(l => window.google?.maps?.event?.removeListener(l));
     this.eventListeners = [];
 
+    if (this._authFailureHandler && typeof window !== 'undefined') {
+      window.removeEventListener('amc-gmaps-auth-failure', this._authFailureHandler);
+    }
+
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
@@ -617,6 +820,7 @@ export class AmcGoogleMapsController {
 
     this.map = null;
     this.isReady = false;
+    this.queuedOperations = [];
   }
 }
 
@@ -631,12 +835,12 @@ export function createGoogleAmcMap(containerId, options = {}) {
 }
 
 /**
- * Places API (New) Autocomplete Helper
+ * Places API Autocomplete Helper
  * 
  * Complies strictly with Google Maps Platform policies:
  * - Restricts search to Malaysia ('my').
  * - Biases search toward operating branch without preventing nationwide searches.
- * - Requests only required Basic/Essentials fields: ['displayName', 'formattedAddress', 'location'].
+ * - Requests only required Basic/Essentials fields: ['name', 'formatted_address', 'geometry.location', 'place_id'].
  *   (Documented Billing Tier: Essentials / Basic Data - lowest cost, avoids Atmosphere/Contact fees).
  * - Distinguishes Google content from user-entered data; does NOT bulk-copy into Supabase.
  * 
@@ -652,50 +856,6 @@ export async function setupPlacesAutocomplete(inputElement, options = {}) {
   const biasLatLng = toGoogleLatLng(options.biasCoords || [5.9176965, 102.2446687]);
 
   try {
-    // Check if Places API (New) PlaceAutocompleteElement is supported
-    if (google.maps.places?.PlaceAutocompleteElement) {
-      const autocompleteEl = new google.maps.places.PlaceAutocompleteElement({
-        includedRegionCodes: ['my'],
-        locationBias: {
-          center: biasLatLng,
-          radius: 50000 // 50 KM bias radius around operating hub
-        }
-      });
-
-      autocompleteEl.addEventListener('gmp-placeselect', async ({ place }) => {
-        if (!place) return;
-        try {
-          // Request ONLY required Essentials fields to protect against unexpected billings
-          await place.fetchFields({
-            fields: ['displayName', 'formattedAddress', 'location']
-          });
-
-          if (!place.location) {
-            alert('Lokasi ini tidak mempunyai koordinat yang sah. Sila pilih lokasi lain atau gunakan penanda manual pada peta.');
-            return;
-          }
-
-          const coords = [place.location.lat(), place.location.lng()];
-          const name = place.displayName || inputElement.value || 'Lokasi Terpilih';
-          const address = place.formattedAddress || name;
-
-          if (typeof options.onPlaceSelect === 'function') {
-            options.onPlaceSelect({
-              name,
-              address,
-              coords,
-              placeId: place.id
-            });
-          }
-        } catch (fetchErr) {
-          console.warn('[PlacesAutocomplete] fetchFields error:', fetchErr);
-        }
-      });
-
-      return autocompleteEl;
-    }
-
-    // Standard Google Places Autocomplete fallback
     if (google.maps.places?.Autocomplete) {
       const autocomplete = new google.maps.places.Autocomplete(inputElement, {
         componentRestrictions: { country: 'my' },
@@ -704,7 +864,7 @@ export async function setupPlacesAutocomplete(inputElement, options = {}) {
 
       const circle = new google.maps.Circle({
         center: biasLatLng,
-        radius: 50000
+        radius: 50000 // 50 KM bias radius around operating hub
       });
       autocomplete.setBounds(circle.getBounds());
 
@@ -732,7 +892,7 @@ export async function setupPlacesAutocomplete(inputElement, options = {}) {
       return autocomplete;
     }
   } catch (err) {
-    console.warn('[GoogleMapsService] Autocomplete setup error:', err);
+    console.warn('[GoogleMapsService] Autocomplete setup warning:', err);
   }
 
   return null;
