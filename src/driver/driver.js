@@ -10,6 +10,7 @@ import {
   getSupabaseClient
 } from '../services/supabaseClient.js';
 import { playSuccessChime, playClickSound, playEmergencyAlertSiren as playAlertSound } from '../utils/soundFx.js';
+import { createGoogleAmcMap } from '../services/googleMapsService.js';
 
 // Coordinates
 const COORDS = {
@@ -373,59 +374,52 @@ function initOdometerTracker() {
 // =====================================================================
 function initLeafletMap(mapId, startCoords, endCoords) {
   const container = document.getElementById(mapId);
-  if (!container || !window.L) return;
+  if (!container) return;
 
   // Cleanup old map if initialized
   if (state.mapInstances[mapId]) {
-    state.mapInstances[mapId].remove();
+    if (typeof state.mapInstances[mapId].destroy === 'function') {
+      state.mapInstances[mapId].destroy();
+    } else if (typeof state.mapInstances[mapId].remove === 'function') {
+      state.mapInstances[mapId].remove();
+    }
     state.mapInstances[mapId] = null;
   }
 
-  const map = window.L.map(mapId, {
-    zoomControl: false,
-    attributionControl: false
-  }).setView(startCoords, 13);
-
-  window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19
-  }).addTo(map);
-
-  // Red Polyline Route
   const routePoints = [
     startCoords,
     [(startCoords[0] + endCoords[0]) / 2 + 0.005, (startCoords[1] + endCoords[1]) / 2 - 0.008],
     endCoords
   ];
 
-  window.L.polyline(routePoints, {
-    color: '#C61E2F',
-    weight: 4,
-    opacity: 0.9,
-    dashArray: '1, 6'
-  }).addTo(map);
+  // Initialize with Google Maps Controller
+  const mapCtrl = createGoogleAmcMap(mapId, {
+    center: startCoords,
+    zoom: 13,
+    interactive: true,
+    showNavigation: true,
+    onReady: (ctrl) => {
+      ctrl.setRoute('driverRoute', routePoints, {
+        color: '#C61E2F',
+        width: 4.5,
+        opacity: 0.95
+      });
 
-  // Start Marker (Ambulance)
-  const ambulanceIcon = window.L.divIcon({
-    className: 'custom-driver-amb-icon',
-    html: `<div style="background:#C61E2F;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(198,30,47,0.4);border:2px solid #fff;font-size:16px;">🚑</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16]
+      ctrl.addOrUpdateMarker('driverAmb', {
+        coords: startCoords,
+        customHtml: `<div style="background:#C61E2F;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(198,30,47,0.4);border:2px solid #fff;font-size:16px;">🚑</div>`
+      });
+
+      ctrl.addOrUpdateMarker('driverTarget', {
+        coords: endCoords,
+        customHtml: `<div style="background:#1E293B;color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,0.3);border:2px solid #fff;font-size:14px;">📍</div>`
+      });
+
+      ctrl.fitBounds(routePoints, { top: 30, bottom: 30, left: 30, right: 30 });
+    }
   });
 
-  window.L.marker(startCoords, { icon: ambulanceIcon }).addTo(map);
-
-  // End Marker (Target Pin)
-  const targetIcon = window.L.divIcon({
-    className: 'custom-driver-target-icon',
-    html: `<div style="background:#1E293B;color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,0.3);border:2px solid #fff;font-size:14px;">📍</div>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15]
-  });
-
-  window.L.marker(endCoords, { icon: targetIcon }).addTo(map);
-
-  map.fitBounds(window.L.latLngBounds(routePoints), { padding: [30, 30] });
-  state.mapInstances[mapId] = map;
+  state.mapInstances[mapId] = mapCtrl;
 }
 
 function launchExternalNav(destName) {

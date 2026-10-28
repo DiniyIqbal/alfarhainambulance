@@ -37,15 +37,80 @@ export function estimateDurationMin(distanceKm, isEmergency = true) {
   return Math.max(3, Math.round(hours * 60));
 }
 
+// Track latest route request to prevent stale async responses from overwriting newer user selections
+let latestRouteRequestId = 0;
+
+export function getLatestRouteRequestId() {
+  return latestRouteRequestId;
+}
+
 /**
- * Fetches real road routing geometry and precise driving distances via OSRM.
- * Supports both standard 2-leg trips (Hub -> Pickup -> Dest) and 3-leg return/multi-stop trips
- * (Hub -> Pickup -> Dest 1 -> Return Home / Dest 2).
+ * Calls AFAMS backend Vercel Serverless Function (POST /api/maps/route)
+ * which interfaces securely with Google Maps Routes API (v2) using GOOGLE_MAPS_SERVER_KEY.
+ * Discards stale responses if a newer location selection was made while in flight.
+ */
+async function fetchGoogleRouteFromBackend(originCoords, pickupCoords, destCoords, dest2Coords, requestId) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 7500);
+
+    // Primary endpoint: /api/maps/route (with backwards-compatible alias /api/calculate-route)
+    const res = await fetch('/api/maps/route', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        origin: originCoords,
+        pickup: pickupCoords,
+        destination: destCoords,
+        destination2: dest2Coords
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    // Stale response guard: check if user already selected a newer location
+    if (requestId !== latestRouteRequestId) {
+      console.info(`[RoutingService] Stale route response ignored (Request #${requestId} vs Latest #${latestRouteRequestId})`);
+      return null;
+    }
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.isRealRoad) {
+        return data;
+      }
+    }
+  } catch (err) {
+    if (requestId === latestRouteRequestId) {
+      console.warn('[RoutingService] Backend Google Maps route not available, proceeding to OSRM:', err.message);
+    }
+  }
+  return null;
+}
+
+/**
+ * Fetches real road routing geometry and precise driving distances.
+ * Priority Waterfall:
+ * 1. Google Maps Platform via Vercel Serverless Function (/api/maps/route)
+ * 2. OSRM High-Precision Road Network Engine
+ * 3. Malaysian Federal Highway Calibrated Haversine (1.28 winding factor offline fallback)
  */
 export async function fetchRoadRoute(originCoords, pickupCoords, destCoords, dest2Coords = null) {
+  const currentReqId = ++latestRouteRequestId;
   const hasDest2 = Boolean(dest2Coords && dest2Coords.length >= 2);
 
-  // Prepare fallback immediately
+  // 1. Try high-precision Google Maps route from backend
+  const googleRoute = await fetchGoogleRouteFromBackend(originCoords, pickupCoords, destCoords, dest2Coords, currentReqId);
+  if (googleRoute) {
+    return googleRoute;
+  }
+
+  // Check again for staleness before running fallback
+  if (currentReqId !== latestRouteRequestId) {
+    return null;
+  }
+
+  // 2. Prepare fallback immediately
   const fallbackLeg1Km = haversineKm(originCoords, pickupCoords, 1.26);
   const fallbackLeg2Km = haversineKm(pickupCoords, destCoords, 1.26);
   const fallbackLeg3Km = hasDest2 ? haversineKm(destCoords, dest2Coords, 1.26) : 0;

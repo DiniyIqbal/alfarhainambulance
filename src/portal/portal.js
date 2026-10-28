@@ -32,12 +32,13 @@ import {
 import { fetchRoadRoute, haversineKm, estimateDurationMin } from '../services/routingService.js';
 import { playCalculateChime, playEmergencyAlertSiren, playSuccessChime } from '../utils/soundFx.js';
 import {
-  createAmcMap,
-  toLngLat,
-  toLatLng,
+  createGoogleAmcMap as createAmcMap,
+  createGoogleAmcMap,
+  toGoogleLatLng as toLngLat,
+  toLatLngArray as toLatLng,
   AMC_MAP_COLORS,
-  isMapLibreSupported
-} from '../services/mapLibreService.js';
+  isGoogleMapsAvailable as isMapLibreSupported
+} from '../services/googleMapsService.js';
 
 /* -------------------------------------------------------------------------
    PORTAL STATE & EXACT SAMPLE DATA FROM SPECIFICATION SCREENSHOTS

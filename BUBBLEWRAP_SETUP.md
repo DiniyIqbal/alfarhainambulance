@@ -50,3 +50,4 @@ project or upload it with the source code.
 Before production release, generate and deploy the required Digital Asset
 Links file at `/.well-known/assetlinks.json` using the final Android package
 name and signing-certificate fingerprint.
+

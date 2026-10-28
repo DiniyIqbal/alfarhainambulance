@@ -48,11 +48,19 @@ import {
 } from './services/routingService.js';
 
 import {
-  createAmcMap,
-  toLngLat,
-  toLatLng,
-  AMC_MAP_COLORS
-} from './services/mapLibreService.js';
+  createGoogleAmcMap as createAmcMap,
+  createGoogleAmcMap,
+  toGoogleLatLng as toLngLat,
+  toLatLngArray as toLatLng,
+  AMC_MAP_COLORS,
+  setupPlacesAutocomplete,
+  isGoogleMapsAvailable
+} from './services/googleMapsService.js';
+
+import {
+  calculateTransportFare,
+  calculateBookingQuotation
+} from './services/pricingService.js';
 
 /* =========================================================================
    APPLICATION STATE (MATCHES MOCKUP DEFAULTS)
@@ -800,40 +808,24 @@ function initStickyBar() {
    9. CALCULATION ENGINE
    ========================================================================= */
 function calculateAll() {
-  const baseKm = BASE_SETTINGS.standardBaseKm; // 25.0 km
-  const totalKm = state.distanceKm;
-  const extraKm = Math.max(0, totalKm - baseKm);
-  const extraKmRate = BASE_SETTINGS.extraKmRateNormal; // RM3.00
-
-  // 1. Base trip fee or Standby Event Package
-  let baseFare = state.selectedTripType ? state.selectedTripType.baseFare : 250.00;
-  let extraDistanceFee = extraKm * extraKmRate;
-  let step1BaseTotal = baseFare + extraDistanceFee;
-
-  if (state.bookingType === 'event_standby') {
-    const hours = parseInt(state.standbyDurationHours, 10) || 4;
-    const standbyRates = { 4: 450.00, 8: 800.00, 12: 1150.00, 24: 2000.00 };
-    baseFare = standbyRates[hours] || (hours * 110.00);
-    extraDistanceFee = 0;
-    step1BaseTotal = baseFare;
-  }
-
-  // 2. Staff package fee
-  const staffFee = state.selectedAssistance ? state.selectedAssistance.price : 0.00;
-
-  // 3. Equipment fee
-  let equipTotal = 0;
-  let equipCount = 0;
-  ADDITIONAL_EQUIPMENTS.forEach(eq => {
-    const qty = state.equipmentQuantities[eq.id] || 0;
-    if (qty > 0) {
-      equipTotal += qty * eq.price;
-      equipCount += qty;
-    }
+  const quote = calculateBookingQuotation({
+    distanceKm: state.distanceKm,
+    tripType: state.selectedTripType,
+    assistancePackage: state.selectedAssistance,
+    equipmentQuantities: state.equipmentQuantities,
+    isEventStandby: state.bookingType === 'event_standby',
+    standbyHours: state.standbyDurationHours
   });
 
-  // 4. Grand total
-  const grandTotal = step1BaseTotal + staffFee + equipTotal;
+  const baseFare = quote.transport.baseFare;
+  const extraKm = quote.transport.extraKm;
+  const extraKmRate = quote.transport.extraKmRate;
+  const extraDistanceFee = quote.transport.extraDistanceFee;
+  const step1BaseTotal = quote.transport.totalTransportFare;
+  const staffFee = quote.staffFee;
+  const equipTotal = quote.equipmentTotal;
+  const grandTotal = quote.grandTotal;
+  const totalKm = state.distanceKm;
 
   // UPDATE DOM ELEMENTS:
 
@@ -2209,6 +2201,23 @@ function initLocationModal() {
       const geocodingBox = content.querySelector('#geocodingResultsContainer');
       const presetsBox = content.querySelector('#presetsListContainer');
 
+      // Setup Google Places API (New) Autocomplete with Malaysia boundary & branch bias
+      if (searchInput) {
+        setupPlacesAutocomplete(searchInput, {
+          biasCoords: state.currentHub.coords,
+          onPlaceSelect: (selectedPlace) => {
+            playClickSound();
+            setPatientPickupLocation(
+              selectedPlace.name,
+              selectedPlace.address,
+              selectedPlace.coords,
+              'google_places'
+            );
+            modal.classList.remove('show');
+          }
+        });
+      }
+
       if (clearBtn && searchInput) {
         clearBtn.addEventListener('click', () => {
           searchInput.value = '';
@@ -2466,6 +2475,22 @@ function openMedicalCenterModal(target = 'dest') {
   const catPills = content.querySelectorAll('.dest-cat-pill');
   const customBox = content.querySelector('#customAddressBox');
   const btnQuickHome = content.querySelector('#btnQuickReturnHome');
+
+  // Setup Google Places API (New) Autocomplete for destinations
+  if (searchInput) {
+    setupPlacesAutocomplete(searchInput, {
+      biasCoords: state.currentHub.coords,
+      onPlaceSelect: (selectedPlace) => {
+        playClickSound();
+        if (isStop4) {
+          setStop4Location(selectedPlace.name, selectedPlace.address, selectedPlace.coords, 'second_dest');
+        } else {
+          setSelectedDestination(selectedPlace.name, selectedPlace.address, selectedPlace.coords, 'google_places');
+        }
+        modal.classList.remove('show');
+      }
+    });
+  }
 
   // Quick Return Home click
   if (btnQuickHome) {
