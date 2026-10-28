@@ -92,8 +92,21 @@ export async function loadGoogleMaps() {
     }
 
     const callbackName = '__amcGoogleMapsLoadedCallback__';
-    window[callbackName] = () => {
+    window[callbackName] = async () => {
       try { delete window[callbackName]; } catch {}
+      // If modern dynamic library loader is available, ensure required modules are loaded
+      if (window.google?.maps?.importLibrary) {
+        try {
+          await Promise.all([
+            window.google.maps.importLibrary('maps'),
+            window.google.maps.importLibrary('marker'),
+            window.google.maps.importLibrary('places'),
+            window.google.maps.importLibrary('geometry')
+          ]);
+        } catch (e) {
+          console.warn('[GoogleMapsService] importLibrary warning:', e);
+        }
+      }
       googleMapsLoaded = true;
       resolve(window.google);
     };
@@ -107,8 +120,7 @@ export async function loadGoogleMaps() {
       key: apiKey,
       libraries: 'places,geometry,marker',
       v: 'weekly',
-      callback: callbackName,
-      loading: 'async'
+      callback: callbackName
     });
 
     if (GOOGLE_MAPS_MAP_ID) {
@@ -222,6 +234,10 @@ export class AmcGoogleMapsController {
       ? document.getElementById(options.container)
       : options.container;
 
+    if (!this.container && typeof options.container === 'string') {
+      this.container = document.getElementById(options.container);
+    }
+
     this.options = options;
     this.map = null;
     this.routes = new Map();   // Map<routeId, google.maps.Polyline>
@@ -239,16 +255,25 @@ export class AmcGoogleMapsController {
       window.addEventListener('amc-gmaps-auth-failure', this._authFailureHandler);
     }
 
-    if (this.container) {
-      this._init();
-    }
+    this._init();
   }
 
   async _init() {
+    if (!this.container && typeof this.options.container === 'string') {
+      this.container = document.getElementById(this.options.container);
+    }
+
     const google = await loadGoogleMaps();
+
+    if (!this.container && typeof this.options.container === 'string') {
+      this.container = document.getElementById(this.options.container);
+    }
+
     if (!google || !this.container) {
-      console.warn('[GoogleMapsController] Google Maps SDK unavailable for container:', this.container?.id);
-      this._renderFallbackMessage('Peta Google tidak dapat dimuatkan. Sila semak sambungan internet dan konfigurasi API key.');
+      console.warn('[GoogleMapsController] Google Maps SDK unavailable for container:', this.container?.id || this.options.container);
+      if (this.container) {
+        this._renderFallbackMessage('Peta Google tidak dapat dimuatkan. Sila semak sambungan internet dan konfigurasi API key.');
+      }
       return;
     }
 
@@ -567,6 +592,12 @@ export class AmcGoogleMapsController {
       draw() {
         const overlayProjection = this.getProjection();
         if (!overlayProjection || !this.div) return;
+
+        if (!this.div.parentNode) {
+          const panes = this.getPanes();
+          const targetPane = panes?.overlayMouseTarget || panes?.overlayLayer;
+          if (targetPane) targetPane.appendChild(this.div);
+        }
 
         const point = overlayProjection.fromLatLngToDivPixel(this.pos);
         if (point) {
