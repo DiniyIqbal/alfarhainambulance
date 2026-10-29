@@ -288,12 +288,23 @@ export default async function handler(req, res) {
 
     if (!apiResponse.ok) {
       const errText = await apiResponse.text().catch(() => '');
-      console.warn(`[Routes API HTTP ${apiResponse.status}]:`, errText);
+      let reason = `HTTP_${apiResponse.status}`;
+      try {
+        const parsed = JSON.parse(errText);
+        reason = parsed?.error?.details?.[0]?.reason || parsed?.error?.status || reason;
+      } catch {}
+
+      if (apiResponse.status === 400 || apiResponse.status === 403) {
+        console.info(`[Google Routes API] Status ${apiResponse.status} (${reason}). Seamlessly using high-precision OSRM fallback.`);
+      } else {
+        console.warn(`[Google Routes API HTTP ${apiResponse.status}]:`, reason);
+      }
+
       return res.status(200).json({
         success: false,
         fallbackToOSRM: true,
-        error: `Google Routes API HTTP ${apiResponse.status}`,
-        code: 'GOOGLE_API_ERROR'
+        error: `Google Routes API HTTP ${apiResponse.status} (${reason})`,
+        code: reason
       });
     }
 

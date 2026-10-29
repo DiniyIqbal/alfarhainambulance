@@ -887,6 +887,59 @@ export async function setupPlacesAutocomplete(inputElement, options = {}) {
   const biasLatLng = toGoogleLatLng(options.biasCoords || [5.9176965, 102.2446687]);
 
   try {
+    // 1. Places API (New) PlaceAutocompleteElement
+    if (google.maps.places?.PlaceAutocompleteElement) {
+      try {
+        const autocompleteEl = new google.maps.places.PlaceAutocompleteElement({
+          includedRegionCodes: ['my'],
+          locationBias: {
+            center: biasLatLng,
+            radius: 50000 // 50 KM bias radius around operating hub
+          }
+        });
+
+        autocompleteEl.addEventListener('gmp-placeselect', async ({ place }) => {
+          if (!place) return;
+          try {
+            await place.fetchFields({
+              fields: ['displayName', 'formattedAddress', 'location']
+            });
+
+            if (!place.location) {
+              alert('Lokasi ini tidak mempunyai koordinat jalan yang sah. Sila laraskan pin pada peta.');
+              return;
+            }
+
+            const coords = [place.location.lat(), place.location.lng()];
+            const name = place.displayName || inputElement.value || 'Lokasi Terpilih';
+            const address = place.formattedAddress || name;
+
+            if (typeof options.onPlaceSelect === 'function') {
+              options.onPlaceSelect({
+                name,
+                address,
+                coords,
+                placeId: place.id
+              });
+            }
+          } catch (fetchErr) {
+            console.warn('[PlacesAutocomplete] fetchFields error:', fetchErr);
+          }
+        });
+
+        // Insert web component beside input and style
+        autocompleteEl.style.width = '100%';
+        autocompleteEl.style.marginBottom = '8px';
+        inputElement.parentNode?.insertBefore(autocompleteEl, inputElement);
+        inputElement.style.display = 'none';
+
+        return autocompleteEl;
+      } catch (elemErr) {
+        console.warn('[PlacesAutocomplete] PlaceAutocompleteElement fallback:', elemErr);
+      }
+    }
+
+    // 2. Standard Google Places Autocomplete fallback
     if (google.maps.places?.Autocomplete) {
       const autocomplete = new google.maps.places.Autocomplete(inputElement, {
         componentRestrictions: { country: 'my' },
