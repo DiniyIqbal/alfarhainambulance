@@ -1165,7 +1165,7 @@
             </div>
           </div>
           <div style="text-align: right;">
-            <span style="background: #E6F7F6; color: var(--amc-teal-dark); font-weight: 800; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px;">INVOIS RASMI</span>
+            <span id="invBadgeStatus" style="background: #E6F7F6; color: var(--amc-teal-dark); font-weight: 800; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px;">INVOIS RASMI</span>
             <div style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; margin-top: 4px;" id="invNumber">INV-AMC-1042</div>
             <div style="font-size: 0.7rem; color: #64748B;" id="invDate">19/10/2026 09:45</div>
           </div>
@@ -1223,13 +1223,52 @@
         </div>
       </div>
 
-      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px;">
+      <!-- Payment Options Box in Invoice Modal -->
+      <div class="invoice-payment-action-box" id="invoicePaymentActionBox" style="margin-top: 16px; padding: 14px; background: #F8FAFC; border-radius: 10px; border: 1px solid #E2E8F0;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <span style="font-weight: 800; font-size: 0.82rem; color: #1E293B; display: flex; align-items: center; gap: 6px;">
+            <span>💳</span> <span>Pilihan Pembayaran:</span>
+          </span>
+          <span style="font-size: 0.68rem; color: #64748B;">FPX / DuitNow QR / Kad / Tunai</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <button type="button" class="primary-action-btn btn-chip-pay" id="btnPayWithChip" style="padding: 10px 14px; font-size: 0.82rem; background: linear-gradient(135deg, #007D77 0%, #005F5A 100%); border: none;">
+            <span>💳 Bayar Dalam Talian (CHIP)</span>
+          </button>
+          <button type="button" class="btn-nav-prev btn-cash-pay" id="btnPayCashArrival" style="padding: 10px 14px; font-size: 0.82rem; border-color: #CBD5E1; color: #334155; font-weight: 700;">
+            <span>💵 Bayar Tunai Ketibaan</span>
+          </button>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px;">
         <button class="btn-nav-prev" id="btnPrintInvoice">
           <span>🖨️</span> <span>Cetak / PDF</span>
         </button>
-        <button class="primary-action-btn" id="btnConfirmBookingClose" style="width: auto; padding: 10px 20px;">
-          <span>✅</span> <span>Selesai</span>
+        <button class="btn-nav-prev" id="btnConfirmBookingClose" style="border-color: #94A3B8; color: #475569;">
+          <span>✕</span> <span>Tutup</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Payment Status Alert (Success / Cancelled) -->
+  <div class="modal-overlay" id="paymentStatusModal">
+    <div class="modal-card" style="text-align: center; max-width: 400px; padding: 24px;">
+      <div id="paymentStatusIcon" style="font-size: 2.8rem; margin-bottom: 8px;">🎉</div>
+      <h3 style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; margin-bottom: 6px;" id="paymentStatusTitle">
+        Pembayaran Berjaya
+      </h3>
+      <p style="font-size: 0.82rem; color: #475569; margin-bottom: 16px; line-height: 1.5;" id="paymentStatusDesc">
+        Terima kasih. Bayaran tempahan ambulans telah disahkan oleh gerbang CHIP.
+      </p>
+      <div id="paymentStatusDetailsBox" style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 10px; margin-bottom: 16px; font-size: 0.78rem; text-align: left;">
+        <div>No Invois: <strong id="paymentStatusInvoiceText">-</strong></div>
+        <div style="margin-top: 4px;">Status: <strong id="paymentStatusBadgeText" style="color: #10B981;">✅ DIBAYAR</strong></div>
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: center;">
+        <button type="button" class="btn-nav-prev" id="btnPaymentStatusViewInvoice">Lihat Invois</button>
+        <button type="button" class="primary-action-btn" id="btnPaymentStatusClose" style="width: auto; padding: 8px 20px;">Faham</button>
       </div>
     </div>
   </div>

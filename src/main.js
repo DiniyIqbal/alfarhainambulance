@@ -62,6 +62,12 @@ import {
   calculateBookingQuotation
 } from './services/pricingService.js';
 
+import {
+  initiateChipPayment,
+  parsePaymentReturnStatus,
+  clearPaymentQueryParams
+} from './services/chipPaymentService.js';
+
 /* =========================================================================
    APPLICATION STATE (MATCHES MOCKUP DEFAULTS)
    ========================================================================= */
@@ -139,7 +145,12 @@ const state = {
   activeTab: 'calculator-view',
   activeCatalogFilter: 'all',
   activeReportMonth: 'Oktober 2026',
-  isPhoneFrame: true
+  isPhoneFrame: true,
+
+  // Payment Tracking
+  currentInvoiceNumber: null,
+  paymentStatus: 'unpaid',
+  paymentMethod: 'cash'
 };
 
 // Map References & Request Tokens
@@ -177,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initActionModals();
   initSupabaseIntegration();
   initMobileAuth();
+  initPaymentReturnHandler();
 
   // Initial calculation and map render
   calculateAll();
@@ -827,6 +839,15 @@ function calculateAll() {
   const grandTotal = quote.grandTotal;
   const totalKm = state.distanceKm;
 
+  // Persist pricing properties on application state
+  state.baseFare = baseFare;
+  state.extraKm = extraKm;
+  state.extraKmRate = extraKmRate;
+  state.extraDistanceFee = extraDistanceFee;
+  state.staffFee = staffFee;
+  state.equipmentTotal = equipTotal;
+  state.grandTotal = grandTotal;
+
   // UPDATE DOM ELEMENTS:
 
   // Step 1: Distance and Base Fare Display
@@ -1143,6 +1164,28 @@ function populatePrintableInvoice(baseFare, extraKm, extraKmRate, extraDistanceF
 
   const grandTotalEl = document.getElementById('invGrandTotal');
   if (grandTotalEl) grandTotalEl.textContent = `RM ${grandTotal.toFixed(2)}`;
+
+  // Update invoice number and payment status badge
+  getOrGenerateInvoiceNumber();
+
+  const invBadge = document.getElementById('invBadgeStatus');
+  if (invBadge) {
+    if (state.paymentStatus === 'paid') {
+      invBadge.textContent = '✅ LUNAS / DIBAYAR';
+      invBadge.style.background = '#D1FAE5';
+      invBadge.style.color = '#065F46';
+    } else {
+      invBadge.textContent = 'INVOIS RASMI';
+      invBadge.style.background = '#E6F7F6';
+      invBadge.style.color = 'var(--amc-teal-dark)';
+    }
+  }
+
+  const invDateEl = document.getElementById('invDate');
+  if (invDateEl && !invDateEl.dataset.customDate) {
+    const now = new Date();
+    invDateEl.textContent = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  }
 }
 
 /* =========================================================================
@@ -1817,6 +1860,132 @@ function initCatalogSection() {
 }
 
 /* =========================================================================
+   16. PAYMENT GATEWAY & INVOICE HELPERS
+   ========================================================================= */
+function getOrGenerateInvoiceNumber() {
+  if (!state.currentInvoiceNumber) {
+    const today = new Date();
+    const dateStr = today.getFullYear().toString() +
+      String(today.getMonth() + 1).padStart(2, '0') +
+      String(today.getDate()).padStart(2, '0');
+    const randomDigits = Math.floor(1000 + Math.random() * 9000);
+    state.currentInvoiceNumber = `AMC-${dateStr}-${randomDigits}`;
+  }
+  const el = document.getElementById('invNumber');
+  if (el) el.textContent = state.currentInvoiceNumber;
+  return state.currentInvoiceNumber;
+}
+
+function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpaid') {
+  return {
+    invoiceNumber: getOrGenerateInvoiceNumber(),
+    hubId: state.currentHub.id,
+    hubName: state.currentHub.name,
+    originName: state.currentHub.shortName,
+    destinationName: state.destinationName,
+    distanceKm: state.distanceKm,
+    tripType: state.selectedTripType.name,
+    baseFare: state.baseFare || 250.00,
+    extraKmCost: state.extraDistanceFee || 0.00,
+    assistancePackage: state.selectedAssistance ? state.selectedAssistance.name : 'Pemandu Sahaja',
+    assistanceCost: state.assistanceCost || 0.00,
+    equipmentItems: Object.keys(state.equipmentQuantities || {}).filter(k => state.equipmentQuantities[k] > 0).join(', ') || 'Tiada Tambahan',
+    equipmentCost: state.equipmentTotal || 0.00,
+    miscFee: 0.00,
+    totalFare: state.grandTotal || 250.00,
+    isDieselSurge: false,
+    plateNumber: state.currentHub.ambulancePlate,
+    driverName: state.currentHub.primaryDriver || 'Pemandu Bertugas',
+    contactPhone: state.currentHub.contactNumber,
+    patientName: state.patientInfo.name || 'Pesakit AMC',
+    patientPhone: state.patientInfo.phone || '0139147606',
+    status: 'Dispatched',
+    paymentStatus,
+    paymentMethod
+  };
+}
+
+function initPaymentReturnHandler() {
+  const returnInfo = parsePaymentReturnStatus();
+  if (!returnInfo || !returnInfo.status) return;
+
+  const statusModal = document.getElementById('paymentStatusModal');
+  const statusIcon = document.getElementById('paymentStatusIcon');
+  const statusTitle = document.getElementById('paymentStatusTitle');
+  const statusDesc = document.getElementById('paymentStatusDesc');
+  const invoiceText = document.getElementById('paymentStatusInvoiceText');
+  const badgeText = document.getElementById('paymentStatusBadgeText');
+  const invoiceModal = document.getElementById('invoiceModal');
+
+  if (invoiceText && returnInfo.invoice) {
+    invoiceText.textContent = returnInfo.invoice;
+    state.currentInvoiceNumber = returnInfo.invoice;
+  }
+
+  if (returnInfo.status === 'success') {
+    state.paymentStatus = 'paid';
+    playSuccessChime();
+
+    if (statusIcon) statusIcon.textContent = '🎉';
+    if (statusTitle) statusTitle.textContent = 'Pembayaran Berjaya!';
+    if (statusDesc) {
+      statusDesc.textContent = returnInfo.isMock
+        ? 'Simulasi Pembayaran Berjaya! Tempahan telah direkodkan sebagai LUNAS (Mod Ujian Sandbox).'
+        : 'Terima kasih. Bayaran tempahan ambulans telah disahkan oleh gerbang CHIP. Kru Al-Farhain AMC sedang bersiap sedia.';
+    }
+    if (badgeText) {
+      badgeText.textContent = '✅ DIBAYAR (LUNAS)';
+      badgeText.style.color = '#10B981';
+    }
+
+    // Update invoice badge to PAID
+    const invBadge = document.getElementById('invBadgeStatus');
+    if (invBadge) {
+      invBadge.textContent = '✅ LUNAS / DIBAYAR';
+      invBadge.style.background = '#D1FAE5';
+      invBadge.style.color = '#065F46';
+    }
+
+    if (statusModal) statusModal.classList.add('show');
+  } else if (returnInfo.status === 'cancelled') {
+    if (statusIcon) statusIcon.textContent = '⚠️';
+    if (statusTitle) statusTitle.textContent = 'Pembayaran Dibatalkan';
+    if (statusDesc) statusDesc.textContent = 'Sesi pembayaran dalam talian telah dibatalkan. Anda boleh mencuba semula atau memilih bayaran tunai semasa ketibaan ambulans.';
+    if (badgeText) {
+      badgeText.textContent = 'DIBATALKAN';
+      badgeText.style.color = '#F59E0B';
+    }
+    if (statusModal) statusModal.classList.add('show');
+  } else if (returnInfo.status === 'failed') {
+    if (statusIcon) statusIcon.textContent = '❌';
+    if (statusTitle) statusTitle.textContent = 'Pembayaran Tidak Berjaya';
+    if (statusDesc) statusDesc.textContent = 'Pihak bank atau gerbang bayaran gagal memproses transaksi ini. Sila cuba lagi atau pilih bayaran tunai.';
+    if (badgeText) {
+      badgeText.textContent = 'GAGAL';
+      badgeText.style.color = '#EF4444';
+    }
+    if (statusModal) statusModal.classList.add('show');
+  }
+
+  const btnViewInv = document.getElementById('btnPaymentStatusViewInvoice');
+  const btnCloseStatus = document.getElementById('btnPaymentStatusClose');
+  if (btnViewInv && statusModal && invoiceModal) {
+    btnViewInv.addEventListener('click', () => {
+      statusModal.classList.remove('show');
+      invoiceModal.classList.add('show');
+    });
+  }
+  if (btnCloseStatus && statusModal) {
+    btnCloseStatus.addEventListener('click', () => {
+      statusModal.classList.remove('show');
+    });
+  }
+
+  // Clear query params so refresh doesn't pop up again
+  clearPaymentQueryParams();
+}
+
+/* =========================================================================
    17. MODAL CONTROLLERS & ACTIONS
    ========================================================================= */
 function initActionModals() {
@@ -1826,6 +1995,8 @@ function initActionModals() {
   const closeInvModal = document.getElementById('closeInvoiceModalBtn');
   const btnConfirmClose = document.getElementById('btnConfirmBookingClose');
   const btnPrint = document.getElementById('btnPrintInvoice');
+  const btnPayWithChip = document.getElementById('btnPayWithChip');
+  const btnPayCashArrival = document.getElementById('btnPayCashArrival');
 
   if (btnGenModal && invoiceModal) {
     btnGenModal.addEventListener('click', () => {
@@ -1840,9 +2011,48 @@ function initActionModals() {
 
   if (btnConfirmClose && invoiceModal) {
     btnConfirmClose.addEventListener('click', () => {
-      playSuccessChime();
       invoiceModal.classList.remove('show');
-      alert('Tempahan ambulans telah direkodkan. Kru Al-Farhain sedang bersiap sedia.');
+    });
+  }
+
+  // CHIP Online Payment (FPX / DuitNow / Cards)
+  if (btnPayWithChip) {
+    btnPayWithChip.addEventListener('click', async () => {
+      const originalText = btnPayWithChip.innerHTML;
+      try {
+        btnPayWithChip.disabled = true;
+        btnPayWithChip.innerHTML = '<span>⏳ Membuka Gerbang CHIP...</span>';
+        playClickSound();
+
+        const booking = getCurrentBookingPayload('chip', 'pending');
+        const result = await initiateChipPayment(booking, 'full');
+
+        if (!result.success || !result.checkoutUrl) {
+          throw new Error(result.error || 'Gagal memulakan transaksi CHIP.');
+        }
+
+        // Save booking to Supabase
+        await insertBookingToSupabase(booking);
+
+        // Redirect to CHIP payment page
+        window.location.href = result.checkoutUrl;
+      } catch (err) {
+        console.error('[CHIP Payment Button Error]:', err);
+        alert(`Ralat Pembayaran: ${err.message || 'Sila cuba sebentar lagi.'}`);
+        btnPayWithChip.disabled = false;
+        btnPayWithChip.innerHTML = originalText;
+      }
+    });
+  }
+
+  // Cash upon arrival
+  if (btnPayCashArrival) {
+    btnPayCashArrival.addEventListener('click', async () => {
+      playSuccessChime();
+      const booking = getCurrentBookingPayload('cash', 'unpaid');
+      await insertBookingToSupabase(booking);
+      if (invoiceModal) invoiceModal.classList.remove('show');
+      alert(`Tempahan ambulans telah direkodkan (${booking.invoiceNumber}). Bayaran tunai RM ${(booking.totalFare || 250).toFixed(2)} akan dikutip semasa ketibaan ambulans.`);
     });
   }
 

@@ -10,20 +10,35 @@ function apiDevPlugin() {
     name: 'api-dev-server',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        if (req.url && (req.url.startsWith('/api/maps/route') || req.url.startsWith('/api/calculate-route'))) {
+        if (req.url && req.url.startsWith('/api/')) {
           try {
-            const modulePath = req.url.startsWith('/api/maps/route') ? '/api/maps/route.js' : '/api/calculate-route.js';
+            const cleanUrl = req.url.split('?')[0];
+            let modulePath = '';
+
+            if (cleanUrl === '/api/calculate-route') {
+              modulePath = '/api/calculate-route.js';
+            } else if (cleanUrl === '/api/maps/route') {
+              modulePath = '/api/maps/route.js';
+            } else if (cleanUrl === '/api/payment/create-checkout') {
+              modulePath = '/api/payment/create-checkout.js';
+            } else if (cleanUrl === '/api/payment/webhook') {
+              modulePath = '/api/payment/webhook.js';
+            } else {
+              modulePath = `${cleanUrl}.js`;
+            }
+
             const { default: handler } = await server.ssrLoadModule(modulePath);
             let body = {};
+            let rawBody = '';
             if (req.method === 'POST') {
               const chunks = [];
               for await (const chunk of req) {
                 chunks.push(chunk);
               }
-              const raw = Buffer.concat(chunks).toString('utf-8');
-              if (raw) {
+              rawBody = Buffer.concat(chunks).toString('utf-8');
+              if (rawBody) {
                 try {
-                  body = JSON.parse(raw);
+                  body = JSON.parse(rawBody);
                 } catch {
                   body = {};
                 }
@@ -33,6 +48,7 @@ function apiDevPlugin() {
               method: req.method,
               headers: req.headers,
               body,
+              rawBody,
               query: Object.fromEntries(new URL(req.url, 'http://localhost').searchParams)
             };
             const fakeRes = {
@@ -45,6 +61,13 @@ function apiDevPlugin() {
                 res.statusCode = this.statusCode;
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify(data));
+              },
+              setHeader(k, v) {
+                res.setHeader(k, v);
+              },
+              end(val) {
+                res.statusCode = this.statusCode;
+                res.end(val);
               }
             };
             await handler(fakeReq, fakeRes);
@@ -52,7 +75,7 @@ function apiDevPlugin() {
             console.error('[Vite API Dev Error]:', err);
             res.statusCode = 500;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ success: false, fallbackToOSRM: true, error: err.message }));
+            res.end(JSON.stringify({ success: false, error: err.message }));
           }
         } else {
           next();
@@ -64,9 +87,24 @@ function apiDevPlugin() {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  if (env.GOOGLE_MAPS_SERVER_KEY && !process.env.GOOGLE_MAPS_SERVER_KEY) {
-    process.env.GOOGLE_MAPS_SERVER_KEY = env.GOOGLE_MAPS_SERVER_KEY;
-  }
+
+  // Populate server-side environment variables for Vite dev server SSR emulation
+  const envKeys = [
+    'GOOGLE_MAPS_SERVER_KEY',
+    'CHIP_BRAND_ID',
+    'CHIP_SECRET_KEY',
+    'CHIP_PUBLIC_KEY',
+    'CHIP_API_URL',
+    'VITE_SUPABASE_URL',
+    'VITE_SUPABASE_ANON_KEY',
+    'SUPABASE_SERVICE_ROLE_KEY'
+  ];
+
+  envKeys.forEach((k) => {
+    if (env[k] && !process.env[k]) {
+      process.env[k] = env[k];
+    }
+  });
 
   return {
     base: '/',

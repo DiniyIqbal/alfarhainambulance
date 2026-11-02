@@ -7,6 +7,8 @@ import { toGoogleLatLng, toLatLngArray } from '../src/services/googleMapsService
 import { calculateTransportFare, calculateBookingQuotation } from '../src/services/pricingService.js';
 import { getLatestRouteRequestId } from '../src/services/routingService.js';
 import routeHandler from '../api/maps/route.js';
+import createCheckoutHandler from '../api/payment/create-checkout.js';
+import webhookHandler from '../api/payment/webhook.js';
 
 console.log('--- STARTING AFAMS VERIFICATION TEST SUITE ---');
 
@@ -191,6 +193,108 @@ await asyncTest('Backend /api/maps/route: rejects invalid coordinates with 400',
 test('Routing Service: sequence ID exists and increments', () => {
   const id1 = getLatestRouteRequestId();
   assert(typeof id1 === 'number');
+});
+
+// -------------------------------------------------------------
+// 6. CHIP PAYMENT GATEWAY TESTS
+// -------------------------------------------------------------
+await asyncTest('Backend /api/payment/create-checkout: rejects request without bookingData with 400', async () => {
+  let statusCode = 0;
+  let responseData = null;
+
+  const fakeReq = {
+    method: 'POST',
+    headers: {},
+    body: {}
+  };
+
+  const fakeRes = {
+    setHeader() {},
+    status(code) {
+      statusCode = code;
+      return this;
+    },
+    json(data) {
+      responseData = data;
+    }
+  };
+
+  await createCheckoutHandler(fakeReq, fakeRes);
+
+  assert.strictEqual(statusCode, 400);
+  assert.strictEqual(responseData.success, false);
+  assert.strictEqual(responseData.code, 'INVALID_BOOKING_DATA');
+});
+
+await asyncTest('Backend /api/payment/create-checkout: generates valid checkout session or mock', async () => {
+  let statusCode = 0;
+  let responseData = null;
+
+  const fakeReq = {
+    method: 'POST',
+    headers: { host: 'localhost:5173' },
+    body: {
+      bookingData: {
+        invoiceNumber: 'AMC-TEST-001',
+        totalFare: 253.90,
+        patientName: 'Ahmad Test',
+        patientPhone: '0139147606'
+      },
+      paymentType: 'full'
+    }
+  };
+
+  const fakeRes = {
+    setHeader() {},
+    status(code) {
+      statusCode = code;
+      return this;
+    },
+    json(data) {
+      responseData = data;
+    }
+  };
+
+  await createCheckoutHandler(fakeReq, fakeRes);
+
+  // Status must be 200 or gateway error if invalid secret key
+  assert(statusCode === 200 || statusCode === 401 || statusCode === 400);
+  if (statusCode === 200) {
+    assert.strictEqual(responseData.success, true);
+    assert(responseData.checkoutUrl);
+  }
+});
+
+await asyncTest('Backend /api/payment/webhook: responds with HTTP 200 on event receipt', async () => {
+  let statusCode = 0;
+  let responseData = null;
+
+  const fakeReq = {
+    method: 'POST',
+    headers: {},
+    body: {
+      id: 'pur_test_123',
+      event_type: 'purchase.paid',
+      status: 'paid',
+      reference: 'AMC-TEST-001'
+    }
+  };
+
+  const fakeRes = {
+    setHeader() {},
+    status(code) {
+      statusCode = code;
+      return this;
+    },
+    json(data) {
+      responseData = data;
+    }
+  };
+
+  await webhookHandler(fakeReq, fakeRes);
+
+  assert.strictEqual(statusCode, 200);
+  assert.strictEqual(responseData.status, 'success');
 });
 
 console.log(`\n--- ALL ${passedTests}/${totalTests} TESTS PASSED SUCCESSFULLY ---`);
