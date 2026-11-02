@@ -1053,6 +1053,8 @@ function populatePrintableInvoice(baseFare, extraKm, extraKmRate, extraDistanceF
       ? `Laluan 3-Leg: ${state.leg1Km.toFixed(1)} km (${state.currentHub.shortName} ➔ ${state.pickupName}) + ${state.leg2Km.toFixed(1)} km (${state.pickupName} ➔ ${state.destinationName}) + ${state.leg3Km.toFixed(1)} km (${state.destinationName} ➔ ${state.returnName})`
       : `Laluan: ${state.leg1Km.toFixed(1)} km (${state.currentHub.shortName} ➔ ${state.pickupName}) + ${state.leg2Km.toFixed(1)} km (${state.pickupName} ➔ ${state.destinationName})`;
 
+    const isPaid = state.paymentStatus === 'paid';
+
     // 1. ORIGINAL BUTIRAN: Tambang Asas & Caj Jarak
     let rows = `
       <tr class="invoice-section-hdr">
@@ -1078,16 +1080,21 @@ function populatePrintableInvoice(baseFare, extraKm, extraKmRate, extraDistanceF
       `;
     }
 
-    // 2. PILIHAN PAKEJ STAF PENGIRING: Senarai semua staf, remark pilihan dan paparkan kadar
-    rows += `
-      <tr class="invoice-section-hdr">
-        <td colspan="3">2. PILIHAN PAKEJ STAF PENGIRING KLINIKAL (STAFFING CAPABILITIES)</td>
-      </tr>
-    `;
+    if (isPaid) {
+      // =====================================================================
+      // PAID INVOICE / RESIT RASMI LUNAS
+      // ONLY displays the chosen/paid package and equipment (hides unchosen items)
+      // =====================================================================
 
-    ASSISTANCE_PACKAGES.forEach(pkg => {
-      const isChosen = state.selectedAssistance && state.selectedAssistance.id === pkg.id;
-      if (isChosen) {
+      // 2. Chosen/Paid Assistance Package
+      rows += `
+        <tr class="invoice-section-hdr" style="background:#F0FDFA;color:#0F766E;">
+          <td colspan="3">2. PAKEJ STAF PENGIRING KLINIKAL (DIBAYAR)</td>
+        </tr>
+      `;
+
+      if (state.selectedAssistance) {
+        const pkg = state.selectedAssistance;
         rows += `
           <tr class="inv-row-chosen">
             <td>
@@ -1095,82 +1102,175 @@ function populatePrintableInvoice(baseFare, extraKm, extraKmRate, extraDistanceF
               <div class="inv-desc-sub">${pkg.name}</div>
             </td>
             <td>
-              <span class="inv-tag inv-tag-chosen">✓ DIPILIH</span>
+              <span class="inv-tag inv-tag-chosen" style="background:#D1FAE5;color:#065F46;">✓ DIBAYAR</span>
               <span class="inv-desc-sub">${pkg.price > 0 ? 'Kru pengiring perubatan khusus' : 'Kru asas termasuk dalam ambulan'}</span>
             </td>
             <td style="text-align: right; font-weight: 800; color: var(--amc-teal-dark);">RM ${pkg.price.toFixed(2)}</td>
           </tr>
         `;
-      } else {
-        rows += `
-          <tr class="inv-row-opt">
-            <td>
-              <span class="inv-item-optional">${pkg.roleTitle}</span>
-              <div class="inv-desc-sub">${pkg.name}</div>
-            </td>
-            <td>
-              <span class="inv-tag inv-tag-opt">Pilihan Sedia Ada</span>
-              <span class="inv-desc-sub">Kadar rujukan: RM ${pkg.price.toFixed(2)}</span>
-            </td>
-            <td style="text-align: right;" class="inv-amount-opt">RM 0.00</td>
-          </tr>
-        `;
       }
-    });
 
-    // 3. SENARAI PERALATAN PERUBATAN: Senarai semua inventori, remark pilihan dan paparkan kadar
-    rows += `
-      <tr class="invoice-section-hdr">
-        <td colspan="3">3. SENARAI PERALATAN PERUBATAN &amp; SOKONGAN PESAKIT (EQUIPMENT CAPABILITIES)</td>
-      </tr>
-    `;
+      // 3. Chosen/Paid Additional Equipments ONLY
+      const paidEquipments = ADDITIONAL_EQUIPMENTS.filter(eq => (state.equipmentQuantities[eq.id] || 0) > 0);
 
-    ADDITIONAL_EQUIPMENTS.forEach(eq => {
-      const qty = state.equipmentQuantities[eq.id] || 0;
-      if (qty > 0) {
-        const itemTotal = qty * eq.price;
+      if (paidEquipments.length > 0) {
         rows += `
-          <tr class="inv-row-chosen">
-            <td>
-              <strong style="color: var(--amc-teal-dark);">${eq.name}</strong>
-              <div class="inv-desc-sub">${eq.category}</div>
-            </td>
-            <td>
-              <span class="inv-tag inv-tag-chosen">✓ DIPILIH (${qty} ${eq.unit})</span>
-              <span class="inv-desc-sub">Kuantiti: ${qty} &times; RM ${eq.price.toFixed(2)}</span>
-            </td>
-            <td style="text-align: right; font-weight: 800; color: var(--amc-teal-dark);">RM ${itemTotal.toFixed(2)}</td>
+          <tr class="invoice-section-hdr" style="background:#F0FDFA;color:#0F766E;">
+            <td colspan="3">3. SENARAI PERALATAN PERUBATAN &amp; SOKONGAN PESAKIT (DIBAYAR)</td>
           </tr>
         `;
-      } else {
-        rows += `
-          <tr class="inv-row-opt">
-            <td>
-              <span class="inv-item-optional">${eq.name}</span>
-              <div class="inv-desc-sub">${eq.category}</div>
-            </td>
-            <td>
-              <span class="inv-tag inv-tag-opt">0 ${eq.unit} (Sedia Ada)</span>
-              <span class="inv-desc-sub">Kadar rujukan: RM ${eq.price.toFixed(2)} / ${eq.unit}</span>
-            </td>
-            <td style="text-align: right;" class="inv-amount-opt">RM 0.00</td>
-          </tr>
-        `;
+
+        paidEquipments.forEach(eq => {
+          const qty = state.equipmentQuantities[eq.id];
+          const itemTotal = qty * eq.price;
+          rows += `
+            <tr class="inv-row-chosen">
+              <td>
+                <strong style="color: var(--amc-teal-dark);">${eq.name}</strong>
+                <div class="inv-desc-sub">${eq.category}</div>
+              </td>
+              <td>
+                <span class="inv-tag inv-tag-chosen" style="background:#D1FAE5;color:#065F46;">✓ DIBAYAR (${qty} ${eq.unit})</span>
+                <span class="inv-desc-sub">Kuantiti: ${qty} &times; RM ${eq.price.toFixed(2)}</span>
+              </td>
+              <td style="text-align: right; font-weight: 800; color: var(--amc-teal-dark);">RM ${itemTotal.toFixed(2)}</td>
+            </tr>
+          `;
+        });
       }
-    });
+
+      // 4. Payment Confirmation Row
+      rows += `
+        <tr class="invoice-section-hdr" style="background:#ECFDF5;color:#065F46;">
+          <td colspan="3">PENGESAHAN STATUS PEMBAYARAN</td>
+        </tr>
+        <tr>
+          <td><strong>Status Transaksi</strong></td>
+          <td>Disahkan Lunas (${state.paymentMethod === 'chip' ? 'CHIP Online - FPX / DuitNow / Kad' : 'Tunai / Resit Diakui'})</td>
+          <td style="text-align: right; font-weight: 800; color: #10B981;">LUNAS</td>
+        </tr>
+      `;
+
+    } else {
+      // =====================================================================
+      // UNPAID / PRE-PAYMENT INVOICE (PRESERVES 100% OF EXISTING FORMAT)
+      // Displays full capabilities disclosure including optional items
+      // =====================================================================
+
+      // 2. PILIHAN PAKEJ STAF PENGIRING: Senarai semua staf, remark pilihan dan paparkan kadar
+      rows += `
+        <tr class="invoice-section-hdr">
+          <td colspan="3">2. PILIHAN PAKEJ STAF PENGIRING KLINIKAL (STAFFING CAPABILITIES)</td>
+        </tr>
+      `;
+
+      ASSISTANCE_PACKAGES.forEach(pkg => {
+        const isChosen = state.selectedAssistance && state.selectedAssistance.id === pkg.id;
+        if (isChosen) {
+          rows += `
+            <tr class="inv-row-chosen">
+              <td>
+                <strong style="color: var(--amc-teal-dark);">${pkg.roleTitle}</strong>
+                <div class="inv-desc-sub">${pkg.name}</div>
+              </td>
+              <td>
+                <span class="inv-tag inv-tag-chosen">✓ DIPILIH</span>
+                <span class="inv-desc-sub">${pkg.price > 0 ? 'Kru pengiring perubatan khusus' : 'Kru asas termasuk dalam ambulan'}</span>
+              </td>
+              <td style="text-align: right; font-weight: 800; color: var(--amc-teal-dark);">RM ${pkg.price.toFixed(2)}</td>
+            </tr>
+          `;
+        } else {
+          rows += `
+            <tr class="inv-row-opt">
+              <td>
+                <span class="inv-item-optional">${pkg.roleTitle}</span>
+                <div class="inv-desc-sub">${pkg.name}</div>
+              </td>
+              <td>
+                <span class="inv-tag inv-tag-opt">Pilihan Sedia Ada</span>
+                <span class="inv-desc-sub">Kadar rujukan: RM ${pkg.price.toFixed(2)}</span>
+              </td>
+              <td style="text-align: right;" class="inv-amount-opt">RM 0.00</td>
+            </tr>
+          `;
+        }
+      });
+
+      // 3. SENARAI PERALATAN PERUBATAN: Senarai semua inventori, remark pilihan dan paparkan kadar
+      rows += `
+        <tr class="invoice-section-hdr">
+          <td colspan="3">3. SENARAI PERALATAN PERUBATAN &amp; SOKONGAN PESAKIT (EQUIPMENT CAPABILITIES)</td>
+        </tr>
+      `;
+
+      ADDITIONAL_EQUIPMENTS.forEach(eq => {
+        const qty = state.equipmentQuantities[eq.id] || 0;
+        if (qty > 0) {
+          const itemTotal = qty * eq.price;
+          rows += `
+            <tr class="inv-row-chosen">
+              <td>
+                <strong style="color: var(--amc-teal-dark);">${eq.name}</strong>
+                <div class="inv-desc-sub">${eq.category}</div>
+              </td>
+              <td>
+                <span class="inv-tag inv-tag-chosen">✓ DIPILIH (${qty} ${eq.unit})</span>
+                <span class="inv-desc-sub">Kuantiti: ${qty} &times; RM ${eq.price.toFixed(2)}</span>
+              </td>
+              <td style="text-align: right; font-weight: 800; color: var(--amc-teal-dark);">RM ${itemTotal.toFixed(2)}</td>
+            </tr>
+          `;
+        } else {
+          rows += `
+            <tr class="inv-row-opt">
+              <td>
+                <span class="inv-item-optional">${eq.name}</span>
+                <div class="inv-desc-sub">${eq.category}</div>
+              </td>
+              <td>
+                <span class="inv-tag inv-tag-opt">0 ${eq.unit} (Sedia Ada)</span>
+                <span class="inv-desc-sub">Kadar rujukan: RM ${eq.price.toFixed(2)} / ${eq.unit}</span>
+              </td>
+              <td style="text-align: right;" class="inv-amount-opt">RM 0.00</td>
+            </tr>
+          `;
+        }
+      });
+    }
 
     tbody.innerHTML = rows;
   }
 
+  const isPaid = state.paymentStatus === 'paid';
+
   const grandTotalEl = document.getElementById('invGrandTotal');
   if (grandTotalEl) grandTotalEl.textContent = `RM ${grandTotal.toFixed(2)}`;
+
+  // Update capability note visibility (hidden on paid receipt)
+  const capNote = document.getElementById('invCapabilityNote');
+  if (capNote) {
+    capNote.style.display = isPaid ? 'none' : 'block';
+  }
+
+  // Update total highlight label
+  const totalLabel = document.getElementById('invTotalLabel');
+  if (totalLabel) {
+    totalLabel.textContent = isPaid ? 'JUMLAH TELAH DIBAYAR (LUNAS):' : 'JUMLAH PERLU DIBAYAR:';
+  }
+
+  // Update payment action box visibility (hidden when already paid)
+  const paymentBox = document.getElementById('invoicePaymentActionBox');
+  if (paymentBox) {
+    paymentBox.style.display = isPaid ? 'none' : 'block';
+  }
 
   // Update invoice number and payment status badge
   getOrGenerateInvoiceNumber();
 
   const invBadge = document.getElementById('invBadgeStatus');
   if (invBadge) {
-    if (state.paymentStatus === 'paid') {
+    if (isPaid) {
       invBadge.textContent = '✅ LUNAS / DIBAYAR';
       invBadge.style.background = '#D1FAE5';
       invBadge.style.color = '#065F46';
@@ -1945,6 +2045,16 @@ function initPaymentReturnHandler() {
       invBadge.style.background = '#D1FAE5';
       invBadge.style.color = '#065F46';
     }
+
+    // Re-render invoice in Clean Paid Format (showing ONLY paid package & equipment)
+    populatePrintableInvoice(
+      state.baseFare || 250.00,
+      state.extraKm || 0,
+      state.extraKmRate || 3,
+      state.extraDistanceFee || 0,
+      state.staffFee || 0,
+      state.grandTotal || 250.00
+    );
 
     if (statusModal) statusModal.classList.add('show');
   } else if (returnInfo.status === 'cancelled') {
