@@ -297,5 +297,58 @@ await asyncTest('Backend /api/payment/webhook: responds with HTTP 200 on event r
   assert.strictEqual(responseData.status, 'success');
 });
 
+// -------------------------------------------------------------
+// 7. REAL-TIME DATA SYNCHRONIZATION & MULTI-PORTAL TESTS
+// -------------------------------------------------------------
+await asyncTest('Real-time Sync: insertBookingToSupabase & updateBookingStatus offline fallback', async () => {
+  // Ensure mock storage for Node environment
+  if (typeof globalThis.localStorage === 'undefined') {
+    const store = new Map();
+    globalThis.localStorage = {
+      getItem: (k) => store.get(k) || null,
+      setItem: (k, v) => store.set(k, String(v)),
+      removeItem: (k) => store.delete(k),
+      clear: () => store.clear()
+    };
+  }
+
+  const {
+    insertBookingToSupabase,
+    updateBookingStatusInSupabase,
+    fetchActiveMissionForDriver
+  } = await import('../src/services/supabaseClient.js');
+
+  const testBooking = {
+    invoiceNumber: 'AMC-SYNC-9999',
+    hubId: 'kok_lanas',
+    hubName: 'HQ Pusat Rawatan Al-Farhain',
+    originName: 'Kota Bharu',
+    destinationName: 'HRPZ II',
+    distanceKm: 26.3,
+    totalFare: 253.90,
+    patientName: 'Pesakit Ujian Sync',
+    plateNumber: 'VPQ 7606',
+    status: 'Dispatched'
+  };
+
+  const insertRes = await insertBookingToSupabase(testBooking);
+  assert.strictEqual(insertRes.success, true);
+  assert.strictEqual(insertRes.data.invoice_number, 'AMC-SYNC-9999');
+
+  // Verify fetchActiveMission retrieves the latest active mission
+  const activeMission = await fetchActiveMissionForDriver('VPQ 7606');
+  assert(activeMission);
+  assert.strictEqual(activeMission.invoice_number, 'AMC-SYNC-9999');
+  assert.strictEqual(activeMission.patient_name, 'Pesakit Ujian Sync');
+
+  // Verify status update to 'Menuju Lokasi'
+  const updateRes = await updateBookingStatusInSupabase('AMC-SYNC-9999', 'Menuju Lokasi');
+  assert.strictEqual(updateRes.success, true);
+
+  const updatedMission = await fetchActiveMissionForDriver('VPQ 7606');
+  assert.strictEqual(updatedMission.status, 'Menuju Lokasi');
+});
+
 console.log(`\n--- ALL ${passedTests}/${totalTests} TESTS PASSED SUCCESSFULLY ---`);
+process.exit(0);
 

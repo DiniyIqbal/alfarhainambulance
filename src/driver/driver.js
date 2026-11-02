@@ -7,7 +7,10 @@ import {
   getCurrentAuthUser,
   resolveUserRole,
   signOutUser,
-  getSupabaseClient
+  getSupabaseClient,
+  updateBookingStatusInSupabase,
+  fetchActiveMissionForDriver,
+  subscribeToUnifiedSync
 } from '../services/supabaseClient.js';
 import { playSuccessChime, playClickSound, playEmergencyAlertSiren as playAlertSound } from '../utils/soundFx.js';
 import { createGoogleAmcMap } from '../services/googleMapsService.js';
@@ -63,6 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initOdometerTracker();
   initModals();
   renderActiveView();
+  await initDriverRealtimeSync();
 });
 
 // =====================================================================
@@ -135,11 +139,12 @@ function initStepActions() {
   // Screen 02: Terima Tugasan -> Move to Screen 03
   const btnAcceptMission = document.getElementById('btnAcceptMission');
   if (btnAcceptMission) {
-    btnAcceptMission.addEventListener('click', () => {
+    btnAcceptMission.addEventListener('click', async () => {
       playSuccessChime();
       state.activeMission.status = 'Diterima';
       state.currentStep = 3;
       renderActiveView();
+      await updateBookingStatusInSupabase(state.activeMission.code, 'Diterima');
     });
   }
 
@@ -155,56 +160,60 @@ function initStepActions() {
   // Screen 03: Sahkan & Mula Perjalanan -> Move to Screen 04
   const btnStartPickupTrip = document.getElementById('btnStartPickupTrip');
   if (btnStartPickupTrip) {
-    btnStartPickupTrip.addEventListener('click', () => {
+    btnStartPickupTrip.addEventListener('click', async () => {
       playSuccessChime();
       state.activeMission.status = 'Menuju Lokasi';
       state.currentStep = 4;
       renderActiveView();
+      await updateBookingStatusInSupabase(state.activeMission.code, 'Menuju Lokasi');
     });
   }
 
   // Screen 04: Saya Sudah Tiba -> Move to Screen 05
   const btnArrivedPickup = document.getElementById('btnArrivedPickup');
   if (btnArrivedPickup) {
-    btnArrivedPickup.addEventListener('click', () => {
+    btnArrivedPickup.addEventListener('click', async () => {
       playSuccessChime();
       state.activeMission.status = 'Di Lokasi Pengambilan';
       state.currentStep = 5;
       renderActiveView();
+      await updateBookingStatusInSupabase(state.activeMission.code, 'Di Lokasi Pengambilan');
     });
   }
 
   // Screen 05: Mulakan Perjalanan ke Hospital -> Move to Screen 06
   const btnStartHospitalTrip = document.getElementById('btnStartHospitalTrip');
   if (btnStartHospitalTrip) {
-    btnStartHospitalTrip.addEventListener('click', () => {
+    btnStartHospitalTrip.addEventListener('click', async () => {
       playSuccessChime();
       state.activeMission.status = 'Menuju Hospital';
       state.currentStep = 6;
       renderActiveView();
+      await updateBookingStatusInSupabase(state.activeMission.code, 'Menuju Hospital');
     });
   }
 
   // Screen 06: Tiba di Hospital -> Move to Screen 07
   const btnArrivedHospital = document.getElementById('btnArrivedHospital');
   if (btnArrivedHospital) {
-    btnArrivedHospital.addEventListener('click', () => {
+    btnArrivedHospital.addEventListener('click', async () => {
       playSuccessChime();
       state.activeMission.status = 'Tiba di Hospital';
       state.currentStep = 7;
       renderActiveView();
+      await updateBookingStatusInSupabase(state.activeMission.code, 'Tiba di Hospital');
     });
   }
 
   // Screen 07: Sahkan Tamat Tugasan -> Move to Screen 08
   const btnConfirmHandover = document.getElementById('btnConfirmHandover');
   if (btnConfirmHandover) {
-    btnConfirmHandover.addEventListener('click', () => {
+    btnConfirmHandover.addEventListener('click', async () => {
       playSuccessChime();
       state.activeMission.status = 'Selesai';
       state.currentStep = 8;
-      // Switch tab to Rekod to display completion
       switchTab('rekod');
+      await updateBookingStatusInSupabase(state.activeMission.code, 'Selesai');
     });
   }
 
@@ -323,6 +332,129 @@ function initStepActions() {
       switchTab('rekod');
     });
   }
+}
+
+// =====================================================================
+// REALTIME DATA SYNC & MISSION ENGINE
+// =====================================================================
+function syncStepWithStatus(status) {
+  const norm = (status || '').toLowerCase();
+  if (norm.includes('selesai') || norm.includes('arrived') || norm.includes('completed')) {
+    state.currentStep = 8;
+  } else if (norm.includes('hospital') || norm.includes('serahan')) {
+    state.currentStep = 7;
+  } else if (norm.includes('transit') || norm.includes('ke hospital')) {
+    state.currentStep = 6;
+  } else if (norm.includes('lokasi') || norm.includes('scene')) {
+    state.currentStep = 5;
+  } else if (norm.includes('menuju') || norm.includes('en route')) {
+    state.currentStep = 4;
+  } else if (norm.includes('diterima') || norm.includes('accepted')) {
+    state.currentStep = 3;
+  } else {
+    state.currentStep = 2; // Tugasan Baharu (Incoming)
+  }
+}
+
+function updateMissionUI() {
+  const m = state.activeMission;
+  if (!m) return;
+
+  // Update Mission Code on all matching elements
+  document.querySelectorAll('.driver-mission-code, .driver-card-title, .driver-hero-task-tag span:last-child').forEach(el => {
+    if (el.textContent.includes('AMC-') || el.classList.contains('driver-mission-code')) {
+      el.textContent = m.code;
+    }
+  });
+
+  // Update Route Cities & Labels
+  document.querySelectorAll('.driver-preview-route-city').forEach((el, idx) => {
+    if (idx === 0) el.textContent = m.pickupLocation.split(',')[0].trim();
+    if (idx === 1) el.textContent = m.destLocation.split(',')[0].trim();
+  });
+
+  // Update Patient Details
+  document.querySelectorAll('.driver-card, .driver-subcard').forEach(card => {
+    const nameEl = card.querySelector('.driver-card-title, div[style*="font-weight:800"]');
+    if (nameEl && nameEl.textContent.includes('Pesakit')) {
+      nameEl.textContent = m.patientName || 'Pesakit AMC';
+    }
+  });
+}
+
+function applyBookingToDriverState(booking, autoSwitch = false) {
+  const code = booking.invoice_number || booking.invoiceNumber || 'AMC-1043';
+  state.activeMission = {
+    ...state.activeMission,
+    code,
+    patientName: booking.patient_name || booking.patientName || 'Pesakit AMC',
+    patientPhone: booking.patient_phone || booking.patientPhone || '013-914 7606',
+    pickupLocation: booking.origin_name || booking.originName || 'Kota Bharu, Kelantan',
+    destLocation: booking.destination_name || booking.destinationName || 'HRPZ II',
+    ambulancePlate: booking.plate_number || booking.plateNumber || 'VPQ 7606',
+    driverName: booking.driver_name || booking.driverName || 'Abe Di',
+    recordedDistance: booking.distance_km || booking.distanceKm || 27,
+    status: booking.status || 'Menunggu penerimaan'
+  };
+
+  syncStepWithStatus(state.activeMission.status);
+  updateMissionUI();
+
+  if (autoSwitch) {
+    state.activeTab = 'tugasan';
+    document.querySelectorAll('.driver-dock-item').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === 'tugasan');
+    });
+  }
+  renderActiveView();
+}
+
+function showDriverToast(msg) {
+  let toast = document.getElementById('driverSyncToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'driverSyncToast';
+    toast.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#1E293B;color:#fff;padding:10px 18px;border-radius:24px;font-size:0.82rem;font-weight:700;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.3);display:flex;align-items:center;gap:8px;border:1px solid #334155;transition:opacity 0.3s ease;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  setTimeout(() => {
+    toast.style.opacity = '0';
+  }, 4500);
+}
+
+async function initDriverRealtimeSync() {
+  // 1. Initial fetch of active mission
+  const initial = await fetchActiveMissionForDriver(state.activeMission.ambulancePlate);
+  if (initial) {
+    applyBookingToDriverState(initial, false);
+  }
+
+  // 2. Subscribe to unified sync
+  subscribeToUnifiedSync({
+    onNewBooking: (newBooking) => {
+      console.info('[Driver Sync] Incoming mission detected:', newBooking);
+      playAlertSound();
+      applyBookingToDriverState(newBooking, true);
+      showDriverToast(`🚨 Tugasan Baharu: ${newBooking.invoice_number || newBooking.invoiceNumber}`);
+    },
+    onUpdateBooking: (updatedBooking) => {
+      const inv = updatedBooking.invoice_number || updatedBooking.invoiceNumber;
+      if (inv === state.activeMission.code && updatedBooking.status) {
+        state.activeMission.status = updatedBooking.status;
+        syncStepWithStatus(updatedBooking.status);
+        renderActiveView();
+      }
+    },
+    onStatusChange: (status) => {
+      const syncValEl = document.querySelector('.driver-status-card .driver-status-icon-wrap.sync ~ .driver-status-texts .driver-status-value');
+      if (syncValEl) {
+        syncValEl.textContent = status?.connected ? 'Disegerak' : 'Luar Talian';
+        syncValEl.style.color = status?.connected ? '#10B981' : '#F59E0B';
+      }
+    }
+  });
 }
 
 // =====================================================================

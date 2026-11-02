@@ -23,6 +23,7 @@ import {
   insertBookingToSupabase,
   updateBookingStatusInSupabase,
   subscribeToRealtimeBookings,
+  subscribeToUnifiedSync,
   signUpUser,
   signInUser,
   signOutUser,
@@ -1044,12 +1045,45 @@ function renderTacticalFleetMarkers() {
 function initRadarGpsSubscriptions() {
   if (radarTelemetryInterval) clearInterval(radarTelemetryInterval);
 
-  // Authorised Realtime Supabase changes for live dispatching
+  // Authorised Realtime Supabase + Unified Cross-Platform Live Dispatch Sync
   if (!realtimeBookingChannel) {
     try {
-      realtimeBookingChannel = subscribeToRealtimeBookings(
-        (newBooking) => {
-          if (newBooking?.plate_number) {
+      realtimeBookingChannel = subscribeToUnifiedSync({
+        onNewBooking: (newBooking) => {
+          const ref = newBooking.invoice_number || newBooking.invoiceNumber;
+          if (!ref) return;
+
+          // Check if already in portalState.records
+          let existing = portalState.records.find(r => r.ref === ref);
+          if (!existing) {
+            const now = new Date(newBooking.created_at || Date.now());
+            const dateStr = `${now.getDate()} Okt 2026 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const rec = {
+              ref,
+              date: dateStr,
+              branch: newBooking.hub_name || 'Kok Lanas HQ',
+              route: `${(newBooking.origin_name || 'Kok Lanas').split('(')[0].trim()} → ${(newBooking.destination_name || 'HRPZ II').split('(')[0].trim()}`,
+              ambulance: newBooking.plate_number || 'VPQ 7606',
+              driver: newBooking.driver_name || 'Abe Di / Syalihan',
+              patient: `${newBooking.patient_name || 'Pesakit AMC'}`,
+              contact: newBooking.patient_phone || newBooking.contact_phone || '013-914 7606',
+              amount: parseFloat(newBooking.total_fare) || 250.00,
+              status: newBooking.status || 'Diterima',
+              statusKey: (newBooking.status === 'Selesai') ? 'selesai' : 'aktif',
+              timeline: [
+                { label: 'Tugasan diterima', time: dateStr, state: 'completed' },
+                { label: 'Menuju lokasi', time: '—', state: 'pending' },
+                { label: 'Di lokasi', time: '—', state: 'pending' },
+                { label: 'Selesai', time: '—', state: 'pending' }
+              ]
+            };
+            portalState.records.unshift(rec);
+            renderRevenueTable();
+            renderRecordsTable();
+            showToast(`Tempahan Baharu Diterima: ${ref}`);
+          }
+
+          if (newBooking.plate_number) {
             const van = portalState.fleet.find(v => v.plate === newBooking.plate_number);
             if (van) {
               van.status = newBooking.status || 'Dalam perjalanan';
@@ -1063,9 +1097,34 @@ function initRadarGpsSubscriptions() {
             }
           }
         },
-        (updatedBooking) => {
-          if (updatedBooking?.plate_number) {
-            const van = portalState.fleet.find(v => v.plate === updatedBooking.plate_number);
+        onUpdateBooking: (updatedBooking) => {
+          const ref = updatedBooking.invoice_number || updatedBooking.invoiceNumber;
+          if (!ref) return;
+
+          const rec = portalState.records.find(r => r.ref === ref);
+          if (rec) {
+            rec.status = updatedBooking.status;
+            if (rec.status === 'Selesai') rec.statusKey = 'selesai';
+            // Update timeline
+            if (rec.timeline && Array.isArray(rec.timeline)) {
+              const nowTime = new Date().toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' });
+              if (rec.status.includes('Menuju') || rec.status.includes('En Route')) {
+                if (rec.timeline[1]) { rec.timeline[1].state = 'active'; rec.timeline[1].time = nowTime; }
+              } else if (rec.status.includes('Di Lokasi') || rec.status.includes('On Scene')) {
+                if (rec.timeline[1]) rec.timeline[1].state = 'completed';
+                if (rec.timeline[2]) { rec.timeline[2].state = 'active'; rec.timeline[2].time = nowTime; }
+              } else if (rec.status.includes('Selesai')) {
+                rec.timeline.forEach(t => t.state = 'completed');
+                if (rec.timeline[3]) rec.timeline[3].time = nowTime;
+              }
+            }
+            renderRecordsTable();
+            renderRevenueTable();
+          }
+
+          const plate = updatedBooking.plate_number;
+          if (plate) {
+            const van = portalState.fleet.find(v => v.plate === plate);
             if (van) {
               van.status = updatedBooking.status;
               van.lastUpdated = new Date();
@@ -1078,7 +1137,7 @@ function initRadarGpsSubscriptions() {
             }
           }
         }
-      );
+      });
     } catch (subErr) {
       console.warn('[TacticalRadarMap] Realtime subscription notice:', subErr);
     }
@@ -1716,6 +1775,30 @@ function initAdminBookingView() {
       portalState.records.unshift(newRecord);
       renderRevenueTable();
       renderRecordsTable();
+
+      // Persist to Supabase and broadcast to Driver and Patient portals
+      insertBookingToSupabase({
+        invoiceNumber: newRef,
+        hubId: adminBookingState.location.hub,
+        hubName: newRecord.branch,
+        originName: adminBookingState.location.pickup,
+        destinationName: adminBookingState.location.dest,
+        distanceKm: adminBookingState.location.distanceKm,
+        tripType: adminBookingState.category.name,
+        baseFare: basePrice,
+        extraKmCost: extraDist,
+        assistancePackage: adminBookingState.staff.roleTitle,
+        assistanceCost: staffPrice,
+        equipmentItems: Object.entries(adminBookingState.equipments).filter(([_, q]) => q > 0).map(([k, q]) => `${k}:${q}`).join(', '),
+        equipmentCost: eqTotal,
+        miscFee: 50.00,
+        totalFare: totalAmount,
+        plateNumber: newRecord.ambulance,
+        driverName: newRecord.driver,
+        patientName: adminBookingState.patient.name,
+        patientPhone: adminBookingState.patient.phone,
+        status: 'Menuju lokasi'
+      });
 
       showToast(`Misi ${newRef} berjaya dilancarkan ke Pemandu (${newRecord.ambulance})!`);
       alert(`✅ Misi Ambulans Berjaya Dicipta!\n\nNo. Rujukan: ${newRef}\nPesakit: ${adminBookingState.patient.name} (${adminBookingState.patient.mobility})\nAmbulans: ${newRecord.ambulance}\nJumlah Invois: RM ${totalAmount.toFixed(2)}\nStatus: Dihantar ke Sistem Dispatch Lapangan.`);

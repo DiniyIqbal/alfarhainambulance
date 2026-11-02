@@ -30,6 +30,7 @@ import {
   fetchBookingsFromSupabase,
   updateBookingStatusInSupabase,
   subscribeToRealtimeBookings,
+  subscribeToUnifiedSync,
   signUpUser,
   signInUser,
   signOutUser,
@@ -1838,6 +1839,36 @@ function initFleetSection() {
     });
   });
 
+  function mapStatusToStage(status) {
+    const s = (status || '').toLowerCase();
+    if (s.includes('selesai') || s.includes('arrived') || s.includes('hospital')) return 5;
+    if (s.includes('transit') || s.includes('ke hospital')) return 4;
+    if (s.includes('lokasi') || s.includes('scene')) return 3;
+    if (s.includes('menuju') || s.includes('en route')) return 2;
+    return 1;
+  }
+
+  // Unified Realtime Subscription for Live Patient Journey
+  subscribeToUnifiedSync({
+    onUpdateBooking: (updated) => {
+      const activeInv = localStorage.getItem('amc_active_invoice');
+      const ref = updated.invoice_number || updated.invoiceNumber;
+      if (!activeInv || ref === activeInv) {
+        if (updated.status) {
+          const stageNum = mapStatusToStage(updated.status);
+          setStage(stageNum);
+          playSuccessChime();
+        }
+      }
+    },
+    onNewBooking: (newBooking) => {
+      const activeInv = localStorage.getItem('amc_active_invoice');
+      if (!activeInv) {
+        localStorage.setItem('amc_active_invoice', newBooking.invoice_number || newBooking.invoiceNumber);
+      }
+    }
+  });
+
   // Safety Checklist Accordion
   if (checklistHeader && checklistStack) {
     checklistHeader.addEventListener('click', () => {
@@ -2141,7 +2172,8 @@ function initActionModals() {
           throw new Error(result.error || 'Gagal memulakan transaksi CHIP.');
         }
 
-        // Save booking to Supabase
+        // Save active invoice and booking to Supabase
+        localStorage.setItem('amc_active_invoice', booking.invoiceNumber);
         await insertBookingToSupabase(booking);
 
         // Redirect to CHIP payment page
@@ -2160,6 +2192,7 @@ function initActionModals() {
     btnPayCashArrival.addEventListener('click', async () => {
       playSuccessChime();
       const booking = getCurrentBookingPayload('cash', 'unpaid');
+      localStorage.setItem('amc_active_invoice', booking.invoiceNumber);
       await insertBookingToSupabase(booking);
       if (invoiceModal) invoiceModal.classList.remove('show');
       alert(`Tempahan ambulans telah direkodkan (${booking.invoiceNumber}). Bayaran tunai RM ${(booking.totalFare || 250).toFixed(2)} akan dikutip semasa ketibaan ambulans.`);
