@@ -253,6 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderRevenueTable();
   initAdminBookingView();
   initKatalogArmadaView();
+  initPemanduView();
 });
 
 /* -------------------------------------------------------------------------
@@ -458,7 +459,8 @@ function initSidebarNavigation() {
     petaFleetView: 'Peta & Fleet',
     hasilInvoisView: 'Hasil & Invois',
     adminBookingView: 'Tempahan Baru',
-    katalogArmadaView: 'Katalog & Armada'
+    katalogArmadaView: 'Katalog & Armada',
+    pemanduView: 'Pemandu & Jemputan'
   };
 
   navBtns.forEach(btn => {
@@ -2253,4 +2255,976 @@ function initKatalogArmadaView() {
       playClickSound();
     });
   }
+}
+
+/* -------------------------------------------------------------------------
+   10. PENGURUSAN PEMANDU & JEMPUTAN (SENARAI, JEMPUTAN, KELULUSAN, AUDIT)
+   ------------------------------------------------------------------------- */
+let pemanduState = {
+  activeTab: 'senarai', // 'senarai' | 'jemputan' | 'kelulusan' | 'log'
+  selectedDriver: null,
+  drivers: [],
+  invitations: [],
+  auditLogs: []
+};
+
+const BRANCH_LABELS = {
+  kok_lanas: 'HQ Kok Lanas',
+  raub: 'Raub, Pahang',
+  jeli: 'Jeli, Kelantan',
+  gua_musang: 'Gua Musang'
+};
+
+function initPemanduView() {
+  loadPemanduData();
+  bindPemanduSubTabs();
+  bindPemanduFilters();
+  bindPemanduModals();
+  renderAllPemanduViews();
+}
+
+function loadPemanduData() {
+  const storedDrivers = localStorage.getItem('amc_portal_drivers');
+  if (storedDrivers) {
+    try { pemanduState.drivers = JSON.parse(storedDrivers); } catch (e) {}
+  }
+  if (!pemanduState.drivers || pemanduState.drivers.length === 0) {
+    pemanduState.drivers = [
+      {
+        id: 'drv-1',
+        name: 'Abe Di / Syalihan',
+        email: 'abedi@alfarhain.my',
+        phone: '013-914 7606',
+        hub_id: 'kok_lanas',
+        assigned_plate: 'VPQ 7606',
+        license_type: 'GDL D / E Bertauliah EMT',
+        ic_number: '850312-03-5123',
+        account_status: 'Aktif',
+        approved_at: '10 Okt 2026, 09:00',
+        approved_by_name: 'Pentadbir Sistem'
+      },
+      {
+        id: 'drv-2',
+        name: 'Abe Din Estimos Sukrosa',
+        email: 'abedin@alfarhain.my',
+        phone: '013-914 7606',
+        hub_id: 'raub',
+        assigned_plate: 'DFG 7606',
+        license_type: 'GDL D / E Bertauliah EMT',
+        ic_number: '880719-06-5431',
+        account_status: 'Aktif',
+        approved_at: '12 Okt 2026, 14:15',
+        approved_by_name: 'Pentadbir Sistem'
+      },
+      {
+        id: 'drv-3',
+        name: 'Mohd Faizul bin Che Man',
+        email: 'faizul@alfarhain.my',
+        phone: '017-889 4432',
+        hub_id: 'jeli',
+        assigned_plate: 'VPP 9901',
+        license_type: 'GDL D Bertauliah Paramedik',
+        ic_number: '920405-03-5911',
+        account_status: 'Menunggu Kelulusan',
+        submitted_at: '22 Okt 2026, 14:30',
+        invitation_id: 'inv-101'
+      },
+      {
+        id: 'drv-4',
+        name: 'Wan Kamarudin bin Wan Ismail',
+        email: 'kamarudin@alfarhain.my',
+        phone: '019-912 3345',
+        hub_id: 'gua_musang',
+        assigned_plate: '',
+        license_type: 'GDL D / E',
+        ic_number: '901123-03-6019',
+        account_status: 'Perlu Pembetulan',
+        correction_notes: 'Sila muat naik semula lesen GDL yang sah dan terkini.',
+        submitted_at: '21 Okt 2026, 11:15',
+        invitation_id: 'inv-102'
+      }
+    ];
+    saveDriversToStorage();
+  }
+
+  const storedInv = localStorage.getItem('amc_portal_invitations');
+  if (storedInv) {
+    try { pemanduState.invitations = JSON.parse(storedInv); } catch (e) {}
+  }
+  if (!pemanduState.invitations || pemanduState.invitations.length === 0) {
+    pemanduState.invitations = [
+      {
+        id: 'inv-101',
+        masked_code: 'AMC-9X****',
+        full_name: 'Mohd Faizul bin Che Man',
+        email: 'faizul@alfarhain.my',
+        phone: '017-889 4432',
+        branch_id: 'jeli',
+        assigned_plate: 'VPP 9901',
+        status: 'Diterima',
+        delivery_status: 'Manual',
+        expires_at: '24 Okt 2026, 14:00',
+        created_at: '22 Okt 2026, 14:00'
+      },
+      {
+        id: 'inv-102',
+        masked_code: 'AMC-4K****',
+        full_name: 'Wan Kamarudin bin Wan Ismail',
+        email: 'kamarudin@alfarhain.my',
+        phone: '019-912 3345',
+        branch_id: 'gua_musang',
+        assigned_plate: '',
+        status: 'Dihantar',
+        delivery_status: 'Manual',
+        expires_at: '23 Okt 2026, 10:00',
+        created_at: '21 Okt 2026, 10:00'
+      }
+    ];
+    saveInvitationsToStorage();
+  }
+
+  const storedAudits = localStorage.getItem('amc_portal_driver_audits');
+  if (storedAudits) {
+    try { pemanduState.auditLogs = JSON.parse(storedAudits); } catch (e) {}
+  }
+  if (!pemanduState.auditLogs || pemanduState.auditLogs.length === 0) {
+    pemanduState.auditLogs = [
+      {
+        id: 'aud-1',
+        created_at: '22 Okt 2026, 14:30',
+        actor_name: 'Abe Di (HQ Kok Lanas)',
+        actor_role: 'Pentadbir HQ',
+        target_email: 'faizul@alfarhain.my',
+        action: 'PROFIL_DIHANTAR',
+        reason: 'Pemandu menebus jemputan dan menghantar maklumat profil pendaftaran.'
+      },
+      {
+        id: 'aud-2',
+        created_at: '21 Okt 2026, 11:15',
+        actor_name: 'Abe Di (HQ Kok Lanas)',
+        actor_role: 'Pentadbir HQ',
+        target_email: 'kamarudin@alfarhain.my',
+        action: 'MINTA_PEMBETULAN',
+        reason: 'Sila muat naik semula lesen GDL yang sah dan terkini.'
+      },
+      {
+        id: 'aud-3',
+        created_at: '20 Okt 2026, 09:00',
+        actor_name: 'Abe Di (HQ Kok Lanas)',
+        actor_role: 'Pentadbir HQ',
+        target_email: 'faizul@alfarhain.my',
+        action: 'JEMPUTAN_DICIPTA',
+        reason: 'Jemputan onboarding pemandu cawangan Jeli dikeluarkan.'
+      }
+    ];
+    saveAuditsToStorage();
+  }
+}
+
+function saveDriversToStorage() {
+  localStorage.setItem('amc_portal_drivers', JSON.stringify(pemanduState.drivers));
+}
+
+function saveInvitationsToStorage() {
+  localStorage.setItem('amc_portal_invitations', JSON.stringify(pemanduState.invitations));
+}
+
+function saveAuditsToStorage() {
+  localStorage.setItem('amc_portal_driver_audits', JSON.stringify(pemanduState.auditLogs));
+}
+
+function bindPemanduSubTabs() {
+  const tabsBar = document.getElementById('pemanduTabsBar');
+  if (!tabsBar) return;
+
+  const tabBtns = tabsBar.querySelectorAll('.set-tab-btn');
+  const tabContents = document.querySelectorAll('.pemandu-tab-content');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ptab = btn.dataset.ptab;
+      if (!ptab) return;
+
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabContents.forEach(c => {
+        c.classList.remove('active');
+        c.style.display = 'none';
+      });
+
+      btn.classList.add('active');
+      const targetContent = document.getElementById(`ptab-${ptab}`);
+      if (targetContent) {
+        targetContent.classList.add('active');
+        targetContent.style.display = 'block';
+      }
+
+      pemanduState.activeTab = ptab;
+      playClickSound();
+    });
+  });
+}
+
+function bindPemanduFilters() {
+  const searchDrivers = document.getElementById('searchDriversInput');
+  const branchFilter = document.getElementById('filterDriverBranch');
+  const statusFilter = document.getElementById('filterDriverStatus');
+
+  if (searchDrivers) searchDrivers.addEventListener('input', () => renderDriversTable());
+  if (branchFilter) branchFilter.addEventListener('change', () => renderDriversTable());
+  if (statusFilter) statusFilter.addEventListener('change', () => renderDriversTable());
+
+  const searchInv = document.getElementById('searchInvitationsInput');
+  const branchInv = document.getElementById('filterInviteBranch');
+  const statusInv = document.getElementById('filterInviteStatus');
+
+  if (searchInv) searchInv.addEventListener('input', () => renderInvitationsTable());
+  if (branchInv) branchInv.addEventListener('change', () => renderInvitationsTable());
+  if (statusInv) statusInv.addEventListener('change', () => renderInvitationsTable());
+
+  const searchPending = document.getElementById('searchPendingDriversInput');
+  const branchPending = document.getElementById('filterPendingBranch');
+
+  if (searchPending) searchPending.addEventListener('input', () => renderPendingDriversTable());
+  if (branchPending) branchPending.addEventListener('change', () => renderPendingDriversTable());
+
+  const searchAudit = document.getElementById('searchAuditLogInput');
+  const actionAudit = document.getElementById('filterAuditAction');
+
+  if (searchAudit) searchAudit.addEventListener('input', () => renderAuditLogsTable());
+  if (actionAudit) actionAudit.addEventListener('change', () => renderAuditLogsTable());
+}
+
+function bindPemanduModals() {
+  // Open Invite Modal
+  const btnOpenInvite = document.getElementById('btnOpenInviteDriverModal');
+  const btnQuickInvite = document.getElementById('btnQuickInvitePemandu');
+  const modalInvite = document.getElementById('modalInviteDriver');
+  const btnCloseInvite = document.getElementById('btnCloseInviteModal');
+  const btnCancelInvite = document.getElementById('btnCancelInviteDriver');
+
+  const openInvite = () => {
+    if (modalInvite) {
+      modalInvite.style.display = 'flex';
+      modalInvite.classList.add('show');
+    }
+  };
+
+  const closeInvite = () => {
+    if (modalInvite) {
+      modalInvite.style.display = 'none';
+      modalInvite.classList.remove('show');
+    }
+  };
+
+  if (btnOpenInvite) btnOpenInvite.addEventListener('click', openInvite);
+  if (btnQuickInvite) btnQuickInvite.addEventListener('click', openInvite);
+  if (btnCloseInvite) btnCloseInvite.addEventListener('click', closeInvite);
+  if (btnCancelInvite) btnCancelInvite.addEventListener('click', closeInvite);
+
+  // Invite Form Submit
+  const formInvite = document.getElementById('formCreateDriverInvite');
+  if (formInvite) {
+    formInvite.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await handleCreateDriverInvite();
+    });
+  }
+
+  // Success Modal
+  const modalSuccess = document.getElementById('modalInviteSuccess');
+  const btnCloseSuccess = document.getElementById('btnCloseSuccessModal');
+  if (btnCloseSuccess && modalSuccess) {
+    btnCloseSuccess.addEventListener('click', () => {
+      modalSuccess.style.display = 'none';
+      modalSuccess.classList.remove('show');
+    });
+  }
+
+  const btnCopyCode = document.getElementById('btnCopyInviteCode');
+  if (btnCopyCode) {
+    btnCopyCode.addEventListener('click', () => {
+      const codeEl = document.getElementById('displayPlainInviteCode');
+      if (codeEl) {
+        navigator.clipboard.writeText(codeEl.textContent.trim());
+        btnCopyCode.textContent = '✔️ Disalin!';
+        setTimeout(() => { btnCopyCode.textContent = '📋 Salin Kod Jemputan'; }, 2000);
+      }
+    });
+  }
+
+  const btnCopyLink = document.getElementById('btnCopyActivationLink');
+  if (btnCopyLink) {
+    btnCopyLink.addEventListener('click', () => {
+      const linkEl = document.getElementById('displayActivationLink');
+      if (linkEl) {
+        navigator.clipboard.writeText(linkEl.value.trim());
+        btnCopyLink.textContent = '✔️ Disalin!';
+        setTimeout(() => { btnCopyLink.textContent = 'Salin Pautan'; }, 2000);
+      }
+    });
+  }
+
+  // Review Modal Handlers
+  const modalReview = document.getElementById('modalReviewDriver');
+  const btnCloseReview = document.getElementById('btnCloseReviewModal');
+  if (btnCloseReview && modalReview) {
+    btnCloseReview.addEventListener('click', () => {
+      modalReview.style.display = 'none';
+      modalReview.classList.remove('show');
+    });
+  }
+
+  const btnApprove = document.getElementById('btnRevActionApprove');
+  const btnCorrect = document.getElementById('btnRevActionCorrect');
+  const btnReject = document.getElementById('btnRevActionReject');
+
+  if (btnApprove) btnApprove.addEventListener('click', () => handleReviewDecision('LULUSKAN'));
+  if (btnCorrect) btnCorrect.addEventListener('click', () => handleReviewDecision('MINTA_PEMBETULAN'));
+  if (btnReject) btnReject.addEventListener('click', () => handleReviewDecision('TOLAK'));
+}
+
+async function handleCreateDriverInvite() {
+  const name = document.getElementById('inviteDriverName')?.value.trim();
+  const email = document.getElementById('inviteDriverEmail')?.value.trim();
+  const phone = document.getElementById('inviteDriverPhone')?.value.trim();
+  const branchId = document.getElementById('inviteDriverBranch')?.value;
+  const validHours = document.getElementById('inviteDriverValidHours')?.value || '48';
+  const assignedPlate = document.getElementById('inviteDriverAssignedPlate')?.value || null;
+  const notes = document.getElementById('inviteDriverNotes')?.value.trim();
+
+  if (!name || !email || !phone) {
+    alert('Sila lengkapkan nama penuh, emel dan nombor telefon pemandu.');
+    return;
+  }
+
+  // Prevent duplicate active invitation for same email
+  const existing = pemanduState.invitations.find(i => i.email.toLowerCase() === email.toLowerCase() && i.status === 'Dihantar');
+  if (existing) {
+    alert(`Jemputan aktif untuk ${email} sudah wujud dalam sistem. Sila guna 'Jana Semula' sekiranya ingin memperbaharui kod.`);
+    return;
+  }
+
+  let resultPlainCode = '';
+  let resultLink = '';
+
+  try {
+    const res = await fetch('/api/driver/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fullName: name,
+        email,
+        phone,
+        branchId,
+        validHours,
+        assignedPlate,
+        internalNotes: notes,
+        actor: { name: portalState.operatorName || 'Abe Di (HQ Kok Lanas)', role: 'hq_admin', email: 'abedi@alfarhain.my' }
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      resultPlainCode = data.plainCode;
+      resultLink = data.activationLink;
+    }
+  } catch (e) {
+    console.warn('API invite failed, using local generation:', e);
+  }
+
+  // Fallback generation if API unavailable
+  if (!resultPlainCode) {
+    const charset = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+    let rand = '';
+    for (let i = 0; i < 6; i++) rand += charset[Math.floor(Math.random() * charset.length)];
+    resultPlainCode = `AMC-${rand}`;
+    resultLink = `${window.location.origin}/?act=${encodeURIComponent(resultPlainCode)}&email=${encodeURIComponent(email)}`;
+  }
+
+  const masked = `${resultPlainCode.slice(0, 6)}****`;
+  const expiryDate = new Date(Date.now() + parseInt(validHours, 10) * 3600 * 1000).toLocaleString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  const newInv = {
+    id: 'inv-' + Date.now(),
+    masked_code: masked,
+    full_name: name,
+    email,
+    phone,
+    branch_id: branchId,
+    assigned_plate: assignedPlate || '',
+    status: 'Dihantar',
+    delivery_status: 'Manual',
+    expires_at: expiryDate,
+    created_at: new Date().toLocaleString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  };
+
+  pemanduState.invitations.unshift(newInv);
+  saveInvitationsToStorage();
+
+  // Audit
+  pemanduState.auditLogs.unshift({
+    id: 'aud-' + Date.now(),
+    created_at: new Date().toLocaleString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    actor_name: portalState.operatorName || 'Abe Di (HQ Kok Lanas)',
+    actor_role: 'Pentadbir HQ',
+    target_email: email,
+    action: 'JEMPUTAN_DICIPTA',
+    reason: `Jemputan pemandu baharu dikeluarkan untuk cawangan ${BRANCH_LABELS[branchId] || branchId}.`
+  });
+  saveAuditsToStorage();
+
+  // Close invite modal, show success modal
+  const modalInvite = document.getElementById('modalInviteDriver');
+  if (modalInvite) {
+    modalInvite.style.display = 'none';
+    modalInvite.classList.remove('show');
+  }
+
+  const modalSuccess = document.getElementById('modalInviteSuccess');
+  const displayCode = document.getElementById('displayPlainInviteCode');
+  const displayLink = document.getElementById('displayActivationLink');
+
+  if (displayCode) displayCode.textContent = resultPlainCode;
+  if (displayLink) displayLink.value = resultLink;
+
+  if (modalSuccess) {
+    modalSuccess.style.display = 'flex';
+    modalSuccess.classList.add('show');
+  }
+
+  // Reset form
+  const form = document.getElementById('formCreateDriverInvite');
+  if (form) form.reset();
+
+  renderAllPemanduViews();
+  playSuccessChime();
+  showToast('Jemputan pemandu berjaya dicipta!');
+}
+
+function renderAllPemanduViews() {
+  renderPemanduMetrics();
+  renderDriversTable();
+  renderInvitationsTable();
+  renderPendingDriversTable();
+  renderAuditLogsTable();
+  updatePendingBadges();
+}
+
+function renderPemanduMetrics() {
+  const total = pemanduState.drivers.length;
+  const active = pemanduState.drivers.filter(d => d.account_status === 'Aktif').length;
+  const pending = pemanduState.drivers.filter(d => ['Menunggu Kelulusan', 'Perlu Pembetulan'].includes(d.account_status)).length;
+  const suspended = pemanduState.drivers.filter(d => ['Digantung', 'Ditolak'].includes(d.account_status)).length;
+
+  const elTotal = document.getElementById('metricTotalDrivers');
+  const elActive = document.getElementById('metricActiveDrivers');
+  const elPending = document.getElementById('metricPendingDrivers');
+  const elSuspended = document.getElementById('metricSuspendedDrivers');
+
+  if (elTotal) elTotal.textContent = total;
+  if (elActive) elActive.textContent = active;
+  if (elPending) elPending.textContent = pending;
+  if (elSuspended) elSuspended.textContent = suspended;
+}
+
+function updatePendingBadges() {
+  const pendingCount = pemanduState.drivers.filter(d => d.account_status === 'Menunggu Kelulusan').length;
+
+  const sidebarBadge = document.getElementById('badgePendingDrivers');
+  if (sidebarBadge) {
+    sidebarBadge.textContent = pendingCount;
+    sidebarBadge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+  }
+
+  const tabBadge = document.getElementById('tabBadgePendingCount');
+  if (tabBadge) {
+    tabBadge.textContent = pendingCount;
+    tabBadge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+  }
+
+  const queueBadge = document.getElementById('badgePendingQueueCount');
+  if (queueBadge) {
+    queueBadge.textContent = `${pendingCount} PERMOHONAN`;
+  }
+}
+
+function renderDriversTable() {
+  const tbody = document.getElementById('tbodyDriversList');
+  if (!tbody) return;
+
+  const search = (document.getElementById('searchDriversInput')?.value || '').toLowerCase();
+  const branch = document.getElementById('filterDriverBranch')?.value || 'all';
+  const status = document.getElementById('filterDriverStatus')?.value || 'all';
+
+  const filtered = pemanduState.drivers.filter(d => {
+    const matchSearch = !search ||
+      (d.name && d.name.toLowerCase().includes(search)) ||
+      (d.email && d.email.toLowerCase().includes(search)) ||
+      (d.phone && d.phone.includes(search));
+    const matchBranch = branch === 'all' || d.hub_id === branch;
+    const matchStatus = status === 'all' || d.account_status === status;
+    return matchSearch && matchBranch && matchStatus;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b;">Tiada rekod pemandu yang sepadan.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(d => {
+    const statusPill = getAccountStatusBadge(d.account_status);
+    const branchLabel = BRANCH_LABELS[d.hub_id] || d.hub_id;
+    const isSuspended = d.account_status === 'Digantung';
+
+    return `
+      <tr>
+        <td>
+          <div style="font-weight:700;color:#0f172a;">${escapeHtml(d.name)}</div>
+          <div style="font-size:0.75rem;color:#64748b;">KP: ${escapeHtml(d.ic_number || '—')}</div>
+        </td>
+        <td>
+          <div style="font-size:0.85rem;color:#1e293b;">${escapeHtml(d.email)}</div>
+          <div style="font-size:0.75rem;color:#64748b;">📞 ${escapeHtml(d.phone)}</div>
+        </td>
+        <td>
+          <span style="font-size:0.85rem;font-weight:600;color:#005047;">${branchLabel}</span>
+        </td>
+        <td>
+          ${d.assigned_plate ? `<span style="display:inline-block;padding:2px 8px;background:#e0f2fe;color:#0369a1;border-radius:4px;font-weight:700;font-size:0.8rem;">${d.assigned_plate}</span>` : `<span style="color:#94a3b8;font-size:0.8rem;">Tiada</span>`}
+        </td>
+        <td>
+          <div style="font-size:0.8rem;color:#334155;">${escapeHtml(d.license_type || 'GDL D / E Bertauliah EMT')}</div>
+        </td>
+        <td>${statusPill}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button type="button" class="btn-table-action" onclick="window.openPemanduReviewModal('${d.id}')" style="background:#005047;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;">
+              Semak
+            </button>
+            ${d.account_status === 'Aktif' ? `
+              <button type="button" class="btn-table-action" onclick="window.confirmSuspendDriver('${d.id}')" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:5px 10px;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;">
+                Gantung
+              </button>
+            ` : isSuspended ? `
+              <button type="button" class="btn-table-action" onclick="window.confirmReactivateDriver('${d.id}')" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;padding:5px 10px;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;">
+                Batal Gantung
+              </button>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderInvitationsTable() {
+  const tbody = document.getElementById('tbodyInvitationsList');
+  if (!tbody) return;
+
+  const search = (document.getElementById('searchInvitationsInput')?.value || '').toLowerCase();
+  const branch = document.getElementById('filterInviteBranch')?.value || 'all';
+  const status = document.getElementById('filterInviteStatus')?.value || 'all';
+
+  const filtered = pemanduState.invitations.filter(i => {
+    const matchSearch = !search ||
+      (i.full_name && i.full_name.toLowerCase().includes(search)) ||
+      (i.email && i.email.toLowerCase().includes(search)) ||
+      (i.masked_code && i.masked_code.toLowerCase().includes(search));
+    const matchBranch = branch === 'all' || i.branch_id === branch;
+    const matchStatus = status === 'all' || i.status === status;
+    return matchSearch && matchBranch && matchStatus;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#64748b;">Tiada rekod jemputan yang sepadan.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(i => {
+    const invStatusPill = getInvitationStatusBadge(i.status);
+    const branchLabel = BRANCH_LABELS[i.branch_id] || i.branch_id;
+
+    return `
+      <tr>
+        <td>
+          <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-weight:700;color:#c61e2f;">${i.masked_code}</code>
+        </td>
+        <td>
+          <div style="font-weight:700;color:#0f172a;">${escapeHtml(i.full_name)}</div>
+        </td>
+        <td>
+          <div style="font-size:0.85rem;color:#1e293b;">${escapeHtml(i.email)}</div>
+          <div style="font-size:0.75rem;color:#64748b;">📞 ${escapeHtml(i.phone)}</div>
+        </td>
+        <td>
+          <span style="font-size:0.85rem;font-weight:600;color:#005047;">${branchLabel}</span>
+        </td>
+        <td>
+          <div style="font-size:0.8rem;color:#475569;">${i.expires_at}</div>
+        </td>
+        <td>${invStatusPill}</td>
+        <td>
+          <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:700;background:#f8fafc;color:#475569;border:1px solid #cbd5e1;">
+            ${i.delivery_status === 'Manual' ? '📋 Pautan Manual' : '✉️ Emel Dihantar'}
+          </span>
+        </td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px;">
+            ${i.status === 'Dihantar' ? `
+              <button type="button" class="btn-table-action" onclick="window.resendDriverInvite('${i.id}')" style="background:#005047;color:#fff;border:none;padding:5px 8px;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;">
+                Jana Semula
+              </button>
+              <button type="button" class="btn-table-action" onclick="window.revokeDriverInvite('${i.id}')" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:5px 8px;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;">
+                Batalkan
+              </button>
+            ` : `<span style="font-size:0.75rem;color:#94a3b8;">Tiada tindakan</span>`}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderPendingDriversTable() {
+  const tbody = document.getElementById('tbodyPendingDriversList');
+  if (!tbody) return;
+
+  const search = (document.getElementById('searchPendingDriversInput')?.value || '').toLowerCase();
+  const branch = document.getElementById('filterPendingBranch')?.value || 'all';
+
+  const pendingList = pemanduState.drivers.filter(d => ['Menunggu Kelulusan', 'Perlu Pembetulan'].includes(d.account_status));
+  const filtered = pendingList.filter(d => {
+    const matchSearch = !search ||
+      (d.name && d.name.toLowerCase().includes(search)) ||
+      (d.email && d.email.toLowerCase().includes(search));
+    const matchBranch = branch === 'all' || d.hub_id === branch;
+    return matchSearch && matchBranch;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b;">Tiada permohonan pemandu yang menanti kelulusan buat masa ini.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(d => {
+    const statusPill = getAccountStatusBadge(d.account_status);
+    const branchLabel = BRANCH_LABELS[d.hub_id] || d.hub_id;
+
+    return `
+      <tr>
+        <td>
+          <div style="font-weight:700;color:#0f172a;">${escapeHtml(d.name)}</div>
+          <div style="font-size:0.75rem;color:#64748b;">KP: ${escapeHtml(d.ic_number || '—')}</div>
+        </td>
+        <td>
+          <div style="font-size:0.85rem;color:#1e293b;">${escapeHtml(d.email)}</div>
+          <div style="font-size:0.75rem;color:#64748b;">📞 ${escapeHtml(d.phone)}</div>
+        </td>
+        <td>
+          <span style="font-size:0.85rem;font-weight:600;color:#005047;">${branchLabel}</span>
+        </td>
+        <td>
+          <div style="font-size:0.8rem;color:#475569;">${d.submitted_at || 'Hari ini'}</div>
+        </td>
+        <td>
+          <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:700;background:#ecfdf5;color:#047857;">Diterima</span>
+        </td>
+        <td>${statusPill}</td>
+        <td>
+          <button type="button" class="btn-table-action" onclick="window.openPemanduReviewModal('${d.id}')" style="background:#c61e2f;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(198,30,47,0.3);">
+            Semak Permohonan ➔
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderAuditLogsTable() {
+  const tbody = document.getElementById('tbodyDriverAuditLogs');
+  if (!tbody) return;
+
+  const search = (document.getElementById('searchAuditLogInput')?.value || '').toLowerCase();
+  const action = document.getElementById('filterAuditAction')?.value || 'all';
+
+  const filtered = pemanduState.auditLogs.filter(a => {
+    const matchSearch = !search ||
+      (a.target_email && a.target_email.toLowerCase().includes(search)) ||
+      (a.actor_name && a.actor_name.toLowerCase().includes(search)) ||
+      (a.reason && a.reason.toLowerCase().includes(search));
+    const matchAction = action === 'all' || a.action === action;
+    return matchSearch && matchAction;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b;">Tiada rekod log aktiviti yang sepadan.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(a => {
+    return `
+      <tr>
+        <td style="font-size:0.8rem;color:#475569;white-space:nowrap;">${a.created_at}</td>
+        <td style="font-weight:700;color:#0f172a;">${escapeHtml(a.actor_name)}</td>
+        <td>
+          <span style="font-size:0.75rem;background:#f1f5f9;color:#334155;padding:2px 8px;border-radius:6px;font-weight:600;">${escapeHtml(a.actor_role)}</span>
+        </td>
+        <td style="font-size:0.85rem;color:#0284c7;font-weight:600;">${escapeHtml(a.target_email)}</td>
+        <td>
+          <span style="font-weight:700;font-size:0.8rem;color:#005047;">${escapeHtml(a.action)}</span>
+        </td>
+        <td style="font-size:0.82rem;color:#334155;">${escapeHtml(a.reason || '—')}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function getAccountStatusBadge(status) {
+  switch (status) {
+    case 'Aktif':
+      return `<span style="display:inline-block;padding:3px 10px;background:#ecfdf5;color:#047857;border-radius:12px;font-size:0.75rem;font-weight:800;">● Aktif</span>`;
+    case 'Menunggu Kelulusan':
+      return `<span style="display:inline-block;padding:3px 10px;background:#fef2f2;color:#c61e2f;border-radius:12px;font-size:0.75rem;font-weight:800;">⏱️ Menunggu Kelulusan</span>`;
+    case 'Perlu Pembetulan':
+      return `<span style="display:inline-block;padding:3px 10px;background:#fffbeb;color:#b45309;border-radius:12px;font-size:0.75rem;font-weight:800;">⚠️ Perlu Pembetulan</span>`;
+    case 'Digantung':
+      return `<span style="display:inline-block;padding:3px 10px;background:#f3f4f6;color:#374151;border-radius:12px;font-size:0.75rem;font-weight:800;">🚫 Digantung</span>`;
+    case 'Ditolak':
+      return `<span style="display:inline-block;padding:3px 10px;background:#fee2e2;color:#991b1b;border-radius:12px;font-size:0.75rem;font-weight:800;">✖ Ditolak</span>`;
+    default:
+      return `<span style="display:inline-block;padding:3px 10px;background:#f1f5f9;color:#64748b;border-radius:12px;font-size:0.75rem;font-weight:700;">${escapeHtml(status || 'Belum Lengkap')}</span>`;
+  }
+}
+
+function getInvitationStatusBadge(status) {
+  switch (status) {
+    case 'Dihantar':
+      return `<span style="display:inline-block;padding:3px 10px;background:#e0f2fe;color:#0369a1;border-radius:12px;font-size:0.75rem;font-weight:800;">Dihantar</span>`;
+    case 'Diterima':
+      return `<span style="display:inline-block;padding:3px 10px;background:#ecfdf5;color:#047857;border-radius:12px;font-size:0.75rem;font-weight:800;">Diterima</span>`;
+    case 'Tamat Tempoh':
+      return `<span style="display:inline-block;padding:3px 10px;background:#f1f5f9;color:#64748b;border-radius:12px;font-size:0.75rem;font-weight:800;">Tamat Tempoh</span>`;
+    case 'Dibatalkan':
+      return `<span style="display:inline-block;padding:3px 10px;background:#fee2e2;color:#991b1b;border-radius:12px;font-size:0.75rem;font-weight:800;">Dibatalkan</span>`;
+    default:
+      return `<span style="display:inline-block;padding:3px 10px;background:#f1f5f9;color:#64748b;border-radius:12px;font-size:0.75rem;font-weight:700;">${escapeHtml(status)}</span>`;
+  }
+}
+
+// Global window actions for inline onclick calls
+window.openPemanduReviewModal = function(driverId) {
+  const driver = pemanduState.drivers.find(d => d.id === driverId);
+  if (!driver) return;
+  pemanduState.selectedDriver = driver;
+
+  const modal = document.getElementById('modalReviewDriver');
+  const avatar = document.getElementById('revDriverAvatar');
+  const name = document.getElementById('revDriverFullName');
+  const emailPhone = document.getElementById('revDriverEmailPhone');
+  const statusBadge = document.getElementById('revDriverStatusBadge');
+  const ic = document.getElementById('revDriverIC');
+  const license = document.getElementById('revDriverLicense');
+  const branchSelect = document.getElementById('revDriverBranchSelect');
+  const plateSelect = document.getElementById('revDriverPlateSelect');
+  const reasonInput = document.getElementById('revDriverReasonInput');
+
+  if (avatar) avatar.textContent = (driver.name || 'PD').slice(0, 2).toUpperCase();
+  if (name) name.textContent = driver.name;
+  if (emailPhone) emailPhone.textContent = `${driver.email} · 📞 ${driver.phone}`;
+  if (statusBadge) statusBadge.innerHTML = getAccountStatusBadge(driver.account_status);
+  if (ic) ic.textContent = driver.ic_number || '890512-03-5541';
+  if (license) license.textContent = driver.license_type || 'GDL D / E Bertauliah EMT';
+  if (branchSelect) branchSelect.value = driver.hub_id || 'kok_lanas';
+  if (plateSelect) plateSelect.value = driver.assigned_plate || '';
+  if (reasonInput) reasonInput.value = driver.correction_notes || driver.rejection_reason || driver.suspension_reason || '';
+
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.classList.add('show');
+  }
+};
+
+window.confirmSuspendDriver = function(driverId) {
+  const driver = pemanduState.drivers.find(d => d.id === driverId);
+  if (!driver) return;
+  const reason = prompt(`Sila nyatakan sebab penggantungan pemandu ${driver.name}:`);
+  if (!reason || reason.trim().length < 5) {
+    if (reason !== null) alert('Sebab penggantungan wajib diisi (minimum 5 aksara).');
+    return;
+  }
+
+  driver.account_status = 'Digantung';
+  driver.suspension_reason = reason.trim();
+  saveDriversToStorage();
+
+  pemanduState.auditLogs.unshift({
+    id: 'aud-' + Date.now(),
+    created_at: new Date().toLocaleString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    actor_name: portalState.operatorName || 'Abe Di (HQ Kok Lanas)',
+    actor_role: 'Pentadbir HQ',
+    target_email: driver.email,
+    action: 'GANTUNG',
+    reason: `Penggantungan pemandu: ${reason.trim()}`
+  });
+  saveAuditsToStorage();
+
+  renderAllPemanduViews();
+  showToast(`Pemandu ${driver.name} telah digantung.`);
+};
+
+window.confirmReactivateDriver = function(driverId) {
+  const driver = pemanduState.drivers.find(d => d.id === driverId);
+  if (!driver) return;
+  if (!confirm(`Adakah anda pasti ingin mengaktifkan semula pemandu ${driver.name}?`)) return;
+
+  driver.account_status = 'Aktif';
+  driver.suspension_reason = null;
+  saveDriversToStorage();
+
+  pemanduState.auditLogs.unshift({
+    id: 'aud-' + Date.now(),
+    created_at: new Date().toLocaleString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    actor_name: portalState.operatorName || 'Abe Di (HQ Kok Lanas)',
+    actor_role: 'Pentadbir HQ',
+    target_email: driver.email,
+    action: 'AKTIFKAN_SEMULA',
+    reason: 'Penggantungan dibatalkan oleh pentadbir HQ.'
+  });
+  saveAuditsToStorage();
+
+  renderAllPemanduViews();
+  showToast(`Pemandu ${driver.name} telah diaktifkan semula.`);
+};
+
+window.resendDriverInvite = function(invId) {
+  const inv = pemanduState.invitations.find(i => i.id === invId);
+  if (!inv) return;
+  if (!confirm(`Jana semula kod jemputan untuk ${inv.full_name}? Kod lama akan dibatalkan serta-merta.`)) return;
+
+  const charset = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+  let rand = '';
+  for (let i = 0; i < 6; i++) rand += charset[Math.floor(Math.random() * charset.length)];
+  const newPlainCode = `AMC-${rand}`;
+
+  inv.masked_code = `${newPlainCode.slice(0, 6)}****`;
+  inv.expires_at = new Date(Date.now() + 48 * 3600 * 1000).toLocaleString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  inv.created_at = new Date().toLocaleString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  saveInvitationsToStorage();
+
+  pemanduState.auditLogs.unshift({
+    id: 'aud-' + Date.now(),
+    created_at: new Date().toLocaleString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    actor_name: portalState.operatorName || 'Abe Di (HQ Kok Lanas)',
+    actor_role: 'Pentadbir HQ',
+    target_email: inv.email,
+    action: 'JEMPUTAN_DIJANA_SEMULA',
+    reason: 'Kod jemputan baharu dijana dan kod lama dibatalkan.'
+  });
+  saveAuditsToStorage();
+
+  // Show modal with new plain code
+  const modalSuccess = document.getElementById('modalInviteSuccess');
+  const displayCode = document.getElementById('displayPlainInviteCode');
+  const displayLink = document.getElementById('displayActivationLink');
+
+  if (displayCode) displayCode.textContent = newPlainCode;
+  if (displayLink) displayLink.value = `${window.location.origin}/?act=${encodeURIComponent(newPlainCode)}&email=${encodeURIComponent(inv.email)}`;
+
+  if (modalSuccess) {
+    modalSuccess.style.display = 'flex';
+    modalSuccess.classList.add('show');
+  }
+
+  renderAllPemanduViews();
+  showToast('Kod jemputan baharu berjaya dijana!');
+};
+
+window.revokeDriverInvite = function(invId) {
+  const inv = pemanduState.invitations.find(i => i.id === invId);
+  if (!inv) return;
+  if (!confirm(`Batalkan jemputan untuk ${inv.full_name}? Pemandu tidak lagi boleh menggunakan jemputan ini.`)) return;
+
+  inv.status = 'Dibatalkan';
+  saveInvitationsToStorage();
+
+  pemanduState.auditLogs.unshift({
+    id: 'aud-' + Date.now(),
+    created_at: new Date().toLocaleString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    actor_name: portalState.operatorName || 'Abe Di (HQ Kok Lanas)',
+    actor_role: 'Pentadbir HQ',
+    target_email: inv.email,
+    action: 'JEMPUTAN_DIBATALKAN',
+    reason: 'Jemputan dibatalkan oleh pegawai pentadbir.'
+  });
+  saveAuditsToStorage();
+
+  renderAllPemanduViews();
+  showToast('Jemputan telah dibatalkan.');
+};
+
+async function handleReviewDecision(action) {
+  const driver = pemanduState.selectedDriver;
+  if (!driver) return;
+
+  const reason = document.getElementById('revDriverReasonInput')?.value.trim();
+  const branchSelect = document.getElementById('revDriverBranchSelect')?.value;
+  const plateSelect = document.getElementById('revDriverPlateSelect')?.value;
+
+  if (['MINTA_PEMBETULAN', 'TOLAK'].includes(action) && (!reason || reason.length < 5)) {
+    alert('Sila nyatakan catatan/sebab (minimum 5 aksara) sebelum menghantar tindakan.');
+    return;
+  }
+
+  if (action === 'LULUSKAN') {
+    if (!confirm(`Sahkan kelulusan akaun pemandu ${driver.name} bagi cawangan ${BRANCH_LABELS[branchSelect] || branchSelect}?`)) return;
+    driver.account_status = 'Aktif';
+    driver.hub_id = branchSelect;
+    driver.assigned_plate = plateSelect;
+    driver.approved_at = new Date().toLocaleString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    driver.approved_by_name = portalState.operatorName || 'Abe Di (HQ Kok Lanas)';
+    driver.correction_notes = null;
+    driver.rejection_reason = null;
+  } else if (action === 'MINTA_PEMBETULAN') {
+    driver.account_status = 'Perlu Pembetulan';
+    driver.correction_notes = reason;
+  } else if (action === 'TOLAK') {
+    if (!confirm(`Adakah anda pasti ingin menolak permohonan pemandu ${driver.name}?`)) return;
+    driver.account_status = 'Ditolak';
+    driver.rejection_reason = reason;
+  }
+
+  saveDriversToStorage();
+
+  // Audit
+  pemanduState.auditLogs.unshift({
+    id: 'aud-' + Date.now(),
+    created_at: new Date().toLocaleString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    actor_name: portalState.operatorName || 'Abe Di (HQ Kok Lanas)',
+    actor_role: 'Pentadbir HQ',
+    target_email: driver.email,
+    action: action,
+    reason: reason || (action === 'LULUSKAN' ? `Diluluskan dengan ambulans ${plateSelect || 'Tiada'}` : 'Tindakan pentadbir disahkan.')
+  });
+  saveAuditsToStorage();
+
+  // Close Review Modal
+  const modal = document.getElementById('modalReviewDriver');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+  }
+
+  pemanduState.selectedDriver = null;
+  renderAllPemanduViews();
+  playSuccessChime();
+  showToast(`Tindakan semakan pemandu telah direkodkan: ${action}.`);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }

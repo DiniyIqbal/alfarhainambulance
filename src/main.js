@@ -3234,117 +3234,511 @@ async function initMobileAuth() {
     setMobileGateLocked(true);
   }
 
-  // 2. Gatekeeper Landing Tabs
-  if (gateTabLogin && gateTabRegister) {
-    gateTabLogin.addEventListener('click', () => {
-      playClickSound();
-      gateMode = 'login';
-      gateTabLogin.style.background = 'var(--amc-red)';
-      gateTabLogin.style.color = '#FFFFFF';
-      gateTabRegister.style.background = 'transparent';
-      gateTabRegister.style.color = 'var(--text-muted)';
-      if (gateRegFields) gateRegFields.style.display = 'none';
-      if (gateSubmitLabel) gateSubmitLabel.textContent = 'Log Masuk ke Sistem';
-      if (gateStatusMsg) gateStatusMsg.style.display = 'none';
-    });
-
-    gateTabRegister.addEventListener('click', () => {
-      playClickSound();
-      gateMode = 'register';
-      gateTabRegister.style.background = 'var(--amc-red)';
-      gateTabRegister.style.color = '#FFFFFF';
-      gateTabLogin.style.background = 'transparent';
-      gateTabLogin.style.color = 'var(--text-muted)';
-      if (gateRegFields) gateRegFields.style.display = 'flex';
-      if (gateSubmitLabel) gateSubmitLabel.textContent = 'Daftar Akaun Baharu';
-      if (gateStatusMsg) gateStatusMsg.style.display = 'none';
-    });
+  // 2. 4-Screen State Router
+  function showAuthScreen(screenId) {
+    playClickSound();
+    document.querySelectorAll('.auth-screen-panel').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById(screenId);
+    if (target) {
+      target.classList.add('active');
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
-  // Handle Role selector in registration
-  const roleSelect = document.getElementById('mobileGateAuthRole');
-  const driverOnlyFields = document.getElementById('mobileGateDriverOnlyFields');
-  if (roleSelect && driverOnlyFields) {
-    roleSelect.addEventListener('change', () => {
-      if (roleSelect.value === 'driver') {
-        driverOnlyFields.style.display = 'grid';
-      } else {
-        driverOnlyFields.style.display = 'none';
+  // Role toggle buttons across screens
+  document.querySelectorAll('[data-action="go-user"]').forEach(btn => {
+    btn.addEventListener('click', () => showAuthScreen('authScreenUserLogin'));
+  });
+  document.querySelectorAll('[data-action="go-driver"]').forEach(btn => {
+    btn.addEventListener('click', () => showAuthScreen('authScreenDriverLogin'));
+  });
+
+  // Cross-screen navigation links
+  const btnToUserRegister = document.getElementById('btnToUserRegister');
+  if (btnToUserRegister) {
+    btnToUserRegister.addEventListener('click', () => showAuthScreen('authScreenUserRegister'));
+  }
+
+  const btnToUserLoginFromReg = document.getElementById('btnToUserLoginFromReg');
+  if (btnToUserLoginFromReg) {
+    btnToUserLoginFromReg.addEventListener('click', () => showAuthScreen('authScreenUserLogin'));
+  }
+
+  const btnToDriverLogin = document.getElementById('btnToDriverLogin');
+  if (btnToDriverLogin) {
+    btnToDriverLogin.addEventListener('click', () => showAuthScreen('authScreenDriverLogin'));
+  }
+
+  const btnDriverBackToUser = document.getElementById('btnDriverBackToUser');
+  if (btnDriverBackToUser) {
+    btnDriverBackToUser.addEventListener('click', () => showAuthScreen('authScreenUserLogin'));
+  }
+
+  const btnToDriverActivate = document.getElementById('btnToDriverActivate');
+  if (btnToDriverActivate) {
+    btnToDriverActivate.addEventListener('click', () => showAuthScreen('authScreenDriverActivate'));
+  }
+
+  const btnToDriverLoginFromAct = document.getElementById('btnToDriverLoginFromAct');
+  if (btnToDriverLoginFromAct) {
+    btnToDriverLoginFromAct.addEventListener('click', () => showAuthScreen('authScreenDriverLogin'));
+  }
+
+  // Password eye visibility toggles
+  document.querySelectorAll('[data-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const inputId = btn.dataset.toggle;
+      const input = document.getElementById(inputId);
+      if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
       }
     });
+  });
+
+  // Helper to show inline alerts
+  function showAuthAlert(alertElId, msg, isSuccess = false) {
+    const el = document.getElementById(alertElId);
+    if (!el) return;
+    el.textContent = msg;
+    el.className = `auth-status-alert ${isSuccess ? 'success' : 'error'}`;
+    el.style.display = 'block';
   }
 
-  // 3. Gatekeeper Landing Form Submit
-  if (gateForm) {
-    gateForm.addEventListener('submit', async (e) => {
+  // 3. Form 1: User Login (Screen 2)
+  const formUserLogin = document.getElementById('formUserLogin');
+  if (formUserLogin) {
+    formUserLogin.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('mobileGateAuthEmail').value.trim();
-      const password = document.getElementById('mobileGateAuthPassword').value;
-      const name = document.getElementById('mobileGateAuthName')?.value.trim() || email.split('@')[0];
-      const branch = document.getElementById('mobileGateAuthBranch')?.value || 'kok_lanas';
-      const plate = document.getElementById('mobileGateAuthPlate')?.value || 'VPQ 7606';
-      const phone = document.getElementById('mobileGateAuthPhone')?.value.trim() || '';
+      const email = document.getElementById('userLoginEmail')?.value.trim();
+      const password = document.getElementById('userLoginPassword')?.value;
+      const btn = document.getElementById('btnUserLogin');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span>⏳ Memproses...</span>'; }
 
-      const selectedRole = document.getElementById('mobileGateAuthRole')?.value || (email.includes('-driver@') ? 'driver' : 'patient');
-      const roleLabel = selectedRole === 'driver' ? 'Pemandu EMT Bertugas' : (selectedRole === 'paramedic' ? 'Penolong Pegawai Perubatan' : 'Pengguna Awam / Waris Pesakit');
-
-      if (gateStatusMsg) {
-        gateStatusMsg.style.display = 'block';
-        gateStatusMsg.textContent = gateMode === 'login' ? 'Mengesahkan akaun pengguna...' : 'Mendaftar akaun baharu...';
-        gateStatusMsg.style.background = '#E0F2FE';
-        gateStatusMsg.style.color = '#0284C7';
-      }
-
-      let res = null;
-      if (gateMode === 'login') {
-        res = await signInUser(email, password);
+      const res = await signInUser(email, password);
+      if (res.success) {
+        playSuccessChime();
+        showAuthAlert('userLoginAlert', 'Log masuk berjaya! Membuka sistem...', true);
+        const user = res.user || res.data?.user;
+        updateMobileAuthUI(user);
+        setTimeout(() => setMobileGateLocked(false), 500);
       } else {
-        res = await signUpUser(email, password, {
-          name,
-          full_name: name,
-          branch: selectedRole === 'driver' ? branch : 'kok_lanas',
-          assigned_plate: selectedRole === 'driver' ? plate : '',
-          phone,
-          role: selectedRole,
-          role_label: roleLabel
-        });
+        showAuthAlert('userLoginAlert', res.error || 'Emel atau kata laluan tidak sah.');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Log masuk</span> <span>➔</span>'; }
       }
+    });
+  }
+
+  // 4. Form 2: User Register (Screen 3)
+  const formUserRegister = document.getElementById('formUserRegister');
+  if (formUserRegister) {
+    formUserRegister.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('userRegName')?.value.trim();
+      const phone = document.getElementById('userRegPhone')?.value.trim();
+      const email = document.getElementById('userRegEmail')?.value.trim();
+      const password = document.getElementById('userRegPassword')?.value;
+      const btn = document.getElementById('btnUserRegister');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span>⏳ Mendaftar akaun...</span>'; }
+
+      const res = await signUpUser(email, password, {
+        full_name: name,
+        phone,
+        role: 'patient',
+        role_label: 'Pengguna Awam / Waris Pesakit'
+      });
 
       if (res.success) {
         playSuccessChime();
+        showAuthAlert('userRegAlert', 'Pendaftaran akaun berjaya! Membuka sistem...', true);
         const user = res.user || res.data?.user;
         updateMobileAuthUI(user);
-        if (branch) switchBranch(branch);
-
-        const userRole = resolveUserRole(user.email, user.user_metadata);
-        if (userRole === 'driver') {
-          if (gateStatusMsg) {
-            gateStatusMsg.textContent = 'Membuka Portal Pemandu EMT...';
-            gateStatusMsg.style.background = '#DCFCE7';
-            gateStatusMsg.style.color = '#15803D';
-          }
-          setTimeout(() => {
-            window.location.href = '/driver.html';
-          }, 600);
-          return;
-        }
-
-        if (gateStatusMsg) {
-          gateStatusMsg.textContent = gateMode === 'login' ? 'Log masuk berjaya! Membuka operasi...' : 'Pendaftaran berjaya! Membuka operasi...';
-          gateStatusMsg.style.background = '#DCFCE7';
-          gateStatusMsg.style.color = '#15803D';
-        }
-
-        setTimeout(() => {
-          setMobileGateLocked(false);
-        }, 500);
+        setTimeout(() => setMobileGateLocked(false), 500);
       } else {
-        if (gateStatusMsg) {
-          gateStatusMsg.textContent = res.error || 'Ralat pengesahan pemandu.';
-          gateStatusMsg.style.background = '#FEE2E2';
-          gateStatusMsg.style.color = '#B91C1C';
-        }
+        showAuthAlert('userRegAlert', res.error || 'Ralat semasa pendaftaran akaun.');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Daftar akaun</span> <span>➔</span>'; }
       }
+    });
+  }
+
+  // 5. Form 3: Driver Login (Screen 1)
+  const formDriverLogin = document.getElementById('formDriverLogin');
+  if (formDriverLogin) {
+    formDriverLogin.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('driverLoginEmail')?.value.trim();
+      const password = document.getElementById('driverLoginPassword')?.value;
+      const btn = document.getElementById('btnDriverLogin');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span>⏳ Mengesahkan pemandu...</span>'; }
+
+      // 1. Check Driver Account Status in Local/Portal Registry
+      const cleanEmail = (email || '').toLowerCase();
+      let driverStatus = 'Aktif'; // default for official demo staff
+      let statusReason = '';
+
+      try {
+        const storedDrivers = localStorage.getItem('amc_portal_drivers');
+        if (storedDrivers) {
+          const list = JSON.parse(storedDrivers);
+          const found = list.find(d => d.email && d.email.toLowerCase() === cleanEmail);
+          if (found) {
+            driverStatus = found.account_status || 'Aktif';
+            statusReason = found.correction_notes || found.rejection_reason || found.suspension_reason || '';
+          }
+        }
+      } catch (e) {}
+
+      // Block unapproved drivers
+      if (driverStatus === 'Menunggu Kelulusan') {
+        showAuthAlert('driverLoginAlert', 'Akaun pemandu anda masih dalam status Menunggu Kelulusan HQ. Sila tunggu pengesahan sebelum bertugas.');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Log masuk pemandu</span>'; }
+        return;
+      }
+      if (driverStatus === 'Perlu Pembetulan') {
+        showAuthAlert('driverLoginAlert', `HQ meminta pembetulan: "${statusReason || 'Maklumat lesen/profil tidak lengkap'}". Sila aktifkan semula atau hubungi HQ.`);
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Log masuk pemandu</span>'; }
+        return;
+      }
+      if (driverStatus === 'Digantung') {
+        showAuthAlert('driverLoginAlert', `Akaun pemandu ini telah digantung oleh HQ: "${statusReason || 'Tindakan disiplin/operasi'}". Akses dispatch disekat.`);
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Log masuk pemandu</span>'; }
+        return;
+      }
+      if (driverStatus === 'Ditolak') {
+        showAuthAlert('driverLoginAlert', `Permohonan akaun pemandu ini telah ditolak oleh HQ: "${statusReason || 'Kelayakan tidak mencukupi'}".`);
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Log masuk pemandu</span>'; }
+        return;
+      }
+
+      const res = await signInUser(email, password);
+      if (res.success) {
+        playSuccessChime();
+        showAuthAlert('driverLoginAlert', 'Pengesahan berjaya! Membuka Portal Pemandu...', true);
+        const user = res.user || res.data?.user;
+        updateMobileAuthUI(user);
+        setTimeout(() => {
+          window.location.href = '/driver.html';
+        }, 600);
+      } else {
+        showAuthAlert('driverLoginAlert', res.error || 'Akses ditolak. Emel atau kata laluan salah.');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Log masuk pemandu</span>'; }
+      }
+    });
+  }
+
+  // 6. Form 4: Driver Activate Flow (Screen 4: Multi-Stage Onboarding)
+  let verifiedInvitation = null;
+
+  // Auto-detect invitation credentials from URL parameters (?act=AMC-XXXXXX&email=...)
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const actCode = urlParams.get('act');
+    const actEmail = urlParams.get('email');
+    if (actCode) {
+      showAuthScreen('authScreenDriverActivate');
+      const codeInput = document.getElementById('driverActCode');
+      const emailInput = document.getElementById('driverActEmail');
+      if (codeInput) codeInput.value = actCode.trim().toUpperCase();
+      if (emailInput && actEmail) emailInput.value = actEmail.trim();
+    }
+  } catch (e) {}
+
+  const formDriverActivate = document.getElementById('formDriverActivate');
+  if (formDriverActivate) {
+    // STEP 1: Verify Code & Email
+    formDriverActivate.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = document.getElementById('driverActCode')?.value.trim().toUpperCase();
+      const email = document.getElementById('driverActEmail')?.value.trim();
+      const phone = document.getElementById('driverActPhone')?.value.trim();
+      const btn = document.getElementById('btnDriverActivate');
+
+      if (!code || code.length < 3) {
+        showAuthAlert('driverActAlert', 'Sila masukkan kod jemputan sah daripada HQ.');
+        return;
+      }
+
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span>⏳ Menyemak jemputan HQ...</span>'; }
+
+      let verifySuccess = false;
+      let invData = null;
+      let errMsg = '';
+
+      try {
+        const res = await fetch('/api/driver/verify-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, email })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          verifySuccess = true;
+          invData = data.invitation;
+        } else {
+          errMsg = data.error || 'Kod jemputan tidak sah atau telah digunakan.';
+        }
+      } catch (err) {
+        console.warn('API verify failed, checking local registry:', err);
+      }
+
+      // Local storage fallback for development / offline testing
+      if (!verifySuccess) {
+        try {
+          const storedInv = localStorage.getItem('amc_portal_invitations');
+          if (storedInv) {
+            const list = JSON.parse(storedInv);
+            const found = list.find(i => i.email.toLowerCase() === email.toLowerCase());
+            if (found) {
+              if (found.status === 'Dibatalkan') {
+                errMsg = 'Jemputan ini telah dibatalkan oleh pentadbir HQ.';
+              } else if (found.status === 'Tamat Tempoh') {
+                errMsg = 'Tempoh sah kod jemputan telah tamat.';
+              } else if (found.status === 'Diterima') {
+                errMsg = 'Kod jemputan ini telah pun digunakan.';
+              } else {
+                verifySuccess = true;
+                invData = {
+                  id: found.id,
+                  fullName: found.full_name,
+                  email: found.email,
+                  phone: found.phone || phone,
+                  branchId: found.branch_id,
+                  assignedPlate: found.assigned_plate
+                };
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      // If still not verified, accept standard AMC- prefix in demo mode
+      if (!verifySuccess && !errMsg && code.startsWith('AMC-')) {
+        verifySuccess = true;
+        invData = {
+          id: 'demo-inv-' + Date.now(),
+          fullName: 'Pemandu EMT Al-Farhain',
+          email,
+          phone,
+          branchId: 'kok_lanas',
+          assignedPlate: 'VPQ 7606'
+        };
+      }
+
+      if (btn) { btn.disabled = false; btn.innerHTML = '<span>Sahkan jemputan</span> <span>➔</span>'; }
+
+      if (verifySuccess && invData) {
+        verifiedInvitation = { ...invData, code, phone };
+        playClickSound();
+
+        // Advance to Step 2
+        const step1 = document.getElementById('driverActStep1');
+        const step2 = document.getElementById('driverActStep2');
+        const pill1 = document.getElementById('pillStep1');
+        const pill2 = document.getElementById('pillStep2');
+        const line1 = document.getElementById('lineStep1');
+        const nameInput = document.getElementById('driverActFullName');
+
+        if (step1) step1.style.display = 'none';
+        if (step2) step2.style.display = 'block';
+        if (pill1) pill1.classList.remove('active');
+        if (pill2) pill2.classList.add('active');
+        if (line1) line1.classList.add('active');
+        if (nameInput && invData.fullName) nameInput.value = invData.fullName;
+
+      } else {
+        showAuthAlert('driverActAlert', errMsg || 'Kod jemputan tidak sah atau emel tidak sepadan dengan jemputan HQ.');
+      }
+    });
+  }
+
+  // Back from Step 2 to Step 1
+  const btnBackToStep1 = document.getElementById('btnBackToStep1');
+  if (btnBackToStep1) {
+    btnBackToStep1.addEventListener('click', () => {
+      const step1 = document.getElementById('driverActStep1');
+      const step2 = document.getElementById('driverActStep2');
+      const pill1 = document.getElementById('pillStep1');
+      const pill2 = document.getElementById('pillStep2');
+      const line1 = document.getElementById('lineStep1');
+
+      if (step1) step1.style.display = 'block';
+      if (step2) step2.style.display = 'none';
+      if (pill1) pill1.classList.add('active');
+      if (pill2) pill2.classList.remove('active');
+      if (line1) line1.classList.remove('active');
+    });
+  }
+
+  // STEP 2: Submit Profile & Secure Password Setup
+  const btnSubmitProfile = document.getElementById('btnSubmitDriverProfile');
+  if (btnSubmitProfile) {
+    btnSubmitProfile.addEventListener('click', async () => {
+      if (!verifiedInvitation) {
+        showAuthAlert('driverActStep2Alert', 'Sesi jemputan tamat. Sila sahkan semula kod anda.');
+        return;
+      }
+
+      const fullName = document.getElementById('driverActFullName')?.value.trim();
+      const icNumber = document.getElementById('driverActIC')?.value.trim();
+      const password = document.getElementById('driverActPassword')?.value;
+      const confirmPassword = document.getElementById('driverActConfirmPassword')?.value;
+
+      if (!fullName || !icNumber) {
+        showAuthAlert('driverActStep2Alert', 'Sila lengkapkan nama penuh dan nombor kad pengenalan.');
+        return;
+      }
+
+      if (!password || password.length < 8) {
+        showAuthAlert('driverActStep2Alert', 'Kata laluan mestilah sekurang-kurangnya 8 aksara.');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        showAuthAlert('driverActStep2Alert', 'Kata laluan dan pengesahan kata laluan tidak sepadan.');
+        return;
+      }
+
+      btnSubmitProfile.disabled = true;
+      btnSubmitProfile.innerHTML = '<span>⏳ Menghantar permohonan ke HQ...</span>';
+
+      let actSuccess = false;
+      let actError = '';
+
+      try {
+        const res = await fetch('/api/driver/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: verifiedInvitation.code,
+            email: verifiedInvitation.email,
+            phone: verifiedInvitation.phone,
+            fullName,
+            icNumber,
+            password,
+            licenseType: 'GDL D / E Bertauliah EMT'
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          actSuccess = true;
+        } else {
+          actError = data.error || 'Ralat semasa mendaftar permohonan.';
+        }
+      } catch (err) {
+        console.warn('API activate call failed, saving to local portal registry:', err);
+      }
+
+      // Local Registry update for immediate portal & mobile consistency
+      try {
+        const storedDrivers = localStorage.getItem('amc_portal_drivers');
+        let list = storedDrivers ? JSON.parse(storedDrivers) : [];
+        const existingIdx = list.findIndex(d => d.email.toLowerCase() === verifiedInvitation.email.toLowerCase());
+
+        const newDriverRecord = {
+          id: 'drv-' + Date.now(),
+          name: fullName,
+          email: verifiedInvitation.email,
+          phone: verifiedInvitation.phone,
+          hub_id: verifiedInvitation.branchId || 'kok_lanas',
+          assigned_plate: verifiedInvitation.assignedPlate || '',
+          license_type: 'GDL D / E Bertauliah EMT',
+          ic_number: icNumber,
+          account_status: 'Menunggu Kelulusan', // strictly pending
+          submitted_at: new Date().toLocaleString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          invitation_id: verifiedInvitation.id
+        };
+
+        if (existingIdx !== -1) list[existingIdx] = newDriverRecord;
+        else list.unshift(newDriverRecord);
+        localStorage.setItem('amc_portal_drivers', JSON.stringify(list));
+
+        // Mark invitation as Diterima
+        const storedInv = localStorage.getItem('amc_portal_invitations');
+        if (storedInv) {
+          let invList = JSON.parse(storedInv);
+          const iIdx = invList.findIndex(i => i.email.toLowerCase() === verifiedInvitation.email.toLowerCase());
+          if (iIdx !== -1) {
+            invList[iIdx].status = 'Diterima';
+            localStorage.setItem('amc_portal_invitations', JSON.stringify(invList));
+          }
+        }
+
+        // Add audit log
+        const storedAud = localStorage.getItem('amc_portal_driver_audits');
+        let audList = storedAud ? JSON.parse(storedAud) : [];
+        audList.unshift({
+          id: 'aud-' + Date.now(),
+          created_at: new Date().toLocaleString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          actor_name: fullName,
+          actor_role: 'driver',
+          target_email: verifiedInvitation.email,
+          action: 'PROFIL_DIHANTAR',
+          reason: 'Pemandu berjaya menebus jemputan dan menghantar permohonan pengaktifan ke HQ.'
+        });
+        localStorage.setItem('amc_portal_driver_audits', JSON.stringify(audList));
+
+        actSuccess = true;
+      } catch (e) {}
+
+      btnSubmitProfile.disabled = false;
+      btnSubmitProfile.innerHTML = '<span>Hantar permohonan ke HQ</span> <span>➔</span>';
+
+      if (actSuccess) {
+        playSuccessChime();
+
+        // Advance to Step 3 (Waiting for HQ Approval Screen)
+        const step2 = document.getElementById('driverActStep2');
+        const step3 = document.getElementById('driverActStep3Waiting');
+        const pill2 = document.getElementById('pillStep2');
+        const pill3 = document.getElementById('pillStep3');
+        const line2 = document.getElementById('lineStep2');
+        const switchLink = document.getElementById('actSwitchLoginLink');
+
+        if (step2) step2.style.display = 'none';
+        if (step3) step3.style.display = 'block';
+        if (pill2) pill2.classList.remove('active');
+        if (pill3) pill3.classList.add('active');
+        if (line2) line2.classList.add('active');
+        if (switchLink) switchLink.style.display = 'none';
+
+        const waitEmail = document.getElementById('waitDriverEmail');
+        const waitBranch = document.getElementById('waitDriverBranch');
+        if (waitEmail) waitEmail.textContent = verifiedInvitation.email;
+        if (waitBranch) waitBranch.textContent = verifiedInvitation.branchId === 'raub' ? 'Raub, Pahang' : verifiedInvitation.branchId === 'jeli' ? 'Jeli, Kelantan' : 'HQ Kok Lanas';
+
+      } else {
+        showAuthAlert('driverActStep2Alert', actError || 'Gagal menghantar permohonan. Sila cuba lagi.');
+      }
+    });
+  }
+
+  // Step 3 Actions: Check Status & Return to Login
+  const btnCheckStatus = document.getElementById('btnCheckDriverStatus');
+  if (btnCheckStatus) {
+    btnCheckStatus.addEventListener('click', () => {
+      if (!verifiedInvitation) return;
+      let status = 'Menunggu Kelulusan';
+      try {
+        const stored = localStorage.getItem('amc_portal_drivers');
+        if (stored) {
+          const list = JSON.parse(stored);
+          const found = list.find(d => d.email.toLowerCase() === verifiedInvitation.email.toLowerCase());
+          if (found) status = found.account_status;
+        }
+      } catch (e) {}
+
+      if (status === 'Aktif') {
+        alert('🎉 Tahniah! Akaun anda telah DILULUSKAN oleh HQ. Anda boleh log masuk sekarang.');
+        showAuthScreen('authScreenDriverLogin');
+      } else {
+        alert(`Status Semasa: [${status}].\nPermohonan anda masih dalam semakan HQ. Sila hubungi 013-914 7606 sekiranya memerlukan kelulusan segera.`);
+      }
+    });
+  }
+
+  const btnReturnLogin = document.getElementById('btnReturnToDriverLogin');
+  if (btnReturnLogin) {
+    btnReturnLogin.addEventListener('click', () => {
+      showAuthScreen('authScreenDriverLogin');
     });
   }
 

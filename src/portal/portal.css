@@ -3592,3 +3592,34 @@ body {
 .amc-maplibre-marker.is-selected .amc-pickup-badge {
   box-shadow: 0 0 0 4px #FFF0F2, 0 8px 22px rgba(198, 30, 47, 0.5) !important;
 }
+
+/* =========================================================================
+   PEMANDU & JEMPUTAN MODULE STYLES
+   ========================================================================= */
+.pemandu-tab-content {
+  display: none;
+}
+
+.pemandu-tab-content.active {
+  display: block;
+}
+
+.tab-badge-pill {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.nav-badge-pill {
+  box-shadow: 0 2px 6px rgba(198, 30, 47, 0.4);
+  animation: pulseBadge 2.5s infinite;
+}
+
+@keyframes pulseBadge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+

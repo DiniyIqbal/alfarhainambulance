@@ -23,150 +23,466 @@
 <body>
 
   <!-- =========================================================================
-       0. FULL-SCREEN MOBILE AUTHENTICATION GATEKEEPER (FIRST PAGE / SECURITY GATEWAY)
+       0. FULL-SCREEN MOBILE AUTHENTICATION (4 SEPARATE USER & DRIVER SCREENS)
        ========================================================================= -->
   <div class="mobile-auth-gate-page" id="mobileAuthGate">
-    <div class="mobile-gate-card">
-      <!-- Header -->
-      <div class="mobile-gate-header">
-        <div class="mobile-gate-emblem">
-          <svg viewBox="0 0 24 24">
-            <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
-          </svg>
+    <div class="mobile-auth-wrapper">
+      
+      <!-- ==============================================================
+           SCREEN 2: USER LOGIN (Default patient landing)
+           ============================================================== -->
+      <div class="auth-screen-panel active" id="authScreenUserLogin">
+        <div class="auth-hero-container">
+          <img src="/auth_hero_user.jpg" class="auth-hero-banner" alt="AFAMS Pengguna">
         </div>
-        <div class="mobile-gate-badge">
-          <span>🏥</span> <span>Perkhidmatan Ambulans &amp; Perubatan 24 Jam</span>
+
+        <div class="auth-card-sheet">
+          <div class="auth-header-texts">
+            <h1 class="auth-main-title">Selamat datang</h1>
+            <p class="auth-sub-title">Tempah ambulans untuk anda dan keluarga.</p>
+          </div>
+
+          <!-- Role Toggle Pill -->
+          <div class="auth-role-toggle">
+            <button type="button" class="auth-role-btn active" data-action="go-user">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+              <span>Pengguna</span>
+            </button>
+            <button type="button" class="auth-role-btn" data-action="go-driver">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.55.45-1 1-1h3.13c.43 1.57 1.63 2.77 3.2 3.2V17c0 .55.45 1 1 1s1-.45 1-1v-2.8c1.57-.43 2.77-1.63 3.2-3.2H19c.55 0 1 .45 1 1 0 4.41-3.59 8-8 8zm-5.5-9c0-.55.45-1 1-1h1.13c.43-1.57 1.63-2.77 3.2-3.2V5c0-.55.45-1 1-1s1 .45 1 1v1.8c1.57.43 2.77 1.63 3.2 3.2H17.5c.55 0 1 .45 1 1s-.45 1-1 1h-1.63c-.35 1.15-1.12 2.11-2.12 2.62V15c0 .55-.45 1-1 1s-1-.45-1-1v-1.38c-1-.51-1.77-1.47-2.12-2.62H7.5c-.55 0-1-.45-1-1z"/>
+              </svg>
+              <span>Pemandu</span>
+            </button>
+          </div>
+
+          <form id="formUserLogin" class="auth-form-fields">
+            <div class="auth-field-group">
+              <label class="auth-field-label">Emel</label>
+              <div class="auth-input-wrap">
+                <span class="auth-input-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                </span>
+                <input type="email" id="userLoginEmail" placeholder="nama@contoh.com" required>
+              </div>
+            </div>
+
+            <div class="auth-field-group">
+              <label class="auth-field-label">Kata laluan</label>
+              <div class="auth-input-wrap">
+                <span class="auth-input-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </span>
+                <input type="password" id="userLoginPassword" placeholder="••••••••" required>
+                <button type="button" class="auth-password-toggle" data-toggle="userLoginPassword">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+              <div class="auth-forgot-row">
+                <button type="button" class="auth-link-text auth-forgot-btn">Lupa kata laluan?</button>
+              </div>
+            </div>
+
+            <div class="auth-status-alert" id="userLoginAlert" style="display:none;"></div>
+
+            <button type="submit" class="auth-btn-primary" id="btnUserLogin">
+              <span>Log masuk</span> <span>➔</span>
+            </button>
+
+            <div class="auth-switch-link">
+              Belum ada akaun? <button type="button" class="auth-link-bold" id="btnToUserRegister">Daftar sekarang</button>
+            </div>
+
+            <div class="auth-emergency-card">
+              <div class="auth-emergency-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+              </div>
+              <div class="auth-emergency-text">
+                <strong>Perlu bantuan segera?</strong>
+                <span>Hubungi HQ • <a href="tel:0139147606">013-914 7606</a></span>
+              </div>
+            </div>
+
+            <div class="auth-driver-prompt">
+              Pemandu? <button type="button" class="auth-link-bold" id="btnToDriverLogin">Log masuk di sini</button>
+            </div>
+          </form>
         </div>
-        <h1 class="mobile-gate-title">Al-Farhain AMC Ambulans</h1>
-        <p class="mobile-gate-subtitle">Sila log masuk untuk membuat tempahan ambulans, semakan tambang pesakit, atau tugasan krew perubatan.</p>
       </div>
 
-      <!-- Body / Form Area -->
-      <div class="mobile-gate-body">
-
-        <!-- EMERGENCY DIRECT CALL BUTTON (DIRECT CRISIS DIALING WITHOUT AUTHENTICATION) -->
-        <a href="tel:0139147606" class="login-emergency-call-card" id="loginEmergencyDirectCall" title="Tekan untuk hubungi Talian Kecemasan 24 Jam serta-merta">
-          <div class="emergency-call-pulse-dot">
-            <span class="emergency-phone-icon">🚨</span>
-          </div>
-          <div class="emergency-call-body">
-            <div class="emergency-call-top">
-              <span class="emergency-tag-red">KECEMASAN 24 JAM</span>
-              <span class="emergency-fast-call">DIRECT CALL ➔</span>
-            </div>
-            <div class="emergency-call-number">013-914 7606</div>
-            <div class="emergency-call-desc">Hubungi Pusat Operasi Al-Farhain serta-merta tanpa perlu log masuk</div>
-          </div>
-          <div class="emergency-call-btn-action">
-            <span>PANGGIL</span>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-              <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
-            </svg>
-          </div>
-        </a>
-
-        <!-- Segmented Tab Switcher -->
-        <div class="auth-segmented-nav" style="display: flex; background: #F1F5F9; border-radius: 8px; padding: 4px; gap: 4px; margin-bottom: 16px;">
-          <button type="button" class="auth-seg-btn active" id="mobileGateBtnTabLogin" style="flex: 1; padding: 8px; font-size: 0.76rem; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; background: var(--amc-red); color: #FFF;">
-            <span>🔑</span> <span>Log Masuk</span>
-          </button>
-          <button type="button" class="auth-seg-btn" id="mobileGateBtnTabRegister" style="flex: 1; padding: 8px; font-size: 0.76rem; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; background: transparent; color: var(--text-muted);">
-            <span>✍️</span> <span>Daftar Akaun</span>
-          </button>
+      <!-- ==============================================================
+           SCREEN 3: USER REGISTER
+           ============================================================== -->
+      <div class="auth-screen-panel" id="authScreenUserRegister">
+        <div class="auth-hero-container reg-hero">
+          <img src="/auth_hero_register.jpg" class="auth-hero-banner" alt="Cipta akaun anda">
         </div>
 
-        <form id="mobileGateAuthForm">
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Register Only Fields -->
-            <div id="mobileGateRegisterFields" style="display: none; flex-direction: column; gap: 10px;">
-              <div>
-                <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Jenis Pengguna</label>
-                <select id="mobileGateAuthRole" class="search-bar-box" style="width: 100%; margin-top: 4px;">
-                  <option value="patient">Pengguna Awam / Waris Pesakit</option>
-                  <option value="driver">Pemandu / Krew EMT Bertugas</option>
-                  <option value="paramedic">Penolong Pegawai Perubatan (M.A)</option>
-                </select>
-              </div>
+        <div class="auth-card-sheet">
+          <div class="auth-header-texts">
+            <h1 class="auth-main-title">Cipta akaun anda</h1>
+            <p class="auth-sub-title">Urus tempahan ambulans dengan lebih mudah.</p>
+          </div>
 
-              <div>
-                <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Nama Penuh</label>
-                <input type="text" id="mobileGateAuthName" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="Cth: Ahmad / Mohd Diniy">
-              </div>
+          <div class="auth-role-toggle">
+            <button type="button" class="auth-role-btn active" data-action="go-user">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+              <span>Pengguna</span>
+            </button>
+            <button type="button" class="auth-role-btn" data-action="go-driver">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.55.45-1 1-1h3.13c.43 1.57 1.63 2.77 3.2 3.2V17c0 .55.45 1 1 1s1-.45 1-1v-2.8c1.57-.43 2.77-1.63 3.2-3.2H19c.55 0 1 .45 1 1 0 4.41-3.59 8-8 8zm-5.5-9c0-.55.45-1 1-1h1.13c.43-1.57 1.63-2.77 3.2-3.2V5c0-.55.45-1 1-1s1 .45 1 1v1.8c1.57.43 2.77 1.63 3.2 3.2H17.5c.55 0 1 .45 1 1s-.45 1-1 1h-1.63c-.35 1.15-1.12 2.11-2.12 2.62V15c0 .55-.45 1-1 1s-1-.45-1-1v-1.38c-1-.51-1.77-1.47-2.12-2.62H7.5c-.55 0-1-.45-1-1z"/>
+              </svg>
+              <span>Pemandu</span>
+            </button>
+          </div>
 
-              <div id="mobileGateDriverOnlyFields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <div>
-                  <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Cawangan</label>
-                  <select id="mobileGateAuthBranch" class="search-bar-box" style="width: 100%; margin-top: 4px;">
-                    <option value="kok_lanas">HQ Kok Lanas</option>
-                    <option value="raub">Cawangan Raub</option>
-                    <option value="jeli">Cawangan Jeli</option>
-                    <option value="machang">Cawangan Machang</option>
-                  </select>
-                </div>
-                <div>
-                  <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">No. Plat Van</label>
-                  <select id="mobileGateAuthPlate" class="search-bar-box" style="width: 100%; margin-top: 4px;">
-                    <option value="VPQ 7606">VPQ 7606 (Kelantan)</option>
-                    <option value="DFG 7606">DFG 7606 (Pahang)</option>
-                    <option value="AMC Regional">AMC Regional</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">No. Telefon</label>
-                <input type="tel" id="mobileGateAuthPhone" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="01X-XXXXXXX">
+          <form id="formUserRegister" class="auth-form-fields">
+            <div class="auth-field-group">
+              <label class="auth-field-label">Nama penuh</label>
+              <div class="auth-input-wrap">
+                <span class="auth-input-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </span>
+                <input type="text" id="userRegName" placeholder="Nama seperti dalam dokumen" required>
               </div>
             </div>
 
-            <!-- Email & Password -->
-            <div>
-              <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Alamat Emel Gmail</label>
-              <input type="email" id="mobileGateAuthEmail" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="emel.anda@gmail.com" required>
-              <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px; line-height: 1.3;">
-                💡 <b>Pesakit:</b> gunakan Gmail biasa (ahmad@gmail.com).<br>
-                🚗 <b>Pemandu EMT:</b> gunakan Gmail bertugas (nama-driver@gmail.com).
+            <div class="auth-field-group">
+              <label class="auth-field-label">No. telefon</label>
+              <div class="auth-phone-input-wrap">
+                <span class="auth-phone-prefix">🇲🇾 +60</span>
+                <input type="tel" id="userRegPhone" placeholder="12 345 6789" required>
               </div>
             </div>
 
-            <div>
-              <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Kata Laluan</label>
-              <input type="password" id="mobileGateAuthPassword" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="Minimum 6 aksara" required minlength="6">
+            <div class="auth-field-group">
+              <label class="auth-field-label">Emel</label>
+              <div class="auth-input-wrap">
+                <span class="auth-input-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                </span>
+                <input type="email" id="userRegEmail" placeholder="nama@contoh.com" required>
+              </div>
             </div>
 
-            <!-- Error / Status Message Box -->
-            <div id="mobileGateStatusMsg" style="display: none; padding: 8px 12px; border-radius: 8px; font-size: 0.74rem;"></div>
+            <div class="auth-field-group">
+              <label class="auth-field-label">Kata laluan</label>
+              <div class="auth-input-wrap">
+                <span class="auth-input-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </span>
+                <input type="password" id="userRegPassword" placeholder="••••••••••••" required minlength="6">
+                <button type="button" class="auth-password-toggle" data-toggle="userRegPassword">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+              <div class="auth-field-hint">Gunakan sekurang-kurangnya 6-12 aksara.</div>
+            </div>
 
-            <button type="submit" class="primary-action-btn" id="btnMobileGateSubmit" style="width: 100%; padding: 12px; font-size: 0.88rem; justify-content: center; margin-top: 4px;">
-              <span>🚀</span> <span id="mobileGateSubmitLabel">Log Masuk ke Sistem</span>
-            </button>
-          </div>
-        </form>
+            <label class="auth-checkbox-row">
+              <input type="checkbox" id="userRegTerms" required checked>
+              <span>Saya bersetuju dengan <a href="#" class="auth-red-link">Terma Penggunaan</a> dan <a href="#" class="auth-red-link">Dasar Privasi</a>.</span>
+            </label>
 
-        <!-- Quick 1-Click Demo Login for Roles -->
-        <div style="background: var(--bg-card); border: 1px dashed var(--border-light); border-radius: var(--radius-sm); padding: 10px; margin-top: 16px;">
-          <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
-            ⚡ Log Masuk Segera (Demo Pengasingan Peranan):
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 6px;">
-            <button type="button" class="btn-demo-quick-auth-mobile" data-email="ahmad@gmail.com" data-name="Ahmad (Pengguna Awam)" data-plate="" data-hub="kok_lanas" data-role="patient" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:#F8FAFC;border:1px solid var(--border-light);color:var(--text-main);cursor:pointer;font-weight:700;font-size:0.75rem;text-align:left;">
-              <span>👤</span> <span>Pengguna Awam / Pesakit (ahmad@gmail.com)</span>
-            </button>
-            <button type="button" class="btn-demo-quick-auth-mobile" data-email="abedi-driver@gmail.com" data-name="Abe Di (Pemandu EMT)" data-plate="VPQ 7606" data-hub="kok_lanas" data-role="driver" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:var(--amc-red-light);border:1px solid var(--amc-red-border);color:var(--amc-red);cursor:pointer;font-weight:700;font-size:0.75rem;text-align:left;">
-              <span>🚗</span> <span>Pemandu EMT (abedi-driver@gmail.com)</span>
-            </button>
-          </div>
-        </div>
+            <div class="auth-status-alert" id="userRegAlert" style="display:none;"></div>
 
-        <!-- Cross Link to Portal -->
-        <div style="margin-top: 14px; text-align: center;">
-          <a href="/portal.html" style="display: block; font-size: 0.76rem; font-weight: 700; color: var(--amc-red); text-decoration: none; padding: 8px; border: 1px solid var(--amc-red-border); border-radius: 8px; background: var(--amc-red-light);">
-            <span>💻</span> <span>Akses Web Portal HQ Pusat Operasi ➔</span>
-          </a>
+            <button type="submit" class="auth-btn-primary" id="btnUserRegister">
+              <span>Daftar akaun</span> <span>➔</span>
+            </button>
+
+            <div class="auth-switch-link">
+              Sudah ada akaun? <button type="button" class="auth-link-bold" id="btnToUserLoginFromReg">Log masuk</button>
+            </div>
+
+            <div class="auth-info-card">
+              <span>ℹ️</span> <span>Maklumat pesakit diisi semasa tempahan.</span>
+            </div>
+          </form>
         </div>
       </div>
+
+      <!-- ==============================================================
+           SCREEN 1: DRIVER LOGIN
+           ============================================================== -->
+      <div class="auth-screen-panel" id="authScreenDriverLogin">
+        <div class="auth-hero-container driver-hero">
+          <img src="/auth_hero_driver.jpg" class="auth-hero-banner" alt="Portal Pemandu">
+        </div>
+
+        <div class="auth-card-sheet">
+          <!-- Role Toggle Pill -->
+          <div class="auth-role-toggle">
+            <button type="button" class="auth-role-btn" data-action="go-user">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+              <span>Pengguna</span>
+            </button>
+            <button type="button" class="auth-role-btn active" data-action="go-driver">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.55.45-1 1-1h3.13c.43 1.57 1.63 2.77 3.2 3.2V17c0 .55.45 1 1 1s1-.45 1-1v-2.8c1.57-.43 2.77-1.63 3.2-3.2H19c.55 0 1 .45 1 1 0 4.41-3.59 8-8 8zm-5.5-9c0-.55.45-1 1-1h1.13c.43-1.57 1.63-2.77 3.2-3.2V5c0-.55.45-1 1-1s1 .45 1 1v1.8c1.57.43 2.77 1.63 3.2 3.2H17.5c.55 0 1 .45 1 1s-.45 1-1 1h-1.63c-.35 1.15-1.12 2.11-2.12 2.62V15c0 .55-.45 1-1 1s-1-.45-1-1v-1.38c-1-.51-1.77-1.47-2.12-2.62H7.5c-.55 0-1-.45-1-1z"/>
+              </svg>
+              <span>Pemandu</span>
+            </button>
+          </div>
+
+          <div class="auth-header-texts">
+            <h1 class="auth-main-title">Sedia untuk bertugas?</h1>
+            <p class="auth-sub-title">Log masuk untuk semak tugasan anda.</p>
+          </div>
+
+          <form id="formDriverLogin" class="auth-form-fields">
+            <div class="auth-field-group">
+              <label class="auth-field-label">Emel kerja</label>
+              <div class="auth-input-wrap">
+                <span class="auth-input-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                </span>
+                <input type="email" id="driverLoginEmail" placeholder="nama@alfarhain.com" required>
+              </div>
+            </div>
+
+            <div class="auth-field-group">
+              <label class="auth-field-label">Kata laluan</label>
+              <div class="auth-input-wrap">
+                <span class="auth-input-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </span>
+                <input type="password" id="driverLoginPassword" placeholder="••••••••••" required>
+                <button type="button" class="auth-password-toggle" data-toggle="driverLoginPassword">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+              <div class="auth-forgot-row">
+                <button type="button" class="auth-link-text auth-forgot-btn">Lupa kata laluan?</button>
+              </div>
+            </div>
+
+            <div class="auth-status-alert" id="driverLoginAlert" style="display:none;"></div>
+
+            <button type="submit" class="auth-btn-primary" id="btnDriverLogin">
+              <span>Log masuk pemandu</span>
+            </button>
+
+            <div class="auth-badge-note">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+              <span>Akses untuk pemandu yang diluluskan HQ.</span>
+            </div>
+
+            <button type="button" class="auth-btn-outline" id="btnToDriverActivate">
+              Aktifkan akaun jemputan
+            </button>
+
+            <div class="auth-switch-link">
+              Perlukan akses? <a href="tel:0139147606" class="auth-red-link">Hubungi HQ</a>
+            </div>
+
+            <button type="button" class="auth-btn-back-user" id="btnDriverBackToUser">
+              ← Kembali ke pengguna
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- ==============================================================
+           SCREEN 4: DRIVER ACTIVATE
+           ============================================================== -->
+      <div class="auth-screen-panel" id="authScreenDriverActivate">
+        <div class="auth-hero-container act-hero">
+          <img src="/auth_hero_activate.jpg" class="auth-hero-banner" alt="Aktifkan akaun pemandu">
+        </div>
+
+        <div class="auth-card-sheet">
+          <div class="auth-role-toggle">
+            <button type="button" class="auth-role-btn" data-action="go-user">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+              <span>Pengguna</span>
+            </button>
+            <button type="button" class="auth-role-btn active" data-action="go-driver">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.55.45-1 1-1h3.13c.43 1.57 1.63 2.77 3.2 3.2V17c0 .55.45 1 1 1s1-.45 1-1v-2.8c1.57-.43 2.77-1.63 3.2-3.2H19c.55 0 1 .45 1 1 0 4.41-3.59 8-8 8zm-5.5-9c0-.55.45-1 1-1h1.13c.43-1.57 1.63-2.77 3.2-3.2V5c0-.55.45-1 1-1s1 .45 1 1v1.8c1.57.43 2.77 1.63 3.2 3.2H17.5c.55 0 1 .45 1 1s-.45 1-1 1h-1.63c-.35 1.15-1.12 2.11-2.12 2.62V15c0 .55-.45 1-1 1s-1-.45-1-1v-1.38c-1-.51-1.77-1.47-2.12-2.62H7.5c-.55 0-1-.45-1-1z"/>
+              </svg>
+              <span>Pemandu</span>
+            </button>
+          </div>
+
+          <div class="auth-shield-header">
+            <div class="auth-shield-icon">🛡️</div>
+            <div>
+              <h1 class="auth-main-title" style="font-size: 1.35rem;">Aktifkan akaun pemandu</h1>
+              <p class="auth-sub-title">Gunakan kod jemputan yang diberikan oleh HQ.</p>
+            </div>
+          </div>
+
+          <!-- Stepper Indicator -->
+          <div class="auth-stepper-row" id="driverActStepper">
+            <div class="auth-step-pill active" id="pillStep1">
+              <span class="auth-step-num">1</span>
+              <span>Jemputan</span>
+            </div>
+            <div class="auth-step-line" id="lineStep1"></div>
+            <div class="auth-step-pill" id="pillStep2">
+              <span class="auth-step-num">2</span>
+              <span>Profil</span>
+            </div>
+            <div class="auth-step-line" id="lineStep2"></div>
+            <div class="auth-step-pill" id="pillStep3">
+              <span class="auth-step-num">3</span>
+              <span>Kelulusan</span>
+            </div>
+          </div>
+
+          <!-- STEP 1: VERIFY INVITATION -->
+          <form id="formDriverActivate" class="auth-form-fields">
+            <div id="driverActStep1">
+              <div class="auth-field-group">
+                <label class="auth-field-label">
+                  <span>🎟️</span> <span>Kod jemputan</span>
+                </label>
+                <div class="auth-input-wrap">
+                  <input type="text" id="driverActCode" placeholder="Masukkan kod jemputan (cth: AMC-XXXXXX)" required>
+                </div>
+              </div>
+
+              <div class="auth-field-group">
+                <label class="auth-field-label">
+                  <span>✉️</span> <span>Emel kerja</span>
+                </label>
+                <div class="auth-input-wrap">
+                  <input type="email" id="driverActEmail" placeholder="Emel yang didaftarkan HQ" required>
+                </div>
+              </div>
+
+              <div class="auth-field-group">
+                <label class="auth-field-label">
+                  <span>📞</span> <span>No. telefon</span>
+                </label>
+                <div class="auth-phone-input-wrap">
+                  <span class="auth-phone-prefix">+60 ▼</span>
+                  <input type="tel" id="driverActPhone" placeholder="12 345 6789" required>
+                </div>
+              </div>
+
+              <div class="auth-notice-card">
+                <div class="auth-notice-badge">🛡️</div>
+                <div class="auth-notice-body">
+                  <strong>Akaun pemandu disahkan oleh HQ.</strong>
+                  <span>Cawangan dan ambulans ditetapkan selepas pengesahan kelayakan.</span>
+                </div>
+              </div>
+
+              <div class="auth-status-alert" id="driverActAlert" style="display:none;"></div>
+
+              <button type="submit" class="auth-btn-primary" id="btnDriverActivate">
+                <span>Sahkan jemputan</span> <span>➔</span>
+              </button>
+            </div>
+
+            <!-- STEP 2: PROFILE & SECURE PASSWORD SETUP -->
+            <div id="driverActStep2" style="display:none;">
+              <div class="auth-notice-card" style="background:#f0fdf4;border-color:#bbf7d0;">
+                <div class="auth-notice-badge">✔️</div>
+                <div class="auth-notice-body">
+                  <strong style="color:#166534;">Kod jemputan sah!</strong>
+                  <span id="actVerifiedHint" style="color:#15803d;">Sila lengkapkan maklumat peribadi dan kata laluan anda.</span>
+                </div>
+              </div>
+
+              <div class="auth-field-group">
+                <label class="auth-field-label">
+                  <span>👤</span> <span>Nama penuh</span>
+                </label>
+                <div class="auth-input-wrap">
+                  <input type="text" id="driverActFullName" placeholder="Nama penuh seperti dalam MyKad" required>
+                </div>
+              </div>
+
+              <div class="auth-field-group">
+                <label class="auth-field-label">
+                  <span>🪪</span> <span>No. Kad Pengenalan (MyKad)</span>
+                </label>
+                <div class="auth-input-wrap">
+                  <input type="text" id="driverActIC" placeholder="cth: 900512-03-5541" required>
+                </div>
+              </div>
+
+              <div class="auth-field-group">
+                <label class="auth-field-label">
+                  <span>🔒</span> <span>Cipta kata laluan baharu</span>
+                </label>
+                <div class="auth-input-wrap">
+                  <input type="password" id="driverActPassword" placeholder="Minimum 8 aksara" required minlength="8">
+                  <button type="button" class="auth-input-action-btn" data-toggle="driverActPassword" aria-label="Lihat kata laluan">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="auth-field-group">
+                <label class="auth-field-label">
+                  <span>🔒</span> <span>Sahkan kata laluan</span>
+                </label>
+                <div class="auth-input-wrap">
+                  <input type="password" id="driverActConfirmPassword" placeholder="Masukkan semula kata laluan" required minlength="8">
+                </div>
+              </div>
+
+              <div class="auth-status-alert" id="driverActStep2Alert" style="display:none;"></div>
+
+              <button type="button" class="auth-btn-primary" id="btnSubmitDriverProfile">
+                <span>Hantar permohonan ke HQ</span> <span>➔</span>
+              </button>
+
+              <button type="button" class="auth-link-bold" id="btnBackToStep1" style="display:block;margin:12px auto 0;background:none;border:none;cursor:pointer;">
+                ← Kembali ke semakan kod
+              </button>
+            </div>
+
+            <!-- STEP 3: WAITING FOR HQ APPROVAL SCREEN -->
+            <div id="driverActStep3Waiting" style="display:none;text-align:center;padding:10px 0;">
+              <div style="font-size:3rem;margin-bottom:8px;">⏱️</div>
+              <h2 style="font-size:1.25rem;font-weight:800;color:#005047;margin-bottom:6px;">Permohonan Dihantar</h2>
+              <div style="display:inline-block;padding:4px 12px;background:#fef2f2;color:#c61e2f;border-radius:14px;font-size:0.75rem;font-weight:800;margin-bottom:14px;border:1px solid #fecaca;">
+                STATUS: MENUNGGU KELULUSAN HQ
+              </div>
+              <p style="font-size:0.82rem;color:#526966;line-height:1.5;margin-bottom:16px;">
+                Permohonan akaun pemandu anda telah direkodkan. Pusat Kawalan Operasi Al-Farhain sedang menyemak kelayakan dan penetapan ambulans sebelum memberi akses dispatch.
+              </p>
+
+              <div style="background:#f8fafc;padding:12px;border-radius:10px;text-align:left;font-size:0.78rem;color:#334155;margin-bottom:16px;border:1px solid #e2e8f0;">
+                <div><strong>Emel Berdaftar:</strong> <span id="waitDriverEmail">—</span></div>
+                <div style="margin-top:4px;"><strong>Cawangan:</strong> <span id="waitDriverBranch">—</span></div>
+                <div style="margin-top:4px;"><strong>Akses Dispatch:</strong> <span style="color:#c61e2f;font-weight:700;">Disekat (Menanti Kelulusan)</span></div>
+              </div>
+
+              <button type="button" class="auth-btn-primary" id="btnCheckDriverStatus">
+                <span>Semak Status Terkini</span>
+              </button>
+
+              <button type="button" class="auth-link-bold" id="btnReturnToDriverLogin" style="display:block;margin:14px auto 0;background:none;border:none;cursor:pointer;">
+                Log Masuk Semula
+              </button>
+            </div>
+
+            <div class="auth-switch-link" id="actSwitchLoginLink">
+              Sudah aktif? <button type="button" class="auth-link-bold" id="btnToDriverLoginFromAct">Log masuk</button>
+            </div>
+
+            <div class="auth-contact-hq-card">
+              <span>📞</span> <span>Perlukan bantuan atau semakan segera? <a href="tel:0139147606" class="auth-red-link">Hubungi HQ</a></span>
+            </div>
+          </form>
+        </div>
+      </div>
+
     </div>
-  </div>
   </div>
 
   <!-- Single Clean Mobile Frame Viewport (Clean, Uncluttered, Self-Contained) -->
