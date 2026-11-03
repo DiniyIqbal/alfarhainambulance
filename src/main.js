@@ -2282,20 +2282,6 @@ function initActionModals() {
     closeSupabase.addEventListener('click', () => supabaseModal.classList.remove('show'));
   }
 
-  // Mobile QR Modal
-  const btnMobile = document.getElementById('openMobileModalBtn');
-  const mobileModal = document.getElementById('mobileModal');
-  const closeMobile = document.getElementById('closeMobileModalBtn');
-  if (btnMobile && mobileModal) {
-    btnMobile.addEventListener('click', () => {
-      playClickSound();
-      mobileModal.classList.add('show');
-    });
-  }
-  if (closeMobile && mobileModal) {
-    closeMobile.addEventListener('click', () => mobileModal.classList.remove('show'));
-  }
-
   // Close modals when clicking on background backdrop
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', (e) => {

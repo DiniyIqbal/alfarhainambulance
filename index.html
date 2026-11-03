@@ -239,14 +239,6 @@
             <span id="themeToggleIcon" style="display:none;">🌙</span>
           </button>
 
-          <!-- Fullscreen / Mobile QR Scanner Circle -->
-          <button type="button" class="header-circle-btn" id="openMobileModalBtn" title="Imbas QR / Skrin Penuh Lapangan">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"></path>
-              <rect x="7" y="7" width="10" height="10" rx="1.5" stroke-dasharray="2 2"></rect>
-            </svg>
-          </button>
-
           <!-- User Profile & Log Out Dropdown Pill -->
           <div class="header-font-wrapper" style="position:relative;">
             <button type="button" class="header-font-pill" id="fontSizeToggleBtn" title="Profil Pengguna & Log Keluar">
@@ -1345,30 +1337,6 @@
         <button class="btn-nav-prev" id="testSupabaseBtn">Uji Sambungan</button>
         <button class="primary-action-btn" id="saveSupabaseBtn" style="width: auto; padding: 8px 18px;">Simpan</button>
       </div>
-    </div>
-  </div>
-
-  <!-- =============================================================
-       MODAL 5: MOBILE QR CODE / APK INSTALL
-       ============================================================= -->
-  <div class="modal-overlay" id="mobileModal">
-    <div class="modal-card" style="text-align: center;">
-      <button class="modal-close-btn" id="closeMobileModalBtn">&times;</button>
-      <span style="font-size: 2.2rem;">📱</span>
-      <h3 style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; color: var(--text-heading); margin: 6px 0;">
-        Buka di Telefon Pintar
-      </h3>
-      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;">
-        Imbas kod QR di bawah dengan kamera telefon untuk terus buka aplikasi:
-      </p>
-
-      <div style="background: #FFFFFF; padding: 12px; border-radius: 16px; display: inline-block; box-shadow: var(--shadow-card); border: 1px solid var(--border-light); margin-bottom: 12px;">
-        <img id="qrCodeImg" src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=http://localhost:5173/" alt="QR Code" style="width: 160px; height: 160px; display: block;">
-      </div>
-
-      <p style="font-size: 0.72rem; color: var(--text-sub); line-height: 1.4;">
-        💡 <strong>Petua Pasang (PWA):</strong> Buka di Chrome / Safari pada telefon, tekan menu <strong>"Add to Home screen"</strong> untuk memasang aplikasi penuh.
-      </p>
     </div>
   </div>
 
