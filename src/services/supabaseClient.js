@@ -464,15 +464,102 @@ export async function signUpUser(email, password, metadata = {}) {
   }
 }
 
+// =========================================================================
+// DEMONSTRATION DUMMY GMAIL ACCOUNTS (FOR MULTI-ROLE TESTING & DEMO)
+// =========================================================================
+export const DEMO_GMAIL_ACCOUNTS = {
+  'pesakit.demo@gmail.com': {
+    email: 'pesakit.demo@gmail.com',
+    full_name: 'Nik Farhan (Waris Pesakit)',
+    phone: '012-345 6789',
+    role: 'patient',
+    role_label: 'Pengguna Awam / Waris Pesakit',
+    branch: 'kok_lanas',
+    account_status: 'Aktif'
+  },
+  'pemandu.demo@gmail.com': {
+    email: 'pemandu.demo@gmail.com',
+    full_name: 'Abe Di (Pemandu Bertugas EMT)',
+    phone: '013-914 7606',
+    role: 'driver',
+    role_label: 'Pemandu EMT Bertugas',
+    ambulance_plate: 'VPQ 7606',
+    branch: 'kok_lanas',
+    account_status: 'Aktif'
+  },
+  'pemandu.pending@gmail.com': {
+    email: 'pemandu.pending@gmail.com',
+    full_name: 'Mohd Faizul bin Che Man',
+    phone: '017-889 4432',
+    role: 'driver',
+    role_label: 'Pemandu EMT (Menunggu Kelulusan)',
+    ambulance_plate: 'VPP 9901',
+    branch: 'jeli',
+    account_status: 'Menunggu Kelulusan'
+  },
+  'pemandu.pembetulan@gmail.com': {
+    email: 'pemandu.pembetulan@gmail.com',
+    full_name: 'Wan Kamarudin bin Wan Ismail',
+    phone: '019-912 3345',
+    role: 'driver',
+    role_label: 'Pemandu EMT (Perlu Pembetulan)',
+    ambulance_plate: '',
+    branch: 'gua_musang',
+    account_status: 'Perlu Pembetulan',
+    correction_notes: 'Sila muat naik semula lesen GDL yang sah dan terkini.'
+  },
+  'admin.hq.alfarhain@gmail.com': {
+    email: 'admin.hq.alfarhain@gmail.com',
+    full_name: 'Abe Di (Pegawai Operasi HQ)',
+    phone: '013-914 7606',
+    role: 'hq_admin',
+    role_label: 'Pentadbir Utama HQ',
+    branch: 'all',
+    account_status: 'Aktif'
+  },
+  'pengurus.raub@gmail.com': {
+    email: 'pengurus.raub@gmail.com',
+    full_name: 'Abe Din Estimos Sukrosa',
+    phone: '013-914 7606',
+    role: 'branch_manager',
+    role_label: 'Pengurus Cawangan Raub',
+    branch: 'raub',
+    account_status: 'Aktif'
+  }
+};
+
 export async function signInUser(email, password) {
+  const cleanEmail = (email || '').trim().toLowerCase();
+
+  // 1. Direct Demo Account Match (Works instantly for demonstration)
+  if (DEMO_GMAIL_ACCOUNTS[cleanEmail]) {
+    const demo = DEMO_GMAIL_ACCOUNTS[cleanEmail];
+    const mockUser = {
+      id: 'demo_' + cleanEmail.replace(/[^a-zA-Z0-9]/g, '_'),
+      email: demo.email,
+      user_metadata: {
+        full_name: demo.full_name,
+        role: demo.role,
+        role_label: demo.role_label,
+        phone: demo.phone,
+        branch: demo.branch,
+        ambulance_plate: demo.ambulance_plate || '',
+        account_status: demo.account_status,
+        correction_notes: demo.correction_notes || ''
+      }
+    };
+    saveStoredUserProfile(mockUser);
+    return { success: true, user: mockUser, isDemo: true };
+  }
+
   const supabase = getSupabaseClient();
   if (!supabase) {
     const mockUser = {
       id: 'local_user',
-      email: email.trim(),
+      email: cleanEmail,
       user_metadata: {
-        full_name: email.split('@')[0],
-        role: 'branch_manager'
+        full_name: cleanEmail.split('@')[0],
+        role: cleanEmail.includes('driver') || cleanEmail.includes('pemandu') ? 'driver' : 'patient'
       }
     };
     saveStoredUserProfile(mockUser);
@@ -481,7 +568,7 @@ export async function signInUser(email, password) {
 
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: cleanEmail,
       password
     });
 

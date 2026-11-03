@@ -237,6 +237,28 @@ runTest('Pembatalan jemputan tidak menggantung pemandu yang telah berstatus Akti
   assert.strictEqual(otherInv.status, 'Dibatalkan', 'Other invitation is revoked separately');
 });
 
+// -------------------------------------------------------------------------
+// TEST 12: Dummy Gmail Accounts Configured for Each Role
+// -------------------------------------------------------------------------
+runTest('Akaun Gmail demonstrasi wujud bagi setiap peranan pengguna & staf', async () => {
+  const { DEMO_GMAIL_ACCOUNTS } = await import('../src/services/supabaseClient.js');
+
+  const requiredRoles = ['patient', 'driver', 'hq_admin', 'branch_manager'];
+  const emails = Object.keys(DEMO_GMAIL_ACCOUNTS);
+
+  assert.strictEqual(emails.includes('pesakit.demo@gmail.com'), true, 'Must have patient demo account');
+  assert.strictEqual(emails.includes('pemandu.demo@gmail.com'), true, 'Must have active driver demo account');
+  assert.strictEqual(emails.includes('pemandu.pending@gmail.com'), true, 'Must have pending driver demo account');
+  assert.strictEqual(emails.includes('pemandu.pembetulan@gmail.com'), true, 'Must have correction driver demo account');
+  assert.strictEqual(emails.includes('admin.hq.alfarhain@gmail.com'), true, 'Must have HQ admin demo account');
+  assert.strictEqual(emails.includes('pengurus.raub@gmail.com'), true, 'Must have branch manager demo account');
+
+  assert.strictEqual(DEMO_GMAIL_ACCOUNTS['pesakit.demo@gmail.com'].role, 'patient');
+  assert.strictEqual(DEMO_GMAIL_ACCOUNTS['pemandu.demo@gmail.com'].account_status, 'Aktif');
+  assert.strictEqual(DEMO_GMAIL_ACCOUNTS['pemandu.pending@gmail.com'].account_status, 'Menunggu Kelulusan');
+  assert.strictEqual(DEMO_GMAIL_ACCOUNTS['pemandu.pembetulan@gmail.com'].account_status, 'Perlu Pembetulan');
+});
+
 console.log(`\n=========================================================================`);
 console.log(`🏁 AFAMS Driver Invitation & Approval Test Results: ${passedTests}/${totalTests} Passed`);
 console.log(`=========================================================================\n`);

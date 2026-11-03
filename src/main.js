@@ -3284,6 +3284,30 @@ async function initMobileAuth() {
     btnToDriverLoginFromAct.addEventListener('click', () => showAuthScreen('authScreenDriverLogin'));
   }
 
+  // Quick Demo Account Auto-Fill Handlers
+  document.querySelectorAll('.btn-demo-quick-mobile').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const email = btn.dataset.email;
+      const pass = btn.dataset.pass;
+      const target = btn.dataset.targetForm;
+
+      if (target === 'user') {
+        const emailInput = document.getElementById('userLoginEmail');
+        const passInput = document.getElementById('userLoginPassword');
+        if (emailInput) emailInput.value = email;
+        if (passInput) passInput.value = pass;
+        showAuthAlert('userLoginAlert', `⚡ Akaun demo dipilih: ${email}. Klik 'Log Masuk' untuk meneruskan.`, true);
+      } else if (target === 'driver') {
+        const emailInput = document.getElementById('driverLoginEmail');
+        const passInput = document.getElementById('driverLoginPassword');
+        if (emailInput) emailInput.value = email;
+        if (passInput) passInput.value = pass;
+        showAuthAlert('driverLoginAlert', `⚡ Akaun demo dipilih: ${email}. Klik 'Log Masuk' untuk semak peranan.`, true);
+      }
+      playClickSound();
+    });
+  });
+
   // Password eye visibility toggles
   document.querySelectorAll('[data-toggle]').forEach(btn => {
     btn.addEventListener('click', () => {

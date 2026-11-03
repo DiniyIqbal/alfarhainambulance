@@ -3360,6 +3360,200 @@ html, body {
   width: 100%;
   height: auto;
   display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* =========================================================================
+   CRISP VECTOR BRANDING MASTHEAD (ZERO BLUR AT ANY RETINA DENSITY)
+   ========================================================================= */
+.auth-brand-masthead {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 8px 14px;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.abm-brand-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.abm-logo-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.abm-text-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.abm-title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #173D3B;
+  letter-spacing: 0.2px;
+  line-height: 1.15;
+}
+
+.abm-title span {
+  color: #006C67;
+  font-weight: 900;
+}
+
+.abm-sub {
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: #526966;
+  letter-spacing: 0.4px;
+  margin-top: 1px;
+}
+
+.abm-divider {
+  width: 1px;
+  height: 28px;
+  background: #CBD5E1;
+  flex-shrink: 0;
+}
+
+.abm-afams-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.abm-afams-title {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #C61E2F;
+  font-style: italic;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+}
+
+.abm-afams-sub {
+  font-size: 0.48rem;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1.2;
+}
+
+/* Driver Floating Card Pill (Matches user uploaded driver mockup) */
+.auth-driver-top-card {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 10;
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 8px 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.adtc-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.adtc-badge-pill {
+  margin-top: 6px;
+  background: #C61E2F;
+  color: #FFFFFF;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 2px 14px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+/* Mobile Demo Accounts Quick Picker */
+.auth-demo-picker-card {
+  margin-top: 16px;
+  background: #F8FAFC;
+  border: 1.5px dashed #CBD5E1;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.demo-picker-title {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.demo-buttons-grid-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btn-demo-quick-mobile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.btn-demo-quick-mobile:hover {
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+}
+
+.demo-user-badge {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.demo-user-badge.green {
+  color: #047857;
+}
+
+.demo-user-badge.red {
+  color: #991b1b;
+}
+
+.demo-user-badge.amber {
+  color: #92400e;
+}
+
+.demo-user-email {
+  font-size: 0.68rem;
+  color: #64748B;
+  font-family: monospace;
 }
 
 .auth-card-sheet {
