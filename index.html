@@ -1328,167 +1328,15 @@
           </div>
         </section>
 
-        <!-- =============================================================
-             VIEW 3: REPORTS (SCREEN 08 — PRESTASI OPERASI)
-             ============================================================= -->
-        <section id="admin-view" class="view-section">
-          <div class="page-title-row">
-            <h2 class="page-title">Prestasi Operasi</h2>
-            <span class="title-badge-pill demo">DATA CONTOH</span>
-          </div>
-
-          <!-- Month Selector Pill -->
-          <div class="month-selector-pill" id="monthSelectorPill">
-            <span>📅</span>
-            <span id="activeReportMonth">Oktober 2026</span>
-            <span style="font-size: 0.65rem;">▾</span>
-          </div>
-
-          <!-- 4 Stat Metric Cards (2x2 Grid with Sparklines) -->
-          <div class="reports-stats-grid">
-            <!-- Metric 1: Jumlah Trip -->
-            <div class="report-metric-card">
-              <div class="metric-top-row">
-                <span style="color: var(--amc-teal); font-size: 0.95rem;">📈</span>
-                <span>Jumlah trip</span>
-              </div>
-              <div class="metric-value-row">142</div>
-              <svg class="metric-sparkline-svg" viewBox="0 0 100 24" fill="none">
-                <path d="M0 18 Q 20 16, 40 10 T 80 8 T 100 4" stroke="#007D77" stroke-width="2" fill="none"/>
-              </svg>
-            </div>
-
-            <!-- Metric 2: Hasil Tambang -->
-            <div class="report-metric-card">
-              <div class="metric-top-row">
-                <span style="color: var(--amc-teal); font-size: 0.95rem;">💰</span>
-                <span>Hasil tambang</span>
-              </div>
-              <div class="metric-value-row">RM48,250</div>
-              <svg class="metric-sparkline-svg" viewBox="0 0 100 24" fill="none">
-                <path d="M0 19 Q 25 15, 50 12 T 75 6 T 100 2" stroke="#007D77" stroke-width="2" fill="none"/>
-              </svg>
-            </div>
-
-            <!-- Metric 3: Unit Bersedia -->
-            <div class="report-metric-card">
-              <div class="metric-top-row">
-                <span style="color: var(--amc-teal); font-size: 0.95rem;">🚑</span>
-                <span>Unit bersedia</span>
-              </div>
-              <div class="metric-value-row">1 / 2</div>
-              <svg class="metric-sparkline-svg" viewBox="0 0 100 24" fill="none">
-                <path d="M0 14 Q 30 18, 60 10 T 100 8" stroke="#007D77" stroke-width="2" fill="none"/>
-              </svg>
-            </div>
-
-            <!-- Metric 4: Purata Respons -->
-            <div class="report-metric-card">
-              <div class="metric-top-row">
-                <span style="color: var(--amc-teal); font-size: 0.95rem;">⏱️</span>
-                <span>Purata respons</span>
-              </div>
-              <div class="metric-value-row">8.4 min</div>
-              <svg class="metric-sparkline-svg" viewBox="0 0 100 24" fill="none">
-                <path d="M0 8 Q 25 12, 50 14 T 75 16 T 100 18" stroke="#007D77" stroke-width="2" fill="none"/>
-              </svg>
-            </div>
-          </div>
-
-          <!-- Trip Mingguan Bar Chart -->
-          <div class="ui-card weekly-chart-card">
-            <div class="chart-title-row">
-              <span class="chart-title">Trip mingguan</span>
-              <span style="font-size: 0.7rem; color: var(--text-muted);">Purata: 26/hari</span>
-            </div>
-
-            <div class="bar-chart-container" id="weeklyBarChartContainer">
-              <div class="bar-column-item" data-day="Isnin" data-val="22">
-                <div class="bar-pill" style="height: 55%;"></div>
-                <span class="bar-day-label">I</span>
-              </div>
-              <div class="bar-column-item" data-day="Selasa" data-val="28">
-                <div class="bar-pill" style="height: 70%;"></div>
-                <span class="bar-day-label">S</span>
-              </div>
-              <div class="bar-column-item" data-day="Rabu" data-val="38">
-                <div class="bar-pill" style="height: 95%;"></div>
-                <span class="bar-day-label">R</span>
-              </div>
-              <div class="bar-column-item" data-day="Khamis" data-val="24">
-                <div class="bar-pill" style="height: 60%;"></div>
-                <span class="bar-day-label">K</span>
-              </div>
-              <div class="bar-column-item" data-day="Jumaat" data-val="22">
-                <div class="bar-pill" style="height: 55%;"></div>
-                <span class="bar-day-label">J</span>
-              </div>
-              <div class="bar-column-item" data-day="Sabtu" data-val="32">
-                <div class="bar-pill" style="height: 80%;"></div>
-                <span class="bar-day-label">S</span>
-              </div>
-              <div class="bar-column-item" data-day="Ahad" data-val="18">
-                <div class="bar-pill" style="height: 45%;"></div>
-                <span class="bar-day-label">A</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Perjalanan Terkini List -->
-          <div class="recent-trips-section-header">
-            <span style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: var(--text-heading);">Perjalanan terkini</span>
-            <div style="font-size: 0.75rem; color: var(--text-muted); cursor: pointer;">Semua ▾</div>
-          </div>
-
-          <div id="recentTripsContainer">
-            <!-- Item 1 -->
-            <div class="recent-trip-item-card">
-              <div class="trip-item-top">
-                <div class="trip-id-group">
-                  <span>📄</span>
-                  <span>INV-AMC-1042</span>
-                  <span class="status-pill-green" style="background:#ECFDF5; color:#059669; padding: 2px 6px;">Selesai</span>
-                </div>
-                <span class="trip-date-meta">12 Okt 2026 14:32</span>
-              </div>
-              <div class="trip-route-desc">📍 Kok Lanas ➔ HRPZ II</div>
-              <div class="trip-item-bottom">
-                <span class="trip-specs-text">🛣️ 29 km · Pakej PPP</span>
-                <span class="trip-fare-total">RM562.00</span>
-              </div>
-            </div>
-
-            <!-- Item 2 -->
-            <div class="recent-trip-item-card">
-              <div class="trip-item-top">
-                <div class="trip-id-group">
-                  <span>📄</span>
-                  <span>INV-AMC-1041</span>
-                  <span class="status-pill-green" style="background:#ECFDF5; color:#059669; padding: 2px 6px;">Selesai</span>
-                </div>
-                <span class="trip-date-meta">11 Okt 2026 09:15</span>
-              </div>
-              <div class="trip-route-desc">📍 Kok Lanas ➔ Hospital Machang</div>
-              <div class="trip-item-bottom">
-                <span class="trip-specs-text">🛣️ 18 km · Pakej PPP</span>
-                <span class="trip-fare-total">RM300.00</span>
-              </div>
-            </div>
-          </div>
-
-          <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 10px; text-align: center;">
-            <span>ℹ️</span> <span>Data contoh · bukan prestasi syarikat yang disahkan</span>
-          </div>
-        </section>
-
-        <!-- =============================================================
-             VIEW 4: KATALOG HARGA (SCREEN 09 — KATALOG HARGA)
+                <!-- =============================================================
+             VIEW 3: KATALOG HARGA & PERKHIDMATAN (SCREEN KATALOG)
              ============================================================= -->
         <section id="catalog-view" class="view-section">
           <div class="page-title-row">
-            <h2 class="page-title">Katalog Harga</h2>
+            <h2 class="page-title">Katalog &amp; Servis</h2>
+            <span class="title-badge-pill" style="background:#ECFDF5;color:#047857;">AL-FARHAIN 24 JAM</span>
           </div>
-          <div class="page-subtitle">Servis, staf &amp; peralatan</div>
+          <div class="page-subtitle">Pilihan servis ambulans, pakej perubatan &amp; peralatan sokongan</div>
 
           <!-- Search Catalog Input -->
           <div class="search-bar-box">
@@ -1510,7 +1358,148 @@
           </div>
 
           <div style="font-size: 0.68rem; color: var(--text-muted); text-align: center; margin: 12px 0;">
-            <span>ℹ️</span> <span>Harga rujukan daripada aplikasi</span>
+            <span>ℹ️</span> <span>Harga rasmi rujukan Al-Farhain AMC</span>
+          </div>
+        </section>
+
+        <!-- =============================================================
+             VIEW 4: PROFIL PENGGUNA & TETAPAN (SCREEN PROFIL)
+             ============================================================= -->
+        <section id="profile-view" class="view-section">
+          <!-- Page Header -->
+          <div class="page-title-row">
+            <h2 class="page-title">Profil Pengguna</h2>
+            <span class="title-badge-pill" style="background:#E0F2FE;color:#0369A1;">AKAUN RASMI</span>
+          </div>
+          <div class="page-subtitle">Tetapan peribadi, gambar profil &amp; rekod perkhidmatan anda</div>
+
+          <!-- 1. User Card with Avatar & Image Upload -->
+          <div class="profile-hero-card">
+            <div class="profile-avatar-wrapper">
+              <div class="profile-avatar-display" id="profileAvatarDisplay">
+                <span id="profileAvatarText">NF</span>
+                <img id="profileAvatarImg" src="" alt="Foto Profil" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;">
+              </div>
+              <label for="profilePhotoInput" class="profile-avatar-camera-btn" title="Tambah / Tukar Foto Profil">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+              </label>
+              <input type="file" id="profilePhotoInput" accept="image/*" style="display:none;">
+            </div>
+
+            <div class="profile-user-info">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <h3 class="profile-user-name" id="profileUserName">Nik Farhan</h3>
+                <span class="profile-verified-badge" title="Disahkan">✓ Aktif</span>
+              </div>
+              <p class="profile-user-email" id="profileUserEmail">pesakit.demo@gmail.com</p>
+              <div class="profile-role-tag" id="profileRoleTag">
+                <span class="profile-live-dot"></span>
+                <span id="profileRoleLabel">Pengguna Awam / Waris Pesakit</span>
+              </div>
+              <div class="profile-phone-line" id="profileUserPhone">📞 +60 12-345 6789</div>
+            </div>
+          </div>
+
+          <!-- 2. SECTION: REKOD PERKHIDMATAN AMBULANS (BASED ON PURCHASED) -->
+          <div class="profile-section-card">
+            <div class="profile-section-header">
+              <div class="ps-title-group">
+                <span class="ps-icon">🚑</span>
+                <div>
+                  <h4 class="ps-title">Rekod Perkhidmatan Ambulans</h4>
+                  <p class="ps-subtitle">Sejarah tempahan &amp; invois yang telah anda bayar</p>
+                </div>
+              </div>
+              <span class="ps-counter-badge" id="purchasedRecordsCount">0 Rekod</span>
+            </div>
+
+            <div class="profile-records-list" id="profilePurchasedRecordsList">
+              <!-- Dynamically populated via JS -->
+            </div>
+          </div>
+
+          <!-- 3. SECTION: TETAPAN KATA LALUAN (CHANGE PASSWORD) -->
+          <div class="profile-section-card">
+            <div class="profile-section-header clickable" id="toggleChangePasswordBtn">
+              <div class="ps-title-group">
+                <span class="ps-icon">🔒</span>
+                <div>
+                  <h4 class="ps-title">Tukar Kata Laluan</h4>
+                  <p class="ps-subtitle">Kemas kini kata laluan keselamatan akaun anda</p>
+                </div>
+              </div>
+              <span class="ps-arrow-icon" id="arrowChangePass">▾</span>
+            </div>
+
+            <form id="formChangePassword" class="profile-form-body" style="display:none;">
+              <div class="profile-input-group">
+                <label>Kata laluan semasa</label>
+                <div class="profile-input-wrap">
+                  <input type="password" id="inputCurrentPass" placeholder="Masukkan kata laluan semasa" required>
+                  <button type="button" class="btn-pwd-eye" data-toggle="inputCurrentPass">👁️</button>
+                </div>
+              </div>
+
+              <div class="profile-input-group">
+                <label>Kata laluan baharu</label>
+                <div class="profile-input-wrap">
+                  <input type="password" id="inputNewPass" placeholder="Minimum 8 aksara" required minlength="8">
+                  <button type="button" class="btn-pwd-eye" data-toggle="inputNewPass">👁️</button>
+                </div>
+              </div>
+
+              <div class="profile-input-group">
+                <label>Sahkan kata laluan baharu</label>
+                <div class="profile-input-wrap">
+                  <input type="password" id="inputConfirmPass" placeholder="Ulangi kata laluan baharu" required minlength="8">
+                </div>
+              </div>
+
+              <div id="changePasswordStatus" class="auth-status-alert" style="display:none;"></div>
+
+              <button type="submit" class="btn-profile-action" id="btnSubmitChangePass">
+                <span>Kemas Kini Kata Laluan</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- 4. SECTION: BANTUAN & TALIAN OPERASI -->
+          <div class="profile-section-card">
+            <div class="profile-section-header">
+              <div class="ps-title-group">
+                <span class="ps-icon">📞</span>
+                <div>
+                  <h4 class="ps-title">Bantuan Operasi 24 Jam</h4>
+                  <p class="ps-subtitle">Hubungi pusat kawalan sekiranya berlaku kecemasan</p>
+                </div>
+              </div>
+            </div>
+            <div class="profile-help-actions">
+              <a href="tel:0139147606" class="profile-help-btn phone">
+                <span>📞 Hubungi HQ (013-914 7606)</span>
+              </a>
+              <a href="https://wa.me/60139147606?text=Salam%20HQ%20Al-Farhain,%20saya%20memerlukan%20bantuan%20ambulans." target="_blank" class="profile-help-btn whatsapp">
+                <span>💬 WhatsApp Pusat Kawalan</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- 5. SECTION: LOG KELUAR (LOG OUT BUTTON) -->
+          <div class="profile-logout-wrap">
+            <button type="button" class="btn-profile-logout" id="btnProfileLogout">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              <span>Log Keluar Akaun</span>
+            </button>
+            <div class="profile-app-version">
+              Al-Farhain AMC Ambulans · Versi 2.4.0 (PWA)
+            </div>
           </div>
         </section>
 
@@ -1553,17 +1542,17 @@
           <span class="dock-tab-title">Tugasan</span>
         </button>
 
-        <button class="dock-tab-item" data-tab="admin-view" title="Rekod Operasi">
+        <button class="dock-tab-item" data-tab="catalog-view" title="Katalog Servis &amp; Peralatan">
           <svg class="dock-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
           </svg>
-          <span class="dock-tab-title">Rekod</span>
+          <span class="dock-tab-title">Katalog</span>
         </button>
 
-        <button class="dock-tab-item" data-tab="catalog-view" title="Katalog & Profil">
+        <button class="dock-tab-item" data-tab="profile-view" title="Profil Pengguna &amp; Tetapan">
           <svg class="dock-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
             <circle cx="12" cy="7" r="4"></circle>

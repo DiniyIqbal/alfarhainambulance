@@ -186,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initFleetSection();
   initReportsSection();
   initCatalogSection();
+  initUserProfileSection();
   initActionModals();
   initSupabaseIntegration();
   initMobileAuth();
@@ -475,6 +476,9 @@ function initNavigationTabs() {
         setTimeout(() => {
           initTugasanMissionMap();
         }, 150);
+      } else if (targetId === 'profile-view') {
+        renderUserProfileDetails();
+        renderUserProfileRecords();
       }
     });
   });
@@ -3933,6 +3937,7 @@ async function initMobileAuth() {
 }
 
 function updateMobileAuthUI(user) {
+  renderUserProfileDetails(user);
   const label = document.getElementById('mobileAuthLabel');
   const icon = document.getElementById('mobileAuthIcon');
   const roleEl = document.getElementById('mobileAuthRole');
@@ -3967,4 +3972,334 @@ function updateMobileAuthUI(user) {
     if (headerBadge) headerBadge.textContent = '👤';
     if (menuAvatar) menuAvatar.textContent = '👤';
   }
+}
+
+
+/* =========================================================================
+   17. USER PROFILE & COMMON SETTINGS CONTROLLER (SCREEN PROFIL)
+   ========================================================================= */
+function initUserProfileSection() {
+  const avatarInput = document.getElementById('profilePhotoInput');
+  const avatarImg = document.getElementById('profileAvatarImg');
+  const avatarText = document.getElementById('profileAvatarText');
+  const togglePassBtn = document.getElementById('toggleChangePasswordBtn');
+  const arrowChangePass = document.getElementById('arrowChangePass');
+  const formChangePassword = document.getElementById('formChangePassword');
+  const changePasswordStatus = document.getElementById('changePasswordStatus');
+  const btnLogout = document.getElementById('btnProfileLogout');
+  const eyeButtons = document.querySelectorAll('.btn-pwd-eye');
+
+  // Initial Profile Render
+  renderUserProfileDetails();
+  renderUserProfileRecords();
+
+  // Avatar Photo Upload
+  if (avatarInput) {
+    avatarInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        alert('Sila pilih fail imej yang sah (PNG / JPG / JPEG).');
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Saiz gambar terlalu besar. Sila pilih gambar di bawah 5MB.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (loadEvt) => {
+        const base64 = loadEvt.target.result;
+        const user = getStoredUserProfile() || { email: 'pesakit.demo@gmail.com' };
+        try {
+          localStorage.setItem('amc_user_avatar_' + user.email, base64);
+          localStorage.setItem('amc_user_avatar_default', base64);
+        } catch (err) {
+          console.warn('Storage quota for avatar:', err);
+        }
+
+        if (avatarImg && avatarText) {
+          avatarImg.src = base64;
+          avatarImg.style.display = 'block';
+          avatarText.style.display = 'none';
+        }
+
+        const headerBadge = document.getElementById('headerProfileBadge');
+        if (headerBadge) {
+          headerBadge.innerHTML = '<img src="' + base64 + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
+        }
+
+        alert('Foto profil anda berjaya dikemas kini!');
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Toggle Change Password Accordion
+  if (togglePassBtn && formChangePassword) {
+    togglePassBtn.addEventListener('click', () => {
+      playClickSound();
+      const isHidden = formChangePassword.style.display === 'none' || !formChangePassword.style.display;
+      formChangePassword.style.display = isHidden ? 'flex' : 'none';
+      if (arrowChangePass) arrowChangePass.classList.toggle('open', isHidden);
+    });
+  }
+
+  // Password Visibility Eye Toggles
+  eyeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.toggle;
+      const targetInput = document.getElementById(targetId);
+      if (targetInput) {
+        const isPass = targetInput.type === 'password';
+        targetInput.type = isPass ? 'text' : 'password';
+        btn.textContent = isPass ? '🙈' : '👁️';
+      }
+    });
+  });
+
+  // Submit Change Password
+  if (formChangePassword) {
+    formChangePassword.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      playClickSound();
+
+      const newPass = document.getElementById('inputNewPass')?.value || '';
+      const confirmPass = document.getElementById('inputConfirmPass')?.value || '';
+
+      if (!changePasswordStatus) return;
+
+      if (newPass.length < 8) {
+        showProfileStatus(changePasswordStatus, 'Kata laluan baharu mestilah sekurang-kurangnya 8 aksara.', 'error');
+        return;
+      }
+
+      if (newPass !== confirmPass) {
+        showProfileStatus(changePasswordStatus, 'Kata laluan baharu dan pengesahan tidak sepadan.', 'error');
+        return;
+      }
+
+      const btnSubmit = document.getElementById('btnSubmitChangePass');
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Menyimpan...';
+      }
+
+      try {
+        const supabase = getSupabaseClient();
+        if (supabase?.auth) {
+          try {
+            await supabase.auth.updateUser({ password: newPass });
+          } catch (err) {
+            console.warn('Supabase auth update notice:', err);
+          }
+        }
+
+        const user = getStoredUserProfile() || { email: 'pesakit.demo@gmail.com' };
+        localStorage.setItem('amc_pass_' + user.email, newPass);
+
+        showProfileStatus(changePasswordStatus, 'Kata laluan anda telah berjaya dikemas kini!', 'success');
+        formChangePassword.reset();
+        setTimeout(() => {
+          if (changePasswordStatus) changePasswordStatus.style.display = 'none';
+        }, 4000);
+      } catch (err) {
+        showProfileStatus(changePasswordStatus, 'Ralat mengemas kini kata laluan. Sila cuba lagi.', 'error');
+      } finally {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = 'Kemas Kini Kata Laluan';
+        }
+      }
+    });
+  }
+
+  // Log Out Button Handler
+  if (btnLogout) {
+    btnLogout.addEventListener('click', async () => {
+      playClickSound();
+      const confirmed = window.confirm('Adakah anda pasti mahu log keluar daripada akaun Al-Farhain?');
+      if (!confirmed) return;
+
+      await signOutUser();
+      updateMobileAuthUI(null);
+      setMobileGateLocked(true);
+
+      const authOverlay = document.getElementById('mobileAuthOverlay');
+      if (authOverlay) {
+        authOverlay.querySelectorAll('.auth-mobile-screen').forEach(s => s.classList.remove('active'));
+        const userLogin = document.getElementById('authScreenUserLogin');
+        if (userLogin) userLogin.classList.add('active');
+      }
+    });
+  }
+}
+
+function showProfileStatus(container, message, type = 'info') {
+  if (!container) return;
+  container.textContent = message;
+  container.className = 'auth-status-alert ' + type;
+  container.style.display = 'block';
+  if (type === 'error') {
+    container.style.background = '#FEE2E2';
+    container.style.color = '#991B1B';
+    container.style.border = '1px solid #FCA5A5';
+  } else if (type === 'success') {
+    container.style.background = '#ECFDF5';
+    container.style.color = '#047857';
+    container.style.border = '1px solid #6EE7B7';
+  }
+}
+
+function renderUserProfileDetails(overrideUser = null) {
+  const user = overrideUser || getStoredUserProfile() || {
+    email: 'pesakit.demo@gmail.com',
+    user_metadata: {
+      name: 'Nik Farhan',
+      full_name: 'Nik Farhan',
+      phone: '+60 12-345 6789',
+      role: 'patient',
+      role_label: 'Pengguna Awam / Waris Pesakit'
+    }
+  };
+
+  const name = user.user_metadata?.name || user.user_metadata?.full_name || (user.email ? user.email.split('@')[0] : 'Nik Farhan');
+  const email = user.email || 'pesakit.demo@gmail.com';
+  const phone = user.user_metadata?.phone || '+60 12-345 6789';
+  const roleLabel = user.user_metadata?.role_label || (email.includes('driver') ? 'Pemandu EMT Bertugas' : 'Pengguna Awam / Waris Pesakit');
+
+  const nameEl = document.getElementById('profileUserName');
+  const emailEl = document.getElementById('profileUserEmail');
+  const phoneEl = document.getElementById('profileUserPhone');
+  const roleEl = document.getElementById('profileRoleLabel');
+  const avatarImg = document.getElementById('profileAvatarImg');
+  const avatarText = document.getElementById('profileAvatarText');
+
+  if (nameEl) nameEl.textContent = name;
+  if (emailEl) emailEl.textContent = email;
+  if (phoneEl) phoneEl.textContent = '📞 ' + phone;
+  if (roleEl) roleEl.textContent = roleLabel;
+
+  const savedAvatar = localStorage.getItem('amc_user_avatar_' + email) || localStorage.getItem('amc_user_avatar_default');
+  if (savedAvatar && avatarImg && avatarText) {
+    avatarImg.src = savedAvatar;
+    avatarImg.style.display = 'block';
+    avatarText.style.display = 'none';
+  } else if (avatarText) {
+    const initials = name.slice(0, 2).toUpperCase() || 'NF';
+    avatarText.textContent = initials;
+    if (avatarImg) avatarImg.style.display = 'none';
+    avatarText.style.display = 'block';
+  }
+}
+
+function renderUserProfileRecords() {
+  const container = document.getElementById('profilePurchasedRecordsList');
+  const countBadge = document.getElementById('purchasedRecordsCount');
+  if (!container) return;
+
+  let allBookings = [];
+  try {
+    const raw = localStorage.getItem('amc_all_bookings');
+    allBookings = raw ? JSON.parse(raw) : [];
+  } catch {
+    allBookings = [];
+  }
+
+  const sampleTrips = [
+    {
+      invoice_number: 'INV-AMC-1042',
+      date_time: '03 Nov 2026, 02:15 PM',
+      pickup_address: 'Poliklinik Al-Farhain Nilai, Putra Nilai',
+      dropoff_address: 'Hospital Tuanku Ja\'afar (HTJ) Seremban',
+      distance_km: 26.4,
+      assistance_package: 'Paramedik Bertugas (MA)',
+      equipment: 'Tangki Oksigen Portabel',
+      total_fare: 284.20,
+      payment_status: 'PAID',
+      status_label: 'Selesai & Dibayar'
+    },
+    {
+      invoice_number: 'INV-AMC-1041',
+      date_time: '28 Okt 2026, 10:45 AM',
+      pickup_address: 'No. 24, Jalan BBN 3/1, Bandar Baru Nilai',
+      dropoff_address: 'Hospital Putrajaya, Presint 7',
+      distance_km: 32.8,
+      assistance_package: 'Krew Standard EMT',
+      equipment: 'Kit Pertolongan Cemas',
+      total_fare: 273.40,
+      payment_status: 'PAID',
+      status_label: 'Selesai & Dibayar'
+    }
+  ];
+
+  const displayRecords = (allBookings && allBookings.length > 0) ? allBookings.map(b => ({
+    invoice_number: b.invoice_number || b.id || 'INV-AMC-1042',
+    date_time: b.created_at ? new Date(b.created_at).toLocaleString('ms-MY', { dateStyle: 'medium', timeStyle: 'short' }) : 'Hari ini',
+    pickup_address: b.pickup_address || b.pickup || 'Poliklinik Al-Farhain Nilai',
+    dropoff_address: b.dropoff_address || b.dropoff || 'Hospital Tuanku Ja\'afar',
+    distance_km: b.distance_km || b.distance || 25,
+    assistance_package: b.assistance_package || b.service_type || 'Kecemasan Standard',
+    equipment: b.equipment || 'Kit Perubatan Lengkap',
+    total_fare: b.total_fare || b.fare || 250,
+    payment_status: b.payment_status || 'PAID',
+    status_label: 'Selesai & Dibayar'
+  })) : sampleTrips;
+
+  if (countBadge) countBadge.textContent = displayRecords.length + ' Rekod';
+
+  container.innerHTML = displayRecords.map(rec => `
+    <div class="purchased-trip-card">
+      <div class="trip-card-header">
+        <span class="trip-inv-pill">${rec.invoice_number}</span>
+        <span class="trip-status-pill success">
+          <span>✓</span>
+          <span>${rec.status_label}</span>
+        </span>
+      </div>
+
+      <div class="trip-route-container">
+        <div class="trip-point-row">
+          <span class="trip-point-dot pickup" title="Lokasi Ambil"></span>
+          <span class="trip-point-text" title="${rec.pickup_address}">Dari: ${rec.pickup_address}</span>
+        </div>
+        <div class="trip-point-row">
+          <span class="trip-point-dot dropoff" title="Destinasi Hantar"></span>
+          <span class="trip-point-text" title="${rec.dropoff_address}">Ke: ${rec.dropoff_address}</span>
+        </div>
+      </div>
+
+      <div class="trip-meta-row">
+        <span class="trip-meta-chip">🛣️ ${rec.distance_km} km</span>
+        <span class="trip-meta-chip">👨‍⚕️ ${rec.assistance_package}</span>
+        <span class="trip-meta-chip">🩹 ${rec.equipment}</span>
+        <span class="trip-meta-chip">📅 ${rec.date_time}</span>
+      </div>
+
+      <div class="trip-card-footer">
+        <div class="trip-fare-box">
+          <span class="trip-fare-label">Jumlah Dibayar (CHIP)</span>
+          <span class="trip-fare-val">RM ${Number(rec.total_fare).toFixed(2)}</span>
+        </div>
+        <button type="button" class="btn-trip-receipt" data-inv="${rec.invoice_number}" data-fare="${Number(rec.total_fare).toFixed(2)}" data-pickup="${rec.pickup_address}" data-dropoff="${rec.dropoff_address}" data-date="${rec.date_time}">
+          <span>🧾</span>
+          <span>Papar Resit</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.btn-trip-receipt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      playClickSound();
+      const inv = btn.dataset.inv;
+      const fare = btn.dataset.fare;
+      const pickup = btn.dataset.pickup;
+      const dropoff = btn.dataset.dropoff;
+      const date = btn.dataset.date;
+      alert('🧾 RESIT RASMI AL-FARHAIN AMBULANCE\n----------------------------------------\nNo. Invois : ' + inv + '\nTarikh     : ' + date + '\nStatus     : TELAH DIBAYAR (CHIP PAYMENT)\nDari       : ' + pickup + '\nKe         : ' + dropoff + '\nJumlah     : RM ' + fare + '\n----------------------------------------\nTerima kasih kerana memilih perkhidmatan ambulans Al-Farhain.');
+    });
+  });
 }
