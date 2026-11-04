@@ -14,6 +14,10 @@ import {
 } from '../services/supabaseClient.js';
 import { playSuccessChime, playClickSound, playEmergencyAlertSiren as playAlertSound } from '../utils/soundFx.js';
 import { createGoogleAmcMap } from '../services/googleMapsService.js';
+import {
+  getPartnerState,
+  updatePartnerTripProgress
+} from '../services/partnerAmbulanceService.js';
 
 // Coordinates
 const COORDS = {
@@ -26,6 +30,11 @@ const COORDS = {
 const state = {
   currentStep: 2, // 2: Tugasan Baharu, 3: Pra-perjalanan, 4: Ke Pengambilan, 5: Di Lokasi, 6: Ke Hospital, 7: Serahan, 8: Rekod
   activeTab: 'utama', // 'utama' | 'tugasan' | 'rekod' | 'profil'
+  isPartnerDriver: false,
+  partnerCompanyId: 'pcomp_medicare_kb',
+  partnerCompanyName: 'MediCare Ambulance Services Sdn. Bhd.',
+  partnerOfferId: 'ptrip_demo_01',
+  partnerCashAuthorized: true,
   activeMission: {
     code: 'AMC-1043',
     patientName: 'Pesakit 01',
@@ -70,26 +79,94 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // =====================================================================
-// 1. AUTH & ROLE GATEKEEPER
+// 1. AUTH & ROLE GATEKEEPER (INTERNAL & PARTNER DRIVER)
 // =====================================================================
-async function enforceDriverRole() {
-  const user = await getCurrentAuthUser();
+function applyDriverModeUI(isPartner) {
+  state.isPartnerDriver = Boolean(isPartner);
+
   const driverEmailEl = document.getElementById('driverEmailBadge');
   const driverNameEl = document.getElementById('driverProfileName');
+  const roleLabelEl = document.getElementById('driverRoleLabel');
+  const plateEl = document.getElementById('driverAssignedPlateText');
+  const vehicleTypeEl = document.getElementById('driverAssignedVehicleType');
+  const hubTextEl = document.getElementById('driverAssignedHubText');
+  const companyTagEl = document.getElementById('driverAssignedCompanyTag');
+  const partnerBanner = document.getElementById('partnerDriverCompanyBanner');
+  const cashCard = document.getElementById('partnerCashCollectionCard');
+  const cashInput = document.getElementById('partnerCashCollectedInput');
+  const btnToggleMode = document.getElementById('btnTogglePartnerDriverMode');
 
-  if (user) {
-    const role = resolveUserRole(user.email, user.user_metadata);
-    const email = user.email || 'diniy-driver@gmail.com';
-    const name = user.user_metadata?.full_name || 'Abe Di';
+  if (state.isPartnerDriver) {
+    const pState = getPartnerState();
+    const assignedOffer = (pState.trip_offers || []).find(o => o.partner_company_id === 'pcomp_medicare_kb') || pState.trip_offers?.[0];
+    state.partnerOfferId = assignedOffer?.id || 'ptrip_demo_01';
+    state.partnerCashAuthorized = assignedOffer ? (assignedOffer.collection_channel === 'cash_collected_partner' || true) : true;
 
-    if (driverEmailEl) driverEmailEl.textContent = email;
-    if (driverNameEl) driverNameEl.textContent = name;
+    state.activeMission = {
+      ...state.activeMission,
+      code: assignedOffer?.invoice_number || 'AMC-RKN-5001',
+      patientName: assignedOffer?.patient_name || 'Pn. Siti Aminah binti Mahmood',
+      mobility: 'Katil + Oksigen',
+      pickupLocation: assignedOffer?.pickup_full_address || 'Wakaf Che Yeh, Kota Bharu',
+      destLocation: assignedOffer?.dropoff_full_address || 'HUSM Kubang Kerian',
+      ambulancePlate: assignedOffer?.assigned_plate || 'DDU 8892',
+      branch: 'MediCare Ambulance (Kota Bharu)',
+      driverName: 'Mohd Hafizuddin bin Razak',
+      crewName: 'Krew Rakan MediCare'
+    };
 
-
+    if (driverEmailEl) driverEmailEl.textContent = 'pemandu.medicare@gmail.com';
+    if (driverNameEl) driverNameEl.textContent = 'Mohd Hafizuddin bin Razak';
+    if (roleLabelEl) roleLabelEl.textContent = 'Pemandu Rakan Ambulans Diluluskan HQ';
+    if (plateEl) plateEl.textContent = state.activeMission.ambulancePlate;
+    if (vehicleTypeEl) vehicleTypeEl.textContent = 'Ambulans Kelas B (ALS)';
+    if (hubTextEl) hubTextEl.textContent = 'MediCare Ambulance Services Sdn. Bhd.';
+    if (companyTagEl) companyTagEl.textContent = 'Rakan Ambulans Rasmi AFAMS';
+    if (partnerBanner) partnerBanner.style.display = 'block';
+    if (cashCard) cashCard.style.display = state.partnerCashAuthorized ? 'block' : 'none';
+    if (cashInput && assignedOffer?.agreed_price_cents) {
+      cashInput.value = (assignedOffer.agreed_price_cents / 100).toFixed(2);
+    } else if (cashInput) {
+      cashInput.value = '500.00';
+    }
+    if (btnToggleMode) btnToggleMode.textContent = 'Tukar ke Pemandu Dalaman ›';
   } else {
-    // Demo auto-assign driver identity
+    state.activeMission = {
+      ...state.activeMission,
+      code: 'AMC-1043',
+      patientName: 'Pesakit 01',
+      mobility: 'Kerusi roda',
+      pickupLocation: 'Kota Bharu, Kelantan',
+      destLocation: 'Hospital Raja Perempuan Zainab II (HRPZ II)',
+      ambulancePlate: 'VPQ 7606',
+      branch: 'Kok Lanas HQ',
+      driverName: 'Pemandu 01 (Abe Di)'
+    };
+
     if (driverEmailEl) driverEmailEl.textContent = 'diniy-driver@gmail.com';
     if (driverNameEl) driverNameEl.textContent = 'Abe Di (Pemandu EMT)';
+    if (roleLabelEl) roleLabelEl.textContent = 'Pemandu EMT Bertugas (Armada Dalaman)';
+    if (plateEl) plateEl.textContent = 'VPQ 7606';
+    if (vehicleTypeEl) vehicleTypeEl.textContent = 'Toyota Hiace High-Roof';
+    if (hubTextEl) hubTextEl.textContent = 'Kok Lanas HQ';
+    if (companyTagEl) companyTagEl.textContent = 'Poliklinik Al-Farhain';
+    if (partnerBanner) partnerBanner.style.display = 'none';
+    if (cashCard) cashCard.style.display = 'none';
+    if (btnToggleMode) btnToggleMode.textContent = 'Tukar ke Pemandu Rakan ›';
+  }
+
+  updateMissionUI();
+}
+
+async function enforceDriverRole() {
+  const user = await getCurrentAuthUser();
+  if (user) {
+    const role = resolveUserRole(user.email, user.user_metadata);
+    const email = (user.email || '').toLowerCase();
+    const isPartner = role === 'partner_driver' || email.includes('medicare');
+    applyDriverModeUI(isPartner);
+  } else {
+    applyDriverModeUI(false);
   }
 }
 
@@ -205,15 +282,62 @@ function initStepActions() {
     });
   }
 
-  // Screen 07: Sahkan Tamat Tugasan -> Move to Screen 08
+  // Screen 07: Sahkan Tamat Tugasan -> Move to Screen 08 (with Partner Completion Evidence if Partner Driver)
   const btnConfirmHandover = document.getElementById('btnConfirmHandover');
   if (btnConfirmHandover) {
     btnConfirmHandover.addEventListener('click', async () => {
       playSuccessChime();
       state.activeMission.status = 'Selesai';
       state.currentStep = 8;
+
+      if (state.isPartnerDriver && state.partnerOfferId) {
+        const receiverName = document.getElementById('handoverReceiverInput')?.value?.trim() || 'Unit Kecemasan Hospital';
+        const notes = document.getElementById('handoverNotesInput')?.value?.trim() || 'Diserahkan dengan selamat';
+        const odoEnd = Number(document.getElementById('odometerEndInput')?.value || state.activeMission.odometerEnd || 124607);
+        const cashVal = state.partnerCashAuthorized
+          ? Number(document.getElementById('partnerCashCollectedInput')?.value || 0)
+          : 0;
+
+        try {
+          updatePartnerTripProgress(
+            {
+              role: 'partner_driver',
+              email: 'pemandu.medicare@gmail.com',
+              name: 'Mohd Hafizuddin bin Razak',
+              partnerCompanyId: state.partnerCompanyId
+            },
+            {
+              offerId: state.partnerOfferId,
+              tripProgress: 'Selesai',
+              handoverReceiverName: receiverName,
+              completionNotes: notes,
+              odometerStartKm: state.activeMission.odometerStart,
+              odometerEndKm: odoEnd,
+              cashCollectedRm: cashVal
+            }
+          );
+          showDriverToast('✓ Bukti penyiapan tugasan Rakan Ambulans dihantar ke HQ untuk pengesahan.');
+        } catch (err) {
+          console.warn('Partner trip progress notice:', err);
+        }
+      }
+
       switchTab('rekod');
       await updateBookingStatusInSupabase(state.activeMission.code, 'Selesai');
+    });
+  }
+
+  // Toggle Partner Driver vs Internal Driver Demo Mode
+  const btnTogglePartnerDriverMode = document.getElementById('btnTogglePartnerDriverMode');
+  if (btnTogglePartnerDriverMode) {
+    btnTogglePartnerDriverMode.addEventListener('click', () => {
+      playClickSound();
+      applyDriverModeUI(!state.isPartnerDriver);
+      showDriverToast(
+        state.isPartnerDriver
+          ? '🤝 Ditukar ke Mod Pemandu Rakan (MediCare Ambulance - DDU 8892)'
+          : '🏥 Ditukar ke Mod Pemandu Dalaman Al-Farhain (VPQ 7606)'
+      );
     });
   }
 

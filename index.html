@@ -1232,6 +1232,27 @@
               </span>
             </div>
 
+            <!-- 1B. Provider Identity Card (Al-Farhain vs Approved Partner Company) -->
+            <div id="customerProviderCard" style="background:#FFFFFF;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(15,23,42,0.04);">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span id="customerProviderBadgeIcon" style="font-size:1.25rem;">🏥</span>
+                  <div>
+                    <div id="customerProviderTypeTag" style="font-size:0.65rem;font-weight:800;text-transform:uppercase;letter-spacing:0.4px;color:#047857;">PENYEDIA PERKHIDMATAN RASMI AL-FARHAIN</div>
+                    <div id="customerProviderCompanyName" style="font-size:0.84rem;font-weight:800;color:#0F172A;">Poliklinik Al-Farhain (Armada Dalaman)</div>
+                  </div>
+                </div>
+                <button type="button" id="btnToggleProviderDemo" style="background:#F1F5F9;border:1px solid #CBD5E1;border-radius:999px;padding:4px 9px;font-size:0.65rem;font-weight:700;color:#334155;cursor:pointer;" title="Pratonton paparan Penyedia Dalaman vs Rakan Ambulans">
+                  🔄 Tukar Paparan Penyedia
+                </button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed #E2E8F0;font-size:0.72rem;color:#475569;">
+                <span id="customerProviderPlate" style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:2px 8px;font-weight:700;color:#0F172A;">🚑 Unit: VPQ 7606</span>
+                <span id="customerProviderDriver" style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:2px 8px;font-weight:700;color:#0F172A;">👨‍✈️ Pemandu: Abe Di (EMT)</span>
+                <span style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px;padding:2px 8px;font-weight:700;color:#065F46;">✓ Diluluskan HQ AFAMS</span>
+              </div>
+            </div>
+
             <!-- 2. ETA & Remaining Distance Stat Cards -->
             <div class="tugasan-stats-grid">
               <div class="tugasan-stat-card">
@@ -1596,6 +1617,7 @@
           </div>
           <div>
             <strong>MAKLUMAT AMBULAN:</strong><br>
+            Penyedia: <span id="invProviderCompany" style="font-weight: 800; color: var(--amc-teal-dark);">Poliklinik Al-Farhain (Armada Dalaman)</span><br>
             Plat: <span id="invPlateNumber" style="font-weight: 700;">VPQ 7606</span><br>
             Pemandu: <span id="invDriverName">Abe Di / Syalihan</span><br>
             Cawangan: <span id="invBranchName">HQ Kok Lanas</span>

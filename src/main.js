@@ -28,6 +28,8 @@ import {
   testSupabaseConnection,
   insertBookingToSupabase,
   fetchBookingsFromSupabase,
+  fetchPatientBookingsFromSupabase,
+  saveLocalBookingCache,
   updateBookingStatusInSupabase,
   subscribeToRealtimeBookings,
   subscribeToUnifiedSync,
@@ -68,6 +70,11 @@ import {
   parsePaymentReturnStatus,
   clearPaymentQueryParams
 } from './services/chipPaymentService.js';
+
+import {
+  redeemPartnerInvitation,
+  getPartnerState
+} from './services/partnerAmbulanceService.js';
 
 /* =========================================================================
    APPLICATION STATE (MATCHES MOCKUP DEFAULTS)
@@ -1864,12 +1871,14 @@ function initFleetSection() {
           playSuccessChime();
         }
       }
+      renderUserProfileRecords();
     },
     onNewBooking: (newBooking) => {
       const activeInv = localStorage.getItem('amc_active_invoice');
       if (!activeInv) {
         localStorage.setItem('amc_active_invoice', newBooking.invoice_number || newBooking.invoiceNumber);
       }
+      renderUserProfileRecords();
     }
   });
 
@@ -1880,6 +1889,57 @@ function initFleetSection() {
       const isHidden = checklistStack.style.display === 'none';
       checklistStack.style.display = isHidden ? 'flex' : 'none';
       if (checklistChevron) checklistChevron.textContent = isHidden ? '▲' : '▼';
+    });
+  }
+
+  // Provider Identity Toggle on Customer Tracking View (Al-Farhain Internal vs Approved Partner)
+  const btnToggleProviderDemo = document.getElementById('btnToggleProviderDemo');
+  let showingPartnerProvider = false;
+  function updateCustomerProviderBanner(isPartner, customData = null) {
+    const iconEl = document.getElementById('customerProviderBadgeIcon');
+    const tagEl = document.getElementById('customerProviderTypeTag');
+    const companyEl = document.getElementById('customerProviderCompanyName');
+    const plateEl = document.getElementById('customerProviderPlate');
+    const driverEl = document.getElementById('customerProviderDriver');
+    const cardEl = document.getElementById('customerProviderCard');
+    if (!companyEl || !cardEl) return;
+
+    if (isPartner) {
+      const compName = customData?.companyName || 'MediCare Ambulance Services Sdn. Bhd.';
+      const plate = customData?.plate || 'DDU 8892';
+      const driver = customData?.driver || 'Mohd Hafizuddin bin Razak';
+      if (iconEl) iconEl.textContent = '🤝';
+      if (tagEl) {
+        tagEl.textContent = 'SYARIKAT RAKAN AMBULANS DILULUSKAN HQ AFAMS';
+        tagEl.style.color = '#B45309';
+      }
+      companyEl.textContent = compName;
+      if (plateEl) plateEl.textContent = `🚑 Unit Rakan: ${plate}`;
+      if (driverEl) driverEl.textContent = `👨‍✈️ Pemandu Rakan: ${driver}`;
+      cardEl.style.borderColor = '#FCD34D';
+      cardEl.style.background = '#FFFBEB';
+    } else {
+      const compName = customData?.companyName || 'Poliklinik Al-Farhain (Armada Dalaman)';
+      const plate = customData?.plate || 'VPQ 7606';
+      const driver = customData?.driver || 'Abe Di (EMT)';
+      if (iconEl) iconEl.textContent = '🏥';
+      if (tagEl) {
+        tagEl.textContent = 'PENYEDIA PERKHIDMATAN RASMI AL-FARHAIN';
+        tagEl.style.color = '#047857';
+      }
+      companyEl.textContent = compName;
+      if (plateEl) plateEl.textContent = `🚑 Unit: ${plate}`;
+      if (driverEl) driverEl.textContent = `👨‍✈️ Pemandu: ${driver}`;
+      cardEl.style.borderColor = '#E2E8F0';
+      cardEl.style.background = '#FFFFFF';
+    }
+  }
+
+  if (btnToggleProviderDemo) {
+    btnToggleProviderDemo.addEventListener('click', () => {
+      playClickSound();
+      showingPartnerProvider = !showingPartnerProvider;
+      updateCustomerProviderBanner(showingPartnerProvider);
     });
   }
 }
@@ -2012,31 +2072,48 @@ function getOrGenerateInvoiceNumber() {
 }
 
 function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpaid') {
+  const user = getStoredUserProfile();
+  const patientEmail = (user?.email || state.patientInfo?.email || 'pesakit.demo@gmail.com').trim();
+  const patientName = (state.patientInfo?.name || user?.user_metadata?.name || user?.user_metadata?.full_name || 'Pesakit AMC').trim();
+  const patientPhone = (state.patientInfo?.phone || user?.user_metadata?.phone || '+60 12-345 6789').trim();
+
+  // Accurate patient pickup & destination locations
+  const originName = state.pickupName || state.pickupAddress || state.currentHub?.shortName || 'Lokasi Pesakit';
+  const destinationName = state.destinationName || state.destinationAddress || 'Hospital Pilihan';
+
   return {
     invoiceNumber: getOrGenerateInvoiceNumber(),
-    hubId: state.currentHub.id,
-    hubName: state.currentHub.name,
-    originName: state.currentHub.shortName,
-    destinationName: state.destinationName,
-    distanceKm: state.distanceKm,
-    tripType: state.selectedTripType.name,
-    baseFare: state.baseFare || 250.00,
-    extraKmCost: state.extraDistanceFee || 0.00,
+    hubId: state.currentHub?.id || 'kok_lanas',
+    hubName: state.currentHub?.name || 'HQ Pusat Rawatan Al-Farhain',
+    originName,
+    destinationName,
+    distanceKm: Number(state.distanceKm || state.totalDistanceKm || 25.0),
+    tripType: state.selectedTripType?.name || 'Kecemasan Standard',
+    baseFare: Number(state.baseFare || 250.00),
+    extraKmCost: Number(state.extraDistanceFee || 0.00),
     assistancePackage: state.selectedAssistance ? state.selectedAssistance.name : 'Pemandu Sahaja',
-    assistanceCost: state.assistanceCost || 0.00,
-    equipmentItems: Object.keys(state.equipmentQuantities || {}).filter(k => state.equipmentQuantities[k] > 0).join(', ') || 'Tiada Tambahan',
-    equipmentCost: state.equipmentTotal || 0.00,
+    assistanceCost: Number(state.assistanceCost || 0.00),
+    equipmentItems: Object.keys(state.equipmentQuantities || {})
+      .filter(k => state.equipmentQuantities[k] > 0)
+      .map(k => {
+        const item = (state.equipmentList || []).find(e => e.id === k);
+        return item ? (item.name + ' (' + state.equipmentQuantities[k] + 'x)') : k;
+      })
+      .join(', ') || 'Tiada Tambahan',
+    equipmentCost: Number(state.equipmentTotal || 0.00),
     miscFee: 0.00,
-    totalFare: state.grandTotal || 250.00,
+    totalFare: Number(state.grandTotal || 250.00),
     isDieselSurge: false,
-    plateNumber: state.currentHub.ambulancePlate,
-    driverName: state.currentHub.primaryDriver || 'Pemandu Bertugas',
-    contactPhone: state.currentHub.contactNumber,
-    patientName: state.patientInfo.name || 'Pesakit AMC',
-    patientPhone: state.patientInfo.phone || '0139147606',
+    plateNumber: state.currentHub?.ambulancePlate || 'VPQ 7606',
+    driverName: state.currentHub?.primaryDriver || 'Pemandu Bertugas AMC',
+    contactPhone: state.currentHub?.contactNumber || '013-914 7606',
+    patientName,
+    patientPhone,
+    patientEmail,
     status: 'Dispatched',
     paymentStatus,
-    paymentMethod
+    paymentMethod,
+    created_at: new Date().toISOString()
   };
 }
 
@@ -2060,6 +2137,14 @@ function initPaymentReturnHandler() {
   if (returnInfo.status === 'success') {
     state.paymentStatus = 'paid';
     playSuccessChime();
+
+    if (returnInfo.invoice) {
+      updateBookingStatusInSupabase(returnInfo.invoice, 'Dispatched', {
+        payment_status: 'PAID',
+        payment_method: 'chip'
+      });
+      setTimeout(() => renderUserProfileRecords(), 150);
+    }
 
     if (statusIcon) statusIcon.textContent = '🎉';
     if (statusTitle) statusTitle.textContent = 'Pembayaran Berjaya!';
@@ -2198,6 +2283,7 @@ function initActionModals() {
       const booking = getCurrentBookingPayload('cash', 'unpaid');
       localStorage.setItem('amc_active_invoice', booking.invoiceNumber);
       await insertBookingToSupabase(booking);
+      renderUserProfileRecords();
       if (invoiceModal) invoiceModal.classList.remove('show');
       alert(`Tempahan ambulans telah direkodkan (${booking.invoiceNumber}). Bayaran tunai RM ${(booking.totalFare || 250).toFixed(2)} akan dikutip semasa ketibaan ambulans.`);
     });
@@ -3538,7 +3624,46 @@ async function initMobileAuth() {
         } catch (e) {}
       }
 
-      // If still not verified, accept standard AMC- prefix in demo mode
+      // If still not verified, check Rakan Ambulans (RKN-) invitations or AMC- prefix
+      if (!verifySuccess && !errMsg && code.startsWith('RKN-')) {
+        try {
+          const pState = getPartnerState();
+          const pInv = (pState.invitations || []).find(i => i.email.toLowerCase() === email.toLowerCase());
+          if (pInv) {
+            if (pInv.status === 'Dibatalkan') errMsg = 'Jemputan Rakan Ambulans ini telah dibatalkan oleh HQ.';
+            else if (pInv.status === 'Tamat Tempoh') errMsg = 'Tempoh sah kod jemputan Rakan Ambulans telah tamat.';
+            else if (pInv.status === 'Diterima') errMsg = 'Kod jemputan Rakan Ambulans ini telah digunakan.';
+            else {
+              verifySuccess = true;
+              invData = {
+                id: pInv.id,
+                fullName: pInv.full_name,
+                email: pInv.email,
+                phone: pInv.phone || phone,
+                branchId: pInv.branch_id || 'kok_lanas',
+                assignedPlate: '',
+                isPartnerInvite: true,
+                partnerCompanyName: pInv.company_name,
+                partnerRole: pInv.invited_role
+              };
+            }
+          } else {
+            verifySuccess = true;
+            invData = {
+              id: 'rkn-inv-' + Date.now(),
+              fullName: 'Pemandu Rakan Ambulans',
+              email,
+              phone,
+              branchId: 'kok_lanas',
+              assignedPlate: 'DDU 8892',
+              isPartnerInvite: true,
+              partnerCompanyName: 'MediCare Ambulance Services Sdn. Bhd.',
+              partnerRole: 'partner_driver'
+            };
+          }
+        } catch (e) {}
+      }
+
       if (!verifySuccess && !errMsg && code.startsWith('AMC-')) {
         verifySuccess = true;
         invData = {
@@ -4195,111 +4320,337 @@ function renderUserProfileDetails(overrideUser = null) {
   }
 }
 
-function renderUserProfileRecords() {
+async function renderUserProfileRecords() {
   const container = document.getElementById('profilePurchasedRecordsList');
   const countBadge = document.getElementById('purchasedRecordsCount');
   if (!container) return;
 
-  let allBookings = [];
+  const user = getStoredUserProfile() || {
+    email: 'pesakit.demo@gmail.com',
+    user_metadata: {
+      name: 'Nik Farhan',
+      phone: '+60 12-345 6789',
+      role: 'patient'
+    }
+  };
+
+  // 1. Live Fetch from Supabase + Local Storage Sync
+  let records = [];
   try {
-    const raw = localStorage.getItem('amc_all_bookings');
-    allBookings = raw ? JSON.parse(raw) : [];
-  } catch {
-    allBookings = [];
+    records = await fetchPatientBookingsFromSupabase(user);
+  } catch (err) {
+    console.warn('Notice fetching patient bookings:', err);
   }
 
-  const sampleTrips = [
-    {
-      invoice_number: 'INV-AMC-1042',
-      date_time: '03 Nov 2026, 02:15 PM',
-      pickup_address: 'Poliklinik Al-Farhain Nilai, Putra Nilai',
-      dropoff_address: 'Hospital Tuanku Ja\'afar (HTJ) Seremban',
-      distance_km: 26.4,
-      assistance_package: 'Paramedik Bertugas (MA)',
-      equipment: 'Tangki Oksigen Portabel',
-      total_fare: 284.20,
-      payment_status: 'PAID',
-      status_label: 'Selesai & Dibayar'
-    },
-    {
-      invoice_number: 'INV-AMC-1041',
-      date_time: '28 Okt 2026, 10:45 AM',
-      pickup_address: 'No. 24, Jalan BBN 3/1, Bandar Baru Nilai',
-      dropoff_address: 'Hospital Putrajaya, Presint 7',
-      distance_km: 32.8,
-      assistance_package: 'Krew Standard EMT',
-      equipment: 'Kit Pertolongan Cemas',
-      total_fare: 273.40,
-      payment_status: 'PAID',
-      status_label: 'Selesai & Dibayar'
+  // 2. Demo User Seed Fallback (Nik Farhan / pesakit.demo@gmail.com)
+  if ((!records || records.length === 0) && (user.email === 'pesakit.demo@gmail.com' || !user.email)) {
+    const demoTrips = [
+      {
+        invoice_number: 'INV-AMC-1042',
+        hub_id: 'kok_lanas',
+        hub_name: 'HQ Pusat Rawatan Al-Farhain (Kok Lanas)',
+        origin_name: 'Poliklinik Al-Farhain Nilai, Putra Nilai',
+        destination_name: "Hospital Tuanku Ja'afar (HTJ) Seremban",
+        distance_km: 26.4,
+        trip_type: 'Kecemasan Standard',
+        assistance_package: 'Paramedik Bertugas (MA)',
+        equipment_items: 'Tangki Oksigen Portabel',
+        total_fare: 284.20,
+        provider_type: 'internal_fleet',
+        partner_company_name: 'Poliklinik Al-Farhain (Armada Dalaman)',
+        plate_number: 'VPQ 7606',
+        driver_name: 'Abe Di (EMT)',
+        patient_name: user.user_metadata?.name || 'Nik Farhan',
+        patient_email: user.email || 'pesakit.demo@gmail.com',
+        patient_phone: user.user_metadata?.phone || '+60 12-345 6789',
+        payment_status: 'PAID',
+        payment_method: 'chip',
+        status: 'Selesai',
+        created_at: new Date(Date.now() - 86400000).toISOString()
+      },
+      {
+        invoice_number: 'AMC-RKN-5001',
+        hub_id: 'kok_lanas',
+        hub_name: 'Rakan Ambulans Diluluskan HQ AFAMS',
+        origin_name: 'Wakaf Che Yeh, Kota Bharu',
+        destination_name: 'Hospital Universiti Sains Malaysia (HUSM) Kubang Kerian',
+        distance_km: 18.5,
+        trip_type: 'Pemindahan Pesakit (Katil + Oksigen)',
+        assistance_package: 'Krew Paramedik + Pemandu Rakan',
+        equipment_items: 'Pengusung Hidraulik, Tangki Oksigen Portabel',
+        total_fare: 500.00,
+        provider_type: 'partner_company',
+        partner_company_name: 'MediCare Ambulance Services Sdn. Bhd.',
+        plate_number: 'DDU 8892',
+        driver_name: 'Mohd Hafizuddin bin Razak',
+        patient_name: user.user_metadata?.name || 'Nik Farhan',
+        patient_email: user.email || 'pesakit.demo@gmail.com',
+        patient_phone: user.user_metadata?.phone || '+60 12-345 6789',
+        payment_status: 'PAID',
+        payment_method: 'chip',
+        status: 'Selesai',
+        created_at: new Date(Date.now() - 3 * 86400000).toISOString()
+      },
+      {
+        invoice_number: 'INV-AMC-1041',
+        hub_id: 'kok_lanas',
+        hub_name: 'HQ Pusat Rawatan Al-Farhain (Kok Lanas)',
+        origin_name: 'No. 24, Jalan BBN 3/1, Bandar Baru Nilai',
+        destination_name: 'Hospital Putrajaya, Presint 7',
+        distance_km: 32.8,
+        trip_type: 'Bukan Kecemasan (Transfer)',
+        assistance_package: 'Krew Standard EMT',
+        equipment_items: 'Kit Pertolongan Cemas',
+        total_fare: 273.40,
+        provider_type: 'internal_fleet',
+        partner_company_name: 'Poliklinik Al-Farhain (Armada Dalaman)',
+        plate_number: 'WXX 9182',
+        driver_name: 'Syalihan (EMT)',
+        patient_name: user.user_metadata?.name || 'Nik Farhan',
+        patient_email: user.email || 'pesakit.demo@gmail.com',
+        patient_phone: user.user_metadata?.phone || '+60 12-345 6789',
+        payment_status: 'PAID',
+        payment_method: 'chip',
+        status: 'Selesai',
+        created_at: new Date(Date.now() - 7 * 86400000).toISOString()
+      }
+    ];
+
+    demoTrips.forEach(saveLocalBookingCache);
+    records = demoTrips;
+  } else if (records && records.length > 0 && (user.email === 'pesakit.demo@gmail.com' || !user.email)) {
+    // Ensure the partner trip demo record is present alongside internal trips
+    const hasPartnerDemo = records.some(r => (r.invoice_number || r.invoiceNumber) === 'AMC-RKN-5001');
+    if (!hasPartnerDemo) {
+      const partnerDemo = {
+        invoice_number: 'AMC-RKN-5001',
+        hub_id: 'kok_lanas',
+        hub_name: 'Rakan Ambulans Diluluskan HQ AFAMS',
+        origin_name: 'Wakaf Che Yeh, Kota Bharu',
+        destination_name: 'Hospital Universiti Sains Malaysia (HUSM) Kubang Kerian',
+        distance_km: 18.5,
+        trip_type: 'Pemindahan Pesakit (Katil + Oksigen)',
+        assistance_package: 'Krew Paramedik + Pemandu Rakan',
+        equipment_items: 'Pengusung Hidraulik, Tangki Oksigen Portabel',
+        total_fare: 500.00,
+        provider_type: 'partner_company',
+        partner_company_name: 'MediCare Ambulance Services Sdn. Bhd.',
+        plate_number: 'DDU 8892',
+        driver_name: 'Mohd Hafizuddin bin Razak',
+        patient_name: user.user_metadata?.name || 'Nik Farhan',
+        patient_email: user.email || 'pesakit.demo@gmail.com',
+        patient_phone: user.user_metadata?.phone || '+60 12-345 6789',
+        payment_status: 'PAID',
+        payment_method: 'chip',
+        status: 'Selesai',
+        created_at: new Date(Date.now() - 3 * 86400000).toISOString()
+      };
+      saveLocalBookingCache(partnerDemo);
+      records.push(partnerDemo);
     }
-  ];
+  }
 
-  const displayRecords = (allBookings && allBookings.length > 0) ? allBookings.map(b => ({
-    invoice_number: b.invoice_number || b.id || 'INV-AMC-1042',
-    date_time: b.created_at ? new Date(b.created_at).toLocaleString('ms-MY', { dateStyle: 'medium', timeStyle: 'short' }) : 'Hari ini',
-    pickup_address: b.pickup_address || b.pickup || 'Poliklinik Al-Farhain Nilai',
-    dropoff_address: b.dropoff_address || b.dropoff || 'Hospital Tuanku Ja\'afar',
-    distance_km: b.distance_km || b.distance || 25,
-    assistance_package: b.assistance_package || b.service_type || 'Kecemasan Standard',
-    equipment: b.equipment || 'Kit Perubatan Lengkap',
-    total_fare: b.total_fare || b.fare || 250,
-    payment_status: b.payment_status || 'PAID',
-    status_label: 'Selesai & Dibayar'
-  })) : sampleTrips;
+  // Update Counter Badge
+  if (countBadge) {
+    countBadge.textContent = records.length + ' Rekod';
+  }
 
-  if (countBadge) countBadge.textContent = displayRecords.length + ' Rekod';
-
-  container.innerHTML = displayRecords.map(rec => `
-    <div class="purchased-trip-card">
-      <div class="trip-card-header">
-        <span class="trip-inv-pill">${rec.invoice_number}</span>
-        <span class="trip-status-pill success">
-          <span>✓</span>
-          <span>${rec.status_label}</span>
-        </span>
-      </div>
-
-      <div class="trip-route-container">
-        <div class="trip-point-row">
-          <span class="trip-point-dot pickup" title="Lokasi Ambil"></span>
-          <span class="trip-point-text" title="${rec.pickup_address}">Dari: ${rec.pickup_address}</span>
-        </div>
-        <div class="trip-point-row">
-          <span class="trip-point-dot dropoff" title="Destinasi Hantar"></span>
-          <span class="trip-point-text" title="${rec.dropoff_address}">Ke: ${rec.dropoff_address}</span>
-        </div>
-      </div>
-
-      <div class="trip-meta-row">
-        <span class="trip-meta-chip">🛣️ ${rec.distance_km} km</span>
-        <span class="trip-meta-chip">👨‍⚕️ ${rec.assistance_package}</span>
-        <span class="trip-meta-chip">🩹 ${rec.equipment}</span>
-        <span class="trip-meta-chip">📅 ${rec.date_time}</span>
-      </div>
-
-      <div class="trip-card-footer">
-        <div class="trip-fare-box">
-          <span class="trip-fare-label">Jumlah Dibayar (CHIP)</span>
-          <span class="trip-fare-val">RM ${Number(rec.total_fare).toFixed(2)}</span>
-        </div>
-        <button type="button" class="btn-trip-receipt" data-inv="${rec.invoice_number}" data-fare="${Number(rec.total_fare).toFixed(2)}" data-pickup="${rec.pickup_address}" data-dropoff="${rec.dropoff_address}" data-date="${rec.date_time}">
-          <span>🧾</span>
-          <span>Papar Resit</span>
+  // 3. Empty State for Patient with No Prior Services
+  if (!records || records.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:26px 16px;background:#F8FAFC;border:1.5px dashed #CBD5E1;border-radius:14px;margin-top:6px;">
+        <div style="font-size:2rem;margin-bottom:8px;">🚑</div>
+        <h5 style="font-size:0.88rem;font-weight:800;color:#1E293B;margin:0 0 6px 0;">Tiada Rekod Tempahan Ambulans Lagi</h5>
+        <p style="font-size:0.75rem;color:#64748B;margin:0 0 14px 0;line-height:1.45;">
+          Akaun anda (<b style="color:#0F172A;">${escapeHtml(user.email || 'Pengguna')}</b>) belum mempunyai rekod perkhidmatan ambulans yang selesai atau dibayar. Tempahan yang anda buat di tab <b>Utama</b> akan diselaraskan di sini secara automatik.
+        </p>
+        <button type="button" id="btnGoToDispatchFromProfile" style="background:#C61E2F;color:#FFFFFF;border:none;border-radius:10px;padding:9px 18px;font-size:0.8rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(198,30,47,0.25);">
+          <span>+ Tempah Ambulans Sekarang</span>
         </button>
       </div>
-    </div>
-  `).join('');
+    `;
 
+    const btnGo = document.getElementById('btnGoToDispatchFromProfile');
+    if (btnGo) {
+      btnGo.addEventListener('click', () => {
+        playClickSound();
+        const utamaTab = document.querySelector('.dock-tab-item[data-tab="calculator-view"]');
+        if (utamaTab) utamaTab.click();
+      });
+    }
+    return;
+  }
+
+  // 4. Render Actual Patient Ambulance Trips
+  container.innerHTML = records.map(rec => {
+    const inv = rec.invoice_number || rec.invoiceNumber || 'INV-AMC-1042';
+    const pickup = rec.origin_name || rec.originName || rec.pickup_name || rec.pickup_address || rec.pickup || 'Lokasi Pesakit';
+    const dropoff = rec.destination_name || rec.destinationName || rec.dest_name || rec.dropoff_address || rec.dropoff || 'Pusat Perubatan';
+    const dist = Number(rec.distance_km || rec.distanceKm || rec.distance || 0).toFixed(1);
+    const pkg = rec.assistance_package || rec.assistancePackage || rec.trip_type || 'Pakej Standard';
+    const eqp = rec.equipment_items || rec.equipmentItems || 'Tiada Alatan Tambahan';
+    const fare = Number(rec.total_fare || rec.totalFare || rec.fare || 250).toFixed(2);
+    const dateStr = rec.created_at
+      ? new Date(rec.created_at).toLocaleString('ms-MY', { dateStyle: 'medium', timeStyle: 'short' })
+      : 'Hari ini';
+
+    const isPaid = (rec.payment_status || '').toUpperCase() === 'PAID' || rec.status === 'Selesai' || rec.status === 'Completed';
+    const statusLabel = isPaid ? '✓ Selesai & Dibayar' : (rec.status ? ('🚨 ' + rec.status) : 'Dalam Proses');
+    const statusClass = isPaid ? 'success' : 'active';
+    const payMethod = (rec.payment_method === 'chip' || rec.paymentMethod === 'chip') ? 'CHIP GATEWAY' : 'TUNAI';
+
+    const isPartnerProvider = rec.provider_type === 'partner_company' || (rec.partner_company_name && !rec.partner_company_name.includes('Al-Farhain')) || inv.startsWith('AMC-RKN-');
+    const providerCompany = rec.partner_company_name || (isPartnerProvider ? 'MediCare Ambulance Services Sdn. Bhd.' : 'Poliklinik Al-Farhain (Armada Dalaman)');
+    const plateNum = rec.plate_number || rec.plateNumber || (isPartnerProvider ? 'DDU 8892' : 'VPQ 7606');
+    const driverName = rec.driver_name || rec.driverName || (isPartnerProvider ? 'Mohd Hafizuddin bin Razak' : 'Abe Di (EMT)');
+
+    const providerBannerHtml = isPartnerProvider
+      ? `<div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:6px 10px;margin:6px 0 8px;font-size:0.71rem;color:#92400E;display:flex;flex-direction:column;gap:2px;">
+           <div style="font-weight:800;display:flex;align-items:center;gap:5px;">
+             <span>🤝</span>
+             <span>Penyedia Rakan Diluluskan HQ: ${escapeHtml(providerCompany)}</span>
+           </div>
+           <div style="font-size:0.68rem;color:#78350F;">
+             🚑 Unit Ambulans: <b>${escapeHtml(plateNum)}</b> &bull; 👨‍✈️ Pemandu: <b>${escapeHtml(driverName)}</b>
+           </div>
+         </div>`
+      : `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:6px 10px;margin:6px 0 8px;font-size:0.71rem;color:#065F46;display:flex;flex-direction:column;gap:2px;">
+           <div style="font-weight:800;display:flex;align-items:center;gap:5px;">
+             <span>🏥</span>
+             <span>Penyedia Perkhidmatan: ${escapeHtml(providerCompany)}</span>
+           </div>
+           <div style="font-size:0.68rem;color:#047857;">
+             🚑 Unit Ambulans: <b>${escapeHtml(plateNum)}</b> &bull; 👨‍✈️ Pemandu: <b>${escapeHtml(driverName)}</b>
+           </div>
+         </div>`;
+
+    return `
+      <div class="purchased-trip-card">
+        <div class="trip-card-header">
+          <span class="trip-inv-pill">${escapeHtml(inv)}</span>
+          <span class="trip-status-pill ${statusClass}">
+            <span>${statusLabel}</span>
+          </span>
+        </div>
+
+        ${providerBannerHtml}
+
+        <div class="trip-route-container">
+          <div class="trip-point-row">
+            <span class="trip-point-dot pickup" title="Lokasi Ambil"></span>
+            <span class="trip-point-text" title="${escapeHtml(pickup)}">Dari: ${escapeHtml(pickup)}</span>
+          </div>
+          <div class="trip-point-row">
+            <span class="trip-point-dot dropoff" title="Destinasi Hantar"></span>
+            <span class="trip-point-text" title="${escapeHtml(dropoff)}">Ke: ${escapeHtml(dropoff)}</span>
+          </div>
+        </div>
+
+        <div class="trip-meta-row">
+          <span class="trip-meta-chip">🛣️ ${dist} km</span>
+          <span class="trip-meta-chip">👨‍⚕️ ${escapeHtml(pkg)}</span>
+          <span class="trip-meta-chip">🩹 ${escapeHtml(eqp)}</span>
+          <span class="trip-meta-chip">📅 ${dateStr}</span>
+        </div>
+
+        <div class="trip-card-footer">
+          <div class="trip-fare-box">
+            <span class="trip-fare-label">Jumlah Dibayar (${payMethod})</span>
+            <span class="trip-fare-val">RM ${fare}</span>
+          </div>
+          <button type="button" class="btn-trip-receipt"
+            data-inv="${escapeHtml(inv)}"
+            data-fare="${fare}"
+            data-pickup="${escapeHtml(pickup)}"
+            data-dropoff="${escapeHtml(dropoff)}"
+            data-date="${dateStr}"
+            data-pkg="${escapeHtml(pkg)}"
+            data-eqp="${escapeHtml(eqp)}"
+            data-dist="${dist}"
+            data-pay="${payMethod}"
+            data-provider="${escapeHtml(providerCompany)}"
+            data-plate="${escapeHtml(plateNum)}"
+            data-driver="${escapeHtml(driverName)}">
+            <span>🧾</span>
+            <span>Papar Resit</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 5. Attach Receipt Modal Handlers
   container.querySelectorAll('.btn-trip-receipt').forEach(btn => {
     btn.addEventListener('click', () => {
       playClickSound();
-      const inv = btn.dataset.inv;
-      const fare = btn.dataset.fare;
-      const pickup = btn.dataset.pickup;
-      const dropoff = btn.dataset.dropoff;
-      const date = btn.dataset.date;
-      alert('🧾 RESIT RASMI AL-FARHAIN AMBULANCE\n----------------------------------------\nNo. Invois : ' + inv + '\nTarikh     : ' + date + '\nStatus     : TELAH DIBAYAR (CHIP PAYMENT)\nDari       : ' + pickup + '\nKe         : ' + dropoff + '\nJumlah     : RM ' + fare + '\n----------------------------------------\nTerima kasih kerana memilih perkhidmatan ambulans Al-Farhain.');
+      showOfficialTripReceipt({
+        inv: btn.dataset.inv,
+        fare: btn.dataset.fare,
+        pickup: btn.dataset.pickup,
+        dropoff: btn.dataset.dropoff,
+        date: btn.dataset.date,
+        pkg: btn.dataset.pkg,
+        eqp: btn.dataset.eqp,
+        dist: btn.dataset.dist,
+        pay: btn.dataset.pay,
+        provider: btn.dataset.provider || 'Poliklinik Al-Farhain (Armada Dalaman)',
+        plate: btn.dataset.plate || 'VPQ 7606',
+        driver: btn.dataset.driver || 'Abe Di (EMT)',
+        patientName: user.user_metadata?.name || 'Nik Farhan'
+      });
     });
   });
+}
+
+function showOfficialTripReceipt(data) {
+  const invModal = document.getElementById('invoiceModal');
+  const invNumberText = document.getElementById('invNumberText') || document.getElementById('invNumber');
+  const invDate = document.getElementById('invDate');
+  const invBadgeStatus = document.getElementById('invBadgeStatus');
+  const invPickup = document.getElementById('invPickup');
+  const invDest = document.getElementById('invDestination');
+  const invPatientName = document.getElementById('invSummaryPatientName') || document.getElementById('invPatientName');
+  const invGrandTotal = document.getElementById('invGrandTotal');
+  const invProviderCompany = document.getElementById('invProviderCompany');
+  const invPlateNumber = document.getElementById('invPlateNumber');
+  const invDriverName = document.getElementById('invDriverName');
+
+  if (invNumberText) invNumberText.textContent = data.inv;
+  if (invDate) invDate.textContent = data.date;
+  if (invBadgeStatus) {
+    invBadgeStatus.textContent = data.pay.includes('CHIP') ? '✅ LUNAS / DIBAYAR (CHIP)' : '💵 TUNAI KETIBAAN';
+    invBadgeStatus.style.background = '#D1FAE5';
+    invBadgeStatus.style.color = '#065F46';
+  }
+  if (invPickup) invPickup.textContent = data.pickup;
+  if (invDest) invDest.textContent = data.dropoff;
+  if (invPatientName) invPatientName.textContent = data.patientName || 'Nik Farhan';
+  if (invGrandTotal) invGrandTotal.textContent = 'RM ' + data.fare;
+  if (invProviderCompany && data.provider) invProviderCompany.textContent = data.provider;
+  if (invPlateNumber && data.plate) invPlateNumber.textContent = data.plate;
+  if (invDriverName && data.driver) invDriverName.textContent = data.driver;
+
+  if (invModal) {
+    invModal.classList.add('show');
+  } else {
+    alert(
+      '🧾 RESIT RASMI RAWATAN & PENGANGKUTAN AMBULANS\n' +
+      'PUSAT RAWATAN AL-FARHAIN (AMC 24 JAM)\n' +
+      '----------------------------------------\n' +
+      'No. Invois : ' + data.inv + '\n' +
+      'Tarikh     : ' + data.date + '\n' +
+      'Status     : ' + (data.pay.includes('CHIP') ? 'TELAH DIBAYAR (CHIP PAYMENT GATEWAY)' : 'TUNAI SEMASA KETIBAAN') + '\n' +
+      'Penyedia   : ' + (data.provider || 'Poliklinik Al-Farhain') + '\n' +
+      'Ambulans   : ' + (data.plate || 'VPQ 7606') + ' (' + (data.driver || 'Abe Di') + ')\n' +
+      'Pesakit    : ' + data.patientName + '\n' +
+      'Dari       : ' + data.pickup + '\n' +
+      'Ke         : ' + data.dropoff + '\n' +
+      'Jarak      : ' + data.dist + ' km\n' +
+      'Pakej      : ' + data.pkg + '\n' +
+      'Peralatan  : ' + data.eqp + '\n' +
+      'Jumlah     : RM ' + data.fare + '\n' +
+      '----------------------------------------\n' +
+      'Terima kasih kerana memilih perkhidmatan ambulans Al-Farhain.'
+    );
+  }
 }

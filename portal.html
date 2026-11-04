@@ -229,17 +229,26 @@
           <span class="nav-badge-pill" id="badgePendingDrivers" style="display:none;background:#c61e2f;color:#fff;font-size:0.7rem;font-weight:700;padding:2px 7px;border-radius:12px;margin-left:auto;">0</span>
         </button>
 
-        <button class="nav-item-btn" data-target="pemanduView" id="navBtnPemandu">
+        <button class="nav-item-btn" data-target="rakanAmbulansView" id="navBtnRakanAmbulans">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
               <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
           </span>
-          <span class="nav-item-label">Pemandu</span>
-          <span class="nav-badge-pill" id="badgePendingDrivers" style="display:none;">0</span>
+          <span class="nav-item-label">Rakan Ambulans</span>
+          <span class="nav-badge-pill" id="badgePendingPartners" style="display:inline-flex;background:#c61e2f;color:#fff;font-size:0.7rem;font-weight:700;padding:2px 7px;border-radius:12px;margin-left:auto;">2</span>
+        </button>
+        <button class="nav-item-btn" data-target="partnerPortalView" id="navBtnPartnerPortal">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+          </span>
+          <span class="nav-item-label">Portal Rakan (B2B)</span>
         </button>
 
         <button class="nav-item-btn" data-target="rekodPerjalananView">
@@ -4866,7 +4875,33 @@
 
         </section>
 
-      </div>
+      
+        <!-- =============================================================
+             SECTION: RAKAN AMBULANS (HQ ADMINISTRATION & 5% COMMISSION)
+             ============================================================= -->
+        <section class="portal-view-section" id="rakanAmbulansView">
+          <div class="section-header-bar" style="margin-bottom: 18px;">
+            <div>
+              <h2 class="section-title-main">Rakan Ambulans &amp; Komisen 5%</h2>
+              <p class="section-subtitle-muted">Pengurusan syarikat ambulans luar diluluskan, Kod Jemputan, tawaran tugasan, pengesahan bukti &amp; lejar penyelesaian 5%</p>
+            </div>
+          </div>
+          <div id="rakanAmbulansDynamicRoot"></div>
+        </section>
+
+        <!-- =============================================================
+             SECTION: PORTAL RAKAN AMBULANS (COMPANY-SCOPED B2B PORTAL)
+             ============================================================= -->
+        <section class="portal-view-section" id="partnerPortalView">
+          <div class="section-header-bar" style="margin-bottom: 18px;">
+            <div>
+              <h2 class="section-title-main">Portal Rakan Ambulans (B2B)</h2>
+              <p class="section-subtitle-muted">Paparan terhad mengikut skop syarikat rakan: Tawaran tugasan, penetapan ambulans/pemandu &amp; penyata pendapatan (95%)</p>
+            </div>
+          </div>
+          <div id="partnerPortalDynamicRoot"></div>
+        </section>
+</div>
     </main>
 
   </div> <!-- /#portalAppShell -->

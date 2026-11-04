@@ -32,14 +32,23 @@ CREATE TABLE IF NOT EXISTS public.ambulance_bookings (
     contact_phone VARCHAR(50) DEFAULT '013-914 7606',
     patient_name VARCHAR(150),
     patient_phone VARCHAR(50),
+    patient_email VARCHAR(150),
+    payment_status VARCHAR(50) DEFAULT 'unpaid',
+    payment_method VARCHAR(50) DEFAULT 'cash',
     status VARCHAR(50) DEFAULT 'Dispatched', -- Dispatched, En Route, On Scene, In Transit, Arrived, Cancelled
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Ensure non-destructive addition of patient sync columns on existing databases
+ALTER TABLE public.ambulance_bookings ADD COLUMN IF NOT EXISTS patient_email VARCHAR(150);
+ALTER TABLE public.ambulance_bookings ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50) DEFAULT 'unpaid';
+ALTER TABLE public.ambulance_bookings ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50) DEFAULT 'cash';
+
 -- Index for speedy querying by invoice and creation date
 CREATE INDEX IF NOT EXISTS idx_bookings_created_at ON public.ambulance_bookings(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_bookings_status ON public.ambulance_bookings(status);
+CREATE INDEX IF NOT EXISTS idx_bookings_patient_email ON public.ambulance_bookings(patient_email);
 
 -- 2. Create Ambulance Fleet Table
 CREATE TABLE IF NOT EXISTS public.ambulance_fleet (

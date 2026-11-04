@@ -3228,3 +3228,15 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+// =========================================================================
+// RAKAN AMBULANS & PARTNER PORTAL INITIALIZATION
+// =========================================================================
+import { initPartnerPortalModule } from './partnerPortalModule.js';
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => initPartnerPortalModule());
+} else {
+  initPartnerPortalModule();
+}
+

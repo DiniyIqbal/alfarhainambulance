@@ -184,6 +184,21 @@
           </div>
         </div>
 
+        <!-- Partner Driver Company Identity Banner (Shown when Partner Driver is logged in) -->
+        <div id="partnerDriverCompanyBanner" style="display:none;background:#FFFBEB;border:1.5px solid #FCD34D;border-radius:12px;padding:10px 12px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.3rem;">🤝</span>
+              <div>
+                <div style="font-size:0.64rem;font-weight:800;color:#B45309;text-transform:uppercase;letter-spacing:0.4px;">IDENTITI SYARIKAT RAKAN AMBULANS</div>
+                <div id="partnerDriverCompanyTitle" style="font-size:0.84rem;font-weight:900;color:#78350F;">MediCare Ambulance Services Sdn. Bhd.</div>
+                <div id="partnerDriverUnitInfo" style="font-size:0.7rem;color:#92400E;">🚑 Unit Diluluskan: <b>DDU 8892</b> &bull; Alatan: Oksigen, Pengusung, AED</div>
+              </div>
+            </div>
+            <span class="driver-pill driver-pill-green" style="font-size:0.65rem;">✓ Diluluskan HQ</span>
+          </div>
+        </div>
+
         <!-- Tugasan seterusnya Section -->
         <div class="driver-next-task-container">
           <div class="driver-next-task-header-row">
@@ -1123,7 +1138,7 @@
             <label style="font-size:0.72rem;color:var(--driver-text-muted);font-weight:600;">Penerima / unit</label>
             <div style="display:flex;align-items:center;gap:8px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:8px 12px;">
               <span>🏥</span>
-              <input type="text" value="Unit penerimaan hospital" style="border:none;background:none;outline:none;font-size:0.82rem;font-weight:700;color:var(--driver-text-heading);width:100%;">
+              <input type="text" id="handoverReceiverInput" value="Unit penerimaan hospital" style="border:none;background:none;outline:none;font-size:0.82rem;font-weight:700;color:var(--driver-text-heading);width:100%;">
             </div>
           </div>
 
@@ -1168,8 +1183,21 @@
 
         <!-- Mission Notes Field -->
         <div class="driver-card">
-          <span style="font-size:0.78rem;font-weight:800;color:var(--driver-text-heading);">📝 Catatan tugasan (pilihan)</span>
-          <textarea class="driver-modal-textarea" style="height:60px;" placeholder="Tiada isu dilaporkan">Tiada isu dilaporkan</textarea>
+          <span style="font-size:0.78rem;font-weight:800;color:var(--driver-text-heading);">📝 Catatan tugasan & bukti penyiapan</span>
+          <textarea id="handoverNotesInput" class="driver-modal-textarea" style="height:60px;" placeholder="Tiada isu dilaporkan">Tiada isu dilaporkan</textarea>
+        </div>
+
+        <!-- Partner Driver Authorized Cash Collection Card (Shown only if authorised for cash collection) -->
+        <div class="driver-card" id="partnerCashCollectionCard" style="display:none;background:#FFFBEB;border-color:#FCD34D;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:0.8rem;font-weight:800;color:#92400E;">💵 Rekod Kutipan Tunai (Diberi Kuasa HQ)</span>
+            <span class="driver-pill driver-pill-amber" id="partnerCashAuthBadge" style="font-size:0.64rem;">Dibayar oleh Pelanggan</span>
+          </div>
+          <p style="font-size:0.7rem;color:#78350F;margin:4px 0 6px;">Hanya rekodkan tunai diterima jika tugasan ini diberi kuasa kutipan tunai oleh HQ AFAMS.</p>
+          <div style="display:flex;align-items:center;gap:8px;background:#FFFFFF;border:1.5px solid #F59E0B;border-radius:8px;padding:8px 12px;">
+            <span style="font-weight:800;color:#92400E;font-size:0.82rem;">RM</span>
+            <input type="number" id="partnerCashCollectedInput" step="0.01" min="0" value="0.00" style="border:none;background:none;outline:none;font-size:0.9rem;font-weight:900;color:#0F172A;width:100%;">
+          </div>
         </div>
 
         <!-- Extra Stop Request -->
@@ -1359,7 +1387,7 @@
             </div>
             <div>
               <h2 id="driverProfileName" style="font-size:1.1rem;font-weight:900;color:var(--driver-text-heading);">Abe Di</h2>
-              <div style="font-size:0.75rem;color:var(--driver-red);font-weight:800;">Pemandu EMT Bertugas</div>
+              <div id="driverRoleLabel" style="font-size:0.75rem;color:var(--driver-red);font-weight:800;">Pemandu EMT Bertugas (Armada Dalaman)</div>
               <div style="font-size:0.7rem;color:var(--driver-text-muted);margin-top:2px;" id="driverEmailBadge">diniy-driver@gmail.com</div>
             </div>
           </div>
@@ -1367,18 +1395,31 @@
 
         <!-- Assigned Vehicle Details -->
         <div class="driver-card">
-          <span style="font-size:0.8rem;font-weight:800;color:var(--driver-text-heading);">🚑 Kenderaan Bertugas</span>
+          <span style="font-size:0.8rem;font-weight:800;color:var(--driver-text-heading);">🚑 Kenderaan & Syarikat Bertugas</span>
           <div class="driver-two-col-grid" style="margin-top:4px;">
             <div class="driver-subcard">
               <span class="driver-subcard-title">Nombor Pendaftaran</span>
-              <span style="font-size:1rem;font-weight:900;color:var(--driver-text-heading);">VPQ 7606</span>
-              <span class="tag">Toyota Hiace High-Roof</span>
+              <span id="driverAssignedPlateText" style="font-size:1rem;font-weight:900;color:var(--driver-text-heading);">VPQ 7606</span>
+              <span class="tag" id="driverAssignedVehicleType">Toyota Hiace High-Roof</span>
             </div>
             <div class="driver-subcard">
-              <span class="driver-subcard-title">Pangkalan</span>
-              <span style="font-size:0.88rem;font-weight:900;color:var(--driver-text-heading);">Kok Lanas HQ</span>
-              <span class="tag">Kelantan</span>
+              <span class="driver-subcard-title">Syarikat / Pangkalan</span>
+              <span id="driverAssignedHubText" style="font-size:0.85rem;font-weight:900;color:var(--driver-text-heading);">Kok Lanas HQ</span>
+              <span class="tag" id="driverAssignedCompanyTag">Poliklinik Al-Farhain</span>
             </div>
+          </div>
+        </div>
+
+        <!-- Switch Partner Driver vs Internal Driver Demo Mode -->
+        <div class="driver-card" style="background:#FFFBEB;border-color:#FCD34D;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div>
+              <div style="font-size:0.8rem;font-weight:800;color:#92400E;">🤝 Mod Pemandu Rakan Ambulans</div>
+              <div id="partnerDriverSwitchSub" style="font-size:0.68rem;color:#78350F;">Tukar antara Pemandu Dalaman Al-Farhain & Pemandu Rakan (MediCare)</div>
+            </div>
+            <button type="button" class="driver-btn-outline" id="btnTogglePartnerDriverMode" style="width:auto;padding:6px 12px;font-size:0.72rem;border-color:#D97706;color:#B45309;background:#FFFFFF;">
+              Tukar ke Pemandu Rakan ›
+            </button>
           </div>
         </div>
 

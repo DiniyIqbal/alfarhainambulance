@@ -115,11 +115,12 @@ export function broadcastSyncEvent(type, data) {
   } catch (e) {}
 }
 
-function saveLocalBookingCache(bookingRecord) {
+export function saveLocalBookingCache(bookingRecord) {
   try {
     const raw = localStorage.getItem('amc_all_bookings');
     const list = raw ? JSON.parse(raw) : [];
-    const idx = list.findIndex(b => b.invoice_number === bookingRecord.invoice_number);
+    const inv = bookingRecord.invoice_number || bookingRecord.invoiceNumber;
+    const idx = list.findIndex(b => (b.invoice_number || b.invoiceNumber) === inv);
     if (idx >= 0) {
       list[idx] = { ...list[idx], ...bookingRecord };
     } else {
@@ -137,26 +138,29 @@ export async function insertBookingToSupabase(bookingData) {
     invoice_number: bookingData.invoiceNumber || bookingData.invoice_number || `AMC-${Date.now().toString().slice(-4)}`,
     hub_id: bookingData.hubId || bookingData.hub_id || 'kok_lanas',
     hub_name: bookingData.hubName || bookingData.hub_name || 'HQ Pusat Rawatan Al-Farhain (Kok Lanas)',
-    origin_name: bookingData.originName || bookingData.origin_name || 'Kota Bharu',
-    destination_name: bookingData.destinationName || bookingData.destination_name || 'HRPZ II',
-    distance_km: bookingData.distanceKm || bookingData.distance_km || 26.3,
+    origin_name: bookingData.originName || bookingData.origin_name || bookingData.pickup_address || bookingData.pickupName || 'Kota Bharu',
+    destination_name: bookingData.destinationName || bookingData.destination_name || bookingData.dropoff_address || 'HRPZ II',
+    distance_km: Number(bookingData.distanceKm || bookingData.distance_km || 26.3),
     trip_type: bookingData.tripType || bookingData.trip_type || 'Kecemasan standard (RM250)',
-    base_fare: bookingData.baseFare || bookingData.base_fare || 250.00,
-    extra_km_cost: bookingData.extraKmCost || bookingData.extra_km_cost || 0.00,
+    base_fare: Number(bookingData.baseFare || bookingData.base_fare || 250.00),
+    extra_km_cost: Number(bookingData.extraKmCost || bookingData.extra_km_cost || 0.00),
     assistance_package: bookingData.assistancePackage || bookingData.assistance_package || 'Tiada Staf Tambahan',
-    assistance_cost: bookingData.assistanceCost || bookingData.assistance_cost || 0.00,
+    assistance_cost: Number(bookingData.assistanceCost || bookingData.assistance_cost || 0.00),
     equipment_items: bookingData.equipmentItems || bookingData.equipment_items || '',
-    equipment_cost: bookingData.equipmentCost || bookingData.equipment_cost || 0.00,
-    misc_fee: bookingData.miscFee || bookingData.misc_fee || 50.00,
-    total_fare: bookingData.totalFare || bookingData.total_fare || 250.00,
+    equipment_cost: Number(bookingData.equipmentCost || bookingData.equipment_cost || 0.00),
+    misc_fee: Number(bookingData.miscFee || bookingData.misc_fee || 0.00),
+    total_fare: Number(bookingData.totalFare || bookingData.total_fare || 250.00),
     is_diesel_surge: Boolean(bookingData.isDieselSurge || bookingData.is_diesel_surge),
     plate_number: bookingData.plateNumber || bookingData.plate_number || 'VPQ 7606',
     driver_name: bookingData.driverName || bookingData.driver_name || 'Abe Di / Syalihan',
     contact_phone: bookingData.contactPhone || bookingData.contact_phone || '013-914 7606',
     patient_name: bookingData.patientName || bookingData.patient_name || 'Pesakit AMC',
     patient_phone: bookingData.patientPhone || bookingData.patient_phone || '013-914 7606',
+    patient_email: bookingData.patientEmail || bookingData.patient_email || '',
+    payment_status: bookingData.paymentStatus || bookingData.payment_status || 'unpaid',
+    payment_method: bookingData.paymentMethod || bookingData.payment_method || 'cash',
     status: bookingData.status || 'Dispatched',
-    created_at: new Date().toISOString(),
+    created_at: bookingData.created_at || new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
 
@@ -171,35 +175,49 @@ export async function insertBookingToSupabase(bookingData) {
   }
 
   try {
-    const { data, error } = await supabase
+    // Attempt full insert including patient_email & payment_status
+    let insertObj = {
+      invoice_number: newRecord.invoice_number,
+      hub_id: newRecord.hub_id,
+      hub_name: newRecord.hub_name,
+      origin_name: newRecord.origin_name,
+      destination_name: newRecord.destination_name,
+      distance_km: newRecord.distance_km,
+      trip_type: newRecord.trip_type,
+      base_fare: newRecord.base_fare,
+      extra_km_cost: newRecord.extra_km_cost,
+      assistance_package: newRecord.assistance_package,
+      assistance_cost: newRecord.assistance_cost,
+      equipment_items: newRecord.equipment_items,
+      equipment_cost: newRecord.equipment_cost,
+      misc_fee: newRecord.misc_fee,
+      total_fare: newRecord.total_fare,
+      is_diesel_surge: newRecord.is_diesel_surge,
+      plate_number: newRecord.plate_number,
+      driver_name: newRecord.driver_name,
+      contact_phone: newRecord.contact_phone,
+      patient_name: newRecord.patient_name,
+      patient_phone: newRecord.patient_phone,
+      patient_email: newRecord.patient_email,
+      payment_status: newRecord.payment_status,
+      payment_method: newRecord.payment_method,
+      status: newRecord.status
+    };
+
+    let { data, error } = await supabase
       .from('ambulance_bookings')
-      .insert([
-        {
-          invoice_number: newRecord.invoice_number,
-          hub_id: newRecord.hub_id,
-          hub_name: newRecord.hub_name,
-          origin_name: newRecord.origin_name,
-          destination_name: newRecord.destination_name,
-          distance_km: newRecord.distance_km,
-          trip_type: newRecord.trip_type,
-          base_fare: newRecord.base_fare,
-          extra_km_cost: newRecord.extra_km_cost,
-          assistance_package: newRecord.assistance_package,
-          assistance_cost: newRecord.assistance_cost,
-          equipment_items: newRecord.equipment_items,
-          equipment_cost: newRecord.equipment_cost,
-          misc_fee: newRecord.misc_fee,
-          total_fare: newRecord.total_fare,
-          is_diesel_surge: newRecord.is_diesel_surge,
-          plate_number: newRecord.plate_number,
-          driver_name: newRecord.driver_name,
-          contact_phone: newRecord.contact_phone,
-          patient_name: newRecord.patient_name,
-          patient_phone: newRecord.patient_phone,
-          status: newRecord.status
-        }
-      ])
+      .insert([insertObj])
       .select();
+
+    // If new columns are not yet in Supabase schema, retry with legacy fields
+    if (error && (error.message.includes('patient_email') || error.message.includes('payment_status') || error.message.includes('payment_method'))) {
+      delete insertObj.patient_email;
+      delete insertObj.payment_status;
+      delete insertObj.payment_method;
+      const retry = await supabase.from('ambulance_bookings').insert([insertObj]).select();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       console.warn('Supabase insert notice (saved locally):', error.message);
@@ -238,11 +256,52 @@ export async function fetchBookingsFromSupabase(limit = 20) {
       return raw ? JSON.parse(raw).slice(0, limit) : null;
     }
 
+    // Cache remote records locally
+    if (Array.isArray(data)) {
+      data.forEach(saveLocalBookingCache);
+    }
+
     return data;
   } catch (err) {
     console.warn('Supabase fetch exception:', err);
     return null;
   }
+}
+
+// Fetch patient's actual ambulance bookings (synced with Supabase + Local Cache)
+export async function fetchPatientBookingsFromSupabase(user) {
+  if (!user) return [];
+  const email = (user.email || '').toLowerCase().trim();
+  const phone = (user.user_metadata?.phone || '').replace(/[^0-9]/g, '');
+  const name = (user.user_metadata?.name || user.user_metadata?.full_name || '').toLowerCase().trim();
+
+  // Try live fetch from Supabase
+  await fetchBookingsFromSupabase(50);
+
+  // Read all records from local cache
+  let all = [];
+  try {
+    const raw = localStorage.getItem('amc_all_bookings');
+    all = raw ? JSON.parse(raw) : [];
+  } catch {
+    all = [];
+  }
+
+  const activeInv = localStorage.getItem('amc_active_invoice');
+
+  return all.filter(b => {
+    const bEmail = (b.patient_email || b.patientEmail || '').toLowerCase().trim();
+    const bPhone = (b.patient_phone || b.patientPhone || '').replace(/[^0-9]/g, '');
+    const bName = (b.patient_name || b.patientName || '').toLowerCase().trim();
+    const inv = b.invoice_number || b.invoiceNumber;
+
+    if (activeInv && inv === activeInv) return true;
+    if (email && bEmail && bEmail === email) return true;
+    if (phone && bPhone && phone.length >= 7 && (phone.includes(bPhone) || bPhone.includes(phone))) return true;
+    if (name && bName && (name.includes(bName) || bName.includes(name))) return true;
+
+    return false;
+  });
 }
 
 // Update booking status (e.g. En Route, On Scene, In Transit, Arrived)
@@ -262,11 +321,24 @@ export async function updateBookingStatusInSupabase(invoiceNumber, newStatus, ex
   if (!supabase) return { success: true, offline: true, data: updatePayload };
 
   try {
-    const { data, error } = await supabase
+    const fieldsToUpdate = { status: newStatus, updated_at: updatePayload.updated_at };
+    if (extraData.payment_status) fieldsToUpdate.payment_status = extraData.payment_status;
+
+    let { data, error } = await supabase
       .from('ambulance_bookings')
-      .update({ status: newStatus, updated_at: updatePayload.updated_at })
+      .update(fieldsToUpdate)
       .eq('invoice_number', invoiceNumber)
       .select();
+
+    if (error && error.message.includes('payment_status')) {
+      const retry = await supabase
+        .from('ambulance_bookings')
+        .update({ status: newStatus, updated_at: updatePayload.updated_at })
+        .eq('invoice_number', invoiceNumber)
+        .select();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) return { success: false, error: error.message };
     return { success: true, data };
@@ -525,6 +597,29 @@ export const DEMO_GMAIL_ACCOUNTS = {
     role_label: 'Pengurus Cawangan Raub',
     branch: 'raub',
     account_status: 'Aktif'
+  },
+  'admin.medicare@gmail.com': {
+    email: 'admin.medicare@gmail.com',
+    full_name: 'En. Wan Kamarul Ariffin',
+    phone: '019-988 4412',
+    role: 'partner_admin',
+    role_label: 'Pentadbir Rakan Ambulans (MediCare)',
+    company_id: 'comp-medicare-kb',
+    company_name: 'MediCare Ambulance Services Sdn. Bhd.',
+    branch: 'kelantan',
+    account_status: 'Aktif'
+  },
+  'pemandu.medicare@gmail.com': {
+    email: 'pemandu.medicare@gmail.com',
+    full_name: 'Mohd Hafizuddin bin Razak',
+    phone: '014-821 9033',
+    role: 'partner_driver',
+    role_label: 'Pemandu Rakan Ambulans (MediCare)',
+    company_id: 'comp-medicare-kb',
+    company_name: 'MediCare Ambulance Services Sdn. Bhd.',
+    ambulance_plate: 'DDU 8892',
+    branch: 'kelantan',
+    account_status: 'Aktif'
   }
 };
 
@@ -544,6 +639,8 @@ export async function signInUser(email, password) {
         phone: demo.phone,
         branch: demo.branch,
         ambulance_plate: demo.ambulance_plate || '',
+        company_id: demo.company_id || null,
+        company_name: demo.company_name || null,
         account_status: demo.account_status,
         correction_notes: demo.correction_notes || ''
       }
