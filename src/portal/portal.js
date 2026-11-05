@@ -237,23 +237,32 @@ let dashboardArmadaMap = null;
 /* -------------------------------------------------------------------------
    DOM INITIALIZATION
    ------------------------------------------------------------------------- */
-document.addEventListener('DOMContentLoaded', async () => {
-  applyStoredTheme();
-  initAuthentication();
-  initSidebarNavigation();
-  initSettingsView();
-  initRecordsView();
-  initDispatchView();
-  initBranchView();
-  if (portalState.activeTab === 'petaFleetView') {
-    initTacticalRadarMap();
+function safeInit(fn, label) {
+  try {
+    fn();
+  } catch (err) {
+    console.error(`[Portal Init Error - ${label}]:`, err);
   }
-  initDashboardView();
-  renderDashboardFleet();
-  renderRevenueTable();
-  initAdminBookingView();
-  initKatalogArmadaView();
-  initPemanduView();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  safeInit(() => applyStoredTheme(), 'Theme');
+  safeInit(() => initAuthentication(), 'Authentication');
+  safeInit(() => initSidebarNavigation(), 'SidebarNavigation');
+  safeInit(() => initPemanduView(), 'PemanduView');
+  safeInit(() => initPartnerPortalModule(), 'PartnerPortalModule');
+  safeInit(() => initSettingsView(), 'SettingsView');
+  safeInit(() => initRecordsView(), 'RecordsView');
+  safeInit(() => initDispatchView(), 'DispatchView');
+  safeInit(() => initBranchView(), 'BranchView');
+  if (portalState.activeTab === 'petaFleetView') {
+    safeInit(() => initTacticalRadarMap(), 'TacticalRadarMap');
+  }
+  safeInit(() => initDashboardView(), 'DashboardView');
+  safeInit(() => renderDashboardFleet(), 'DashboardFleet');
+  safeInit(() => renderRevenueTable(), 'RevenueTable');
+  safeInit(() => initAdminBookingView(), 'AdminBookingView');
+  safeInit(() => initKatalogArmadaView(), 'KatalogArmadaView');
 });
 
 /* -------------------------------------------------------------------------
@@ -485,6 +494,15 @@ function initSidebarNavigation() {
 
       if (breadcrumbCurrent && viewTitles[targetId]) {
         breadcrumbCurrent.textContent = viewTitles[targetId];
+      }
+
+      // Refresh Pemandu, Rakan Ambulans, and Partner Portal (B2B) views on tab click
+      if (targetId === 'pemanduView') {
+        safeInit(() => renderAllPemanduViews(), 'RefreshPemandu');
+      } else if (targetId === 'rakanAmbulansView') {
+        safeInit(() => renderHqRakanAmbulansView(), 'RefreshRakanAmbulans');
+      } else if (targetId === 'partnerPortalView') {
+        safeInit(() => renderPartnerPortalView(), 'RefreshPartnerPortal');
       }
 
       // Handle Peta & Fleet tab activation for MapLibre GL
@@ -3234,11 +3252,13 @@ function escapeHtml(str) {
 // =========================================================================
 // RAKAN AMBULANS & PARTNER PORTAL INITIALIZATION
 // =========================================================================
-import { initPartnerPortalModule } from './partnerPortalModule.js';
+import {
+  initPartnerPortalModule,
+  renderHqRakanAmbulansView,
+  renderPartnerPortalView
+} from './partnerPortalModule.js';
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => initPartnerPortalModule());
-} else {
-  initPartnerPortalModule();
+if (document.readyState !== 'loading') {
+  safeInit(() => initPartnerPortalModule(), 'PartnerPortalImmediate');
 }
 
