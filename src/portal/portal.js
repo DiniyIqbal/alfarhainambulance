@@ -460,7 +460,9 @@ function initSidebarNavigation() {
     hasilInvoisView: 'Hasil & Invois',
     adminBookingView: 'Tempahan Baru',
     katalogArmadaView: 'Katalog & Armada',
-    pemanduView: 'Pemandu & Jemputan'
+    pemanduView: 'Pemandu & Jemputan',
+    rakanAmbulansView: 'Rakan Ambulans & Komisen 5%',
+    partnerPortalView: 'Portal Rakan Ambulans (B2B)'
   };
 
   navBtns.forEach(btn => {
