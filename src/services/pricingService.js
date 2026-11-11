@@ -2,7 +2,7 @@
 // Single source of truth for transport fare, quotation, and invoice calculations.
 // Adheres strictly to the approved operational transport pricing rule.
 
-import { BASE_SETTINGS, TRIP_TYPES, ADDITIONAL_EQUIPMENTS } from '../data/pricingData.js';
+import { BASE_SETTINGS, TRIP_TYPES, SERVICE_PACKAGES, getServicePackageById, ADDITIONAL_EQUIPMENTS } from '../data/pricingData.js';
 
 /**
  * Calculates transport fare based on chargeable road distance.
@@ -64,8 +64,10 @@ export function calculateTransportFare(chargeableKm, tripType = null) {
  * 
  * @param {Object} params
  * @param {number} params.distanceKm - Confirmed road distance in KM
- * @param {Object} [params.tripType] - Selected trip category
- * @param {Object} [params.assistancePackage] - Selected medical staff package
+ * @param {Object} [params.tripType] - Selected trip category or legacy trip type
+ * @param {Object} [params.servicePackage] - Selected service package
+ * @param {string} [params.packageId] - Selected service package ID
+ * @param {Object} [params.assistancePackage] - Selected medical staff package (if charged separately)
  * @param {Object} [params.equipmentQuantities] - Map of equipment ID to quantity
  * @param {boolean} [params.isEventStandby=false] - Event standby package flag
  * @param {number} [params.standbyHours=4] - Duration in hours for event standby
@@ -74,6 +76,8 @@ export function calculateTransportFare(chargeableKm, tripType = null) {
 export function calculateBookingQuotation({
   distanceKm,
   tripType = null,
+  servicePackage = null,
+  packageId = null,
   assistancePackage = null,
   equipmentQuantities = {},
   isEventStandby = false,
@@ -81,6 +85,14 @@ export function calculateBookingQuotation({
 }) {
   let transport = null;
   let baseStep1Total = 0;
+  let selectedPkg = servicePackage || (packageId ? getServicePackageById(packageId) : null);
+
+  if (!selectedPkg && tripType) {
+    selectedPkg = getServicePackageById(tripType.id || tripType.packageId || tripType.name);
+  }
+  if (!selectedPkg) {
+    selectedPkg = SERVICE_PACKAGES[0];
+  }
 
   if (isEventStandby) {
     const hours = parseInt(standbyHours, 10) || 4;
@@ -98,7 +110,8 @@ export function calculateBookingQuotation({
       formulaText: `Standby ${hours} Jam (Ambulans + Krew EMT)`
     };
   } else {
-    transport = calculateTransportFare(distanceKm, tripType);
+    const baseFareToUse = selectedPkg?.baseFare ?? tripType?.baseFare ?? 250.00;
+    transport = calculateTransportFare(distanceKm, { baseFare: baseFareToUse, name: selectedPkg?.name });
     baseStep1Total = transport.totalTransportFare;
   }
 
@@ -128,9 +141,13 @@ export function calculateBookingQuotation({
 
   return {
     transport,
+    package: selectedPkg,
+    servicePackage: selectedPkg,
     staffFee,
     equipmentTotal,
     equipmentItems,
+    includedStaff: selectedPkg ? [...selectedPkg.includedStaff] : [],
+    includedEquipment: selectedPkg ? [...selectedPkg.includedEquipment] : [],
     grandTotal
   };
 }

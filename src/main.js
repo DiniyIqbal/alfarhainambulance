@@ -8,6 +8,8 @@ import {
   PRESET_PICKUP_LOCATIONS,
   PRESET_DESTINATIONS,
   TRIP_TYPES,
+  SERVICE_PACKAGES,
+  getServicePackageById,
   ASSISTANCE_PACKAGES,
   ADDITIONAL_EQUIPMENTS,
   BASE_SETTINGS,
@@ -119,22 +121,13 @@ const state = {
   leg2Geometry: null,
   leg3Geometry: null,
 
-  calcStep: 1, // 1: Lokasi, 2: Kategori, 3: Staf, 4: Alatan, 5: Invois
+  calcStep: 1, // 1: Lokasi, 2: Kategori, 3: Invois
   step1Mode: 'lokasi', // 'lokasi' | 'peta'
 
-  selectedTripType: TRIP_TYPES[0], // Kecemasan standard (RM250)
-  selectedAssistance: ASSISTANCE_PACKAGES[2], // Penolong Pegawai Perubatan (PPP / M.A) (+RM200) - matching mockup!
-  equipmentQuantities: {
-    'oxygen_supply': 1, // Tangki oksigen 1x (RM50) - matching mockup!
-    'med_kit': 0,
-    'transport_incubator': 0,
-    'infusion_pump_ventilator': 0,
-    'suction_unit': 0,
-    'aed_unit': 0,
-    'spine_board': 0,
-    'iv_drip_set': 0,
-    'maternity_kit': 0
-  },
+  selectedPackage: SERVICE_PACKAGES[0], // Kecemasan standard (RM250)
+  selectedTripType: SERVICE_PACKAGES[0],
+  selectedAssistance: null,
+  equipmentQuantities: {},
 
   // Booking Section: Regular Trip vs Ambulance Standby (Event)
   bookingType: 'regular_trip', // 'regular_trip' | 'event_standby'
@@ -203,6 +196,13 @@ document.addEventListener('DOMContentLoaded', () => {
   calculateAll();
   initMiniLeafletMap();
   calculateMultiLegRoute(true);
+
+  // Deep link support (e.g. ?step=2 for direct service package view)
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialStep = parseInt(urlParams.get('step'), 10);
+  if (initialStep && initialStep >= 1 && initialStep <= 3) {
+    switchCalcStep(initialStep);
+  }
 });
 
 /* =========================================================================
@@ -469,7 +469,7 @@ function initNavigationTabs() {
       if (stepperContainer) stepperContainer.style.display = isDispatch ? 'block' : 'none';
 
       if (stickyBar) {
-        const showSticky = isDispatch && state.calcStep >= 2 && state.calcStep <= 4;
+        const showSticky = isDispatch && state.calcStep === 2;
         stickyBar.style.display = showSticky ? 'flex' : 'none';
       }
 
@@ -632,10 +632,10 @@ function initDispatchStepper() {
 }
 
 function switchCalcStep(stepNum) {
-  stepNum = Math.max(1, Math.min(5, stepNum));
+  stepNum = Math.max(1, Math.min(3, stepNum));
   state.calcStep = stepNum;
 
-  // 1. Toggle Step Pages
+  // 1. Toggle Step Pages (1: Lokasi, 2: Kategori, 3: Invois)
   const pages = document.querySelectorAll('.calc-step-page');
   pages.forEach(p => {
     const s = parseInt(p.dataset.step, 10);
@@ -660,18 +660,18 @@ function switchCalcStep(stepNum) {
     }
   });
 
-  // 3. Update Progress Bar Fill Width
+  // 3. Update Progress Bar Fill Width for 3 steps
   const progressFill = document.getElementById('stepperProgressFill');
   if (progressFill) {
-    const widths = { 1: '10%', 2: '32%', 3: '54%', 4: '76%', 5: '100%' };
-    progressFill.style.width = widths[stepNum] || '10%';
+    const widths = { 1: '15%', 2: '50%', 3: '100%' };
+    progressFill.style.width = widths[stepNum] || '15%';
   }
 
-  // 4. Update Sticky Action Bar (visible on Steps 2, 3, 4)
+  // 4. Update Sticky Action Bar (visible on Step 2: Kategori / Jenis Perkhidmatan)
   const stickyBar = document.getElementById('stickyStepActionBar');
   if (stickyBar) {
     const isDispatch = state.activeTab === 'calculator-view';
-    stickyBar.style.display = (isDispatch && stepNum >= 2 && stepNum <= 4) ? 'flex' : 'none';
+    stickyBar.style.display = (isDispatch && stepNum === 2) ? 'flex' : 'none';
   }
 
   // 5. Scroll container to top
@@ -807,11 +807,12 @@ function initPatientAndBookingSection() {
 }
 
 /* =========================================================================
-   8. STICKY ACTION BAR NAVIGATION (STEPS 2, 3, 4)
+   8. STICKY ACTION BAR NAVIGATION (STEP 2: KATEGORI / JENIS PERKHIDMATAN)
    ========================================================================= */
 function initStickyBar() {
   const btnPrev = document.getElementById('btnStickyPrev');
   const btnNext = document.getElementById('btnStickyNext');
+  const btnBack2 = document.getElementById('btnBackToStep2');
 
   if (btnPrev) {
     btnPrev.addEventListener('click', () => {
@@ -826,6 +827,13 @@ function initStickyBar() {
       switchCalcStep(state.calcStep + 1);
     });
   }
+
+  if (btnBack2) {
+    btnBack2.addEventListener('click', () => {
+      playClickSound();
+      switchCalcStep(2);
+    });
+  }
 }
 
 /* =========================================================================
@@ -834,7 +842,8 @@ function initStickyBar() {
 function calculateAll() {
   const quote = calculateBookingQuotation({
     distanceKm: state.distanceKm,
-    tripType: state.selectedTripType,
+    servicePackage: state.selectedPackage,
+    tripType: state.selectedPackage || state.selectedTripType,
     assistancePackage: state.selectedAssistance,
     equipmentQuantities: state.equipmentQuantities,
     isEventStandby: state.bookingType === 'event_standby',
@@ -920,16 +929,11 @@ function calculateAll() {
   const mapTotalEl = document.getElementById('mapTotalDistanceKm');
   if (mapTotalEl) mapTotalEl.textContent = `${totalKm.toFixed(1)} km (~${state.totalDurationMin} min)`;
 
-  // Sticky Bar estimate updates based on step:
+  // Sticky Bar estimate updates based on step (matches mockup Kadar asas):
   const stickyAmount = document.getElementById('stickyFareAmount');
   if (stickyAmount) {
-    if (state.calcStep === 2) {
-      stickyAmount.textContent = `RM${step1BaseTotal.toFixed(2)}`;
-    } else if (state.calcStep === 3) {
-      stickyAmount.textContent = `RM${(step1BaseTotal + staffFee).toFixed(2)}`;
-    } else {
-      stickyAmount.textContent = `RM${grandTotal.toFixed(2)}`;
-    }
+    const pkgBase = state.selectedPackage ? state.selectedPackage.baseFare : baseFare;
+    stickyAmount.textContent = `RM${pkgBase.toFixed(2)}`;
   }
 
   // Step 5 Invois summary updates
@@ -973,9 +977,11 @@ function populateCostItems(baseFare, extraKm, extraKmRate, extraDistanceFee, sta
   const container = document.getElementById('costItemsContainer');
   if (!container) return;
 
+  const pkg = state.selectedPackage || SERVICE_PACKAGES[0];
+
   let html = `
     <div class="cost-item-row">
-      <span>Kadar asas (${BASE_SETTINGS.standardBaseKm.toFixed(0)} km)</span>
+      <span>Kadar asas: ${pkg.name} (${BASE_SETTINGS.standardBaseKm.toFixed(0)} km)</span>
       <span class="cost-item-price">RM${baseFare.toFixed(2)}</span>
     </div>
   `;
@@ -989,16 +995,36 @@ function populateCostItems(baseFare, extraKm, extraKmRate, extraDistanceFee, sta
     `;
   }
 
+  // Display included staff if package specifies staff
+  if (pkg.includedStaff && pkg.includedStaff.length > 0) {
+    html += `
+      <div class="cost-item-row" style="color: #64748B; font-size: 0.85rem;">
+        <span>Staf Termasuk (${pkg.includedStaff.join(', ')})</span>
+        <span class="cost-item-price" style="color: #10B981; font-weight: 700;">Termasuk</span>
+      </div>
+    `;
+  }
+
+  // Display included equipment summary
+  if (pkg.includedEquipment && pkg.includedEquipment.length > 0) {
+    html += `
+      <div class="cost-item-row" style="color: #64748B; font-size: 0.85rem;">
+        <span>Alatan Termasuk (${pkg.includedEquipment.length} jenis alatan)</span>
+        <span class="cost-item-price" style="color: #10B981; font-weight: 700;">Termasuk</span>
+      </div>
+    `;
+  }
+
   if (state.selectedAssistance && state.selectedAssistance.price > 0) {
     html += `
       <div class="cost-item-row">
-        <span>Pakej ${state.selectedAssistance.roleTitle}</span>
+        <span>Pakej Staf Tambahan: ${state.selectedAssistance.roleTitle}</span>
         <span class="cost-item-price">RM${staffFee.toFixed(2)}</span>
       </div>
     `;
   }
 
-  // Equipment lines
+  // Standalone equipment lines if any
   ADDITIONAL_EQUIPMENTS.forEach(eq => {
     const qty = state.equipmentQuantities[eq.id] || 0;
     if (qty > 0) {
@@ -1061,19 +1087,20 @@ function populatePrintableInvoice(baseFare, extraKm, extraKmRate, extraDistanceF
 
   const tbody = document.getElementById('invTableBody');
   if (tbody) {
+    const pkg = state.selectedPackage || SERVICE_PACKAGES[0];
     const routeBreakdownText = state.hasStop4
       ? `Laluan 3-Leg: ${state.leg1Km.toFixed(1)} km (${state.currentHub.shortName} ➔ ${state.pickupName}) + ${state.leg2Km.toFixed(1)} km (${state.pickupName} ➔ ${state.destinationName}) + ${state.leg3Km.toFixed(1)} km (${state.destinationName} ➔ ${state.returnName})`
       : `Laluan: ${state.leg1Km.toFixed(1)} km (${state.currentHub.shortName} ➔ ${state.pickupName}) + ${state.leg2Km.toFixed(1)} km (${state.pickupName} ➔ ${state.destinationName})`;
 
     const isPaid = state.paymentStatus === 'paid';
 
-    // 1. ORIGINAL BUTIRAN: Tambang Asas & Caj Jarak
+    // 1. TAMBANG ASAS PAKEJ & CAJ JARAK
     let rows = `
       <tr class="invoice-section-hdr">
-        <td colspan="3">1. MAKLUMAT TAMBANG ASAS &amp; PERJALANAN MULTI-LEG</td>
+        <td colspan="3">1. MAKLUMAT PAKEJ PERKHIDMATAN &amp; TAMBANG ASAS</td>
       </tr>
       <tr>
-        <td><strong>Kadar Asas (${state.selectedTripType.name})</strong></td>
+        <td><strong>Kadar Asas (${pkg.name})</strong></td>
         <td>
           Kadar tetap sehingga ${BASE_SETTINGS.standardBaseKm.toFixed(0)} KM<br>
           <small style="color:#64748B;">${routeBreakdownText}</small>
@@ -1092,66 +1119,85 @@ function populatePrintableInvoice(baseFare, extraKm, extraKmRate, extraDistanceF
       `;
     }
 
-    if (isPaid) {
-      // =====================================================================
-      // PAID INVOICE / RESIT RASMI LUNAS
-      // ONLY displays the chosen/paid package and equipment (hides unchosen items)
-      // =====================================================================
-
-      // 2. Chosen/Paid Assistance Package
+    // 2. STAF TERMASUK (Omitted completely for Bukan Kecemasan)
+    if (pkg.includedStaff && pkg.includedStaff.length > 0) {
       rows += `
         <tr class="invoice-section-hdr" style="background:#F0FDFA;color:#0F766E;">
-          <td colspan="3">2. PAKEJ STAF PENGIRING KLINIKAL (DIBAYAR)</td>
+          <td colspan="3">2. PAKEJ STAF PENGIRING KLINIKAL TERMASUK</td>
         </tr>
       `;
 
-      if (state.selectedAssistance) {
-        const pkg = state.selectedAssistance;
+      pkg.includedStaff.forEach(staffName => {
         rows += `
           <tr class="inv-row-chosen">
             <td>
-              <strong style="color: var(--amc-teal-dark);">${pkg.roleTitle}</strong>
-              <div class="inv-desc-sub">${pkg.name}</div>
+              <strong style="color: var(--amc-teal-dark);">${staffName}</strong>
+              <div class="inv-desc-sub">Disertakan dalam ${pkg.name}</div>
             </td>
             <td>
-              <span class="inv-tag inv-tag-chosen" style="background:#D1FAE5;color:#065F46;">✓ DIBAYAR</span>
-              <span class="inv-desc-sub">${pkg.price > 0 ? 'Kru pengiring perubatan khusus' : 'Kru asas termasuk dalam ambulan'}</span>
+              <span class="inv-tag inv-tag-chosen" style="background:#D1FAE5;color:#065F46;">✓ TERMASUK</span>
+              <span class="inv-desc-sub">Kru perubatan klinikal bertugas</span>
             </td>
-            <td style="text-align: right; font-weight: 800; color: var(--amc-teal-dark);">RM ${pkg.price.toFixed(2)}</td>
+            <td style="text-align: right; font-weight: 800; color: #10B981;">RM 0.00</td>
           </tr>
         `;
-      }
+      });
+    }
 
-      // 3. Chosen/Paid Additional Equipments ONLY
-      const paidEquipments = ADDITIONAL_EQUIPMENTS.filter(eq => (state.equipmentQuantities[eq.id] || 0) > 0);
+    // 3. ALATAN PERUBATAN TERMASUK
+    if (pkg.includedEquipment && pkg.includedEquipment.length > 0) {
+      rows += `
+        <tr class="invoice-section-hdr" style="background:#F0FDFA;color:#0F766E;">
+          <td colspan="3">3. SENARAI PERALATAN PERUBATAN &amp; SOKONGAN PESAKIT TERMASUK</td>
+        </tr>
+      `;
 
-      if (paidEquipments.length > 0) {
+      pkg.includedEquipment.forEach(item => {
         rows += `
-          <tr class="invoice-section-hdr" style="background:#F0FDFA;color:#0F766E;">
-            <td colspan="3">3. SENARAI PERALATAN PERUBATAN &amp; SOKONGAN PESAKIT (DIBAYAR)</td>
+          <tr class="inv-row-chosen">
+            <td>
+              <strong style="color: var(--amc-teal-dark);">${item}</strong>
+              <div class="inv-desc-sub">Disertakan dalam ${pkg.name}</div>
+            </td>
+            <td>
+              <span class="inv-tag inv-tag-chosen" style="background:#D1FAE5;color:#065F46;">✓ TERMASUK</span>
+              <span class="inv-desc-sub">Peralatan ambulans siap sedia</span>
+            </td>
+            <td style="text-align: right; font-weight: 800; color: #10B981;">RM 0.00</td>
           </tr>
         `;
+      });
+    }
 
-        paidEquipments.forEach(eq => {
-          const qty = state.equipmentQuantities[eq.id];
-          const itemTotal = qty * eq.price;
-          rows += `
-            <tr class="inv-row-chosen">
-              <td>
-                <strong style="color: var(--amc-teal-dark);">${eq.name}</strong>
-                <div class="inv-desc-sub">${eq.category}</div>
-              </td>
-              <td>
-                <span class="inv-tag inv-tag-chosen" style="background:#D1FAE5;color:#065F46;">✓ DIBAYAR (${qty} ${eq.unit})</span>
-                <span class="inv-desc-sub">Kuantiti: ${qty} &times; RM ${eq.price.toFixed(2)}</span>
-              </td>
-              <td style="text-align: right; font-weight: 800; color: var(--amc-teal-dark);">RM ${itemTotal.toFixed(2)}</td>
-            </tr>
-          `;
-        });
-      }
+    // Standalone additional equipment if any
+    const paidEquipments = ADDITIONAL_EQUIPMENTS.filter(eq => (state.equipmentQuantities[eq.id] || 0) > 0);
+    if (paidEquipments.length > 0) {
+      rows += `
+        <tr class="invoice-section-hdr">
+          <td colspan="3">4. CAJ PERALATAN TAMBAHAN KHAS</td>
+        </tr>
+      `;
+      paidEquipments.forEach(eq => {
+        const qty = state.equipmentQuantities[eq.id];
+        const itemTotal = qty * eq.price;
+        rows += `
+          <tr class="inv-row-chosen">
+            <td>
+              <strong style="color: var(--amc-teal-dark);">${eq.name}</strong>
+              <div class="inv-desc-sub">${eq.category}</div>
+            </td>
+            <td>
+              <span class="inv-tag inv-tag-chosen">✓ TAMBAHAN (${qty} ${eq.unit})</span>
+              <span class="inv-desc-sub">Kuantiti: ${qty} &times; RM ${eq.price.toFixed(2)}</span>
+            </td>
+            <td style="text-align: right; font-weight: 800; color: var(--amc-teal-dark);">RM ${itemTotal.toFixed(2)}</td>
+          </tr>
+        `;
+      });
+    }
 
-      // 4. Payment Confirmation Row
+    // Payment Confirmation Row if paid
+    if (isPaid) {
       rows += `
         <tr class="invoice-section-hdr" style="background:#ECFDF5;color:#065F46;">
           <td colspan="3">PENGESAHAN STATUS PEMBAYARAN</td>
@@ -1162,93 +1208,6 @@ function populatePrintableInvoice(baseFare, extraKm, extraKmRate, extraDistanceF
           <td style="text-align: right; font-weight: 800; color: #10B981;">LUNAS</td>
         </tr>
       `;
-
-    } else {
-      // =====================================================================
-      // UNPAID / PRE-PAYMENT INVOICE (PRESERVES 100% OF EXISTING FORMAT)
-      // Displays full capabilities disclosure including optional items
-      // =====================================================================
-
-      // 2. PILIHAN PAKEJ STAF PENGIRING: Senarai semua staf, remark pilihan dan paparkan kadar
-      rows += `
-        <tr class="invoice-section-hdr">
-          <td colspan="3">2. PILIHAN PAKEJ STAF PENGIRING KLINIKAL (STAFFING CAPABILITIES)</td>
-        </tr>
-      `;
-
-      ASSISTANCE_PACKAGES.forEach(pkg => {
-        const isChosen = state.selectedAssistance && state.selectedAssistance.id === pkg.id;
-        if (isChosen) {
-          rows += `
-            <tr class="inv-row-chosen">
-              <td>
-                <strong style="color: var(--amc-teal-dark);">${pkg.roleTitle}</strong>
-                <div class="inv-desc-sub">${pkg.name}</div>
-              </td>
-              <td>
-                <span class="inv-tag inv-tag-chosen">✓ DIPILIH</span>
-                <span class="inv-desc-sub">${pkg.price > 0 ? 'Kru pengiring perubatan khusus' : 'Kru asas termasuk dalam ambulan'}</span>
-              </td>
-              <td style="text-align: right; font-weight: 800; color: var(--amc-teal-dark);">RM ${pkg.price.toFixed(2)}</td>
-            </tr>
-          `;
-        } else {
-          rows += `
-            <tr class="inv-row-opt">
-              <td>
-                <span class="inv-item-optional">${pkg.roleTitle}</span>
-                <div class="inv-desc-sub">${pkg.name}</div>
-              </td>
-              <td>
-                <span class="inv-tag inv-tag-opt">Pilihan Sedia Ada</span>
-                <span class="inv-desc-sub">Kadar rujukan: RM ${pkg.price.toFixed(2)}</span>
-              </td>
-              <td style="text-align: right;" class="inv-amount-opt">RM 0.00</td>
-            </tr>
-          `;
-        }
-      });
-
-      // 3. SENARAI PERALATAN PERUBATAN: Senarai semua inventori, remark pilihan dan paparkan kadar
-      rows += `
-        <tr class="invoice-section-hdr">
-          <td colspan="3">3. SENARAI PERALATAN PERUBATAN &amp; SOKONGAN PESAKIT (EQUIPMENT CAPABILITIES)</td>
-        </tr>
-      `;
-
-      ADDITIONAL_EQUIPMENTS.forEach(eq => {
-        const qty = state.equipmentQuantities[eq.id] || 0;
-        if (qty > 0) {
-          const itemTotal = qty * eq.price;
-          rows += `
-            <tr class="inv-row-chosen">
-              <td>
-                <strong style="color: var(--amc-teal-dark);">${eq.name}</strong>
-                <div class="inv-desc-sub">${eq.category}</div>
-              </td>
-              <td>
-                <span class="inv-tag inv-tag-chosen">✓ DIPILIH (${qty} ${eq.unit})</span>
-                <span class="inv-desc-sub">Kuantiti: ${qty} &times; RM ${eq.price.toFixed(2)}</span>
-              </td>
-              <td style="text-align: right; font-weight: 800; color: var(--amc-teal-dark);">RM ${itemTotal.toFixed(2)}</td>
-            </tr>
-          `;
-        } else {
-          rows += `
-            <tr class="inv-row-opt">
-              <td>
-                <span class="inv-item-optional">${eq.name}</span>
-                <div class="inv-desc-sub">${eq.category}</div>
-              </td>
-              <td>
-                <span class="inv-tag inv-tag-opt">0 ${eq.unit} (Sedia Ada)</span>
-                <span class="inv-desc-sub">Kadar rujukan: RM ${eq.price.toFixed(2)} / ${eq.unit}</span>
-              </td>
-              <td style="text-align: right;" class="inv-amount-opt">RM 0.00</td>
-            </tr>
-          `;
-        }
-      });
     }
 
     tbody.innerHTML = rows;
@@ -1309,43 +1268,126 @@ function initServicesList() {
 
   container.innerHTML = '';
 
-  const serviceIcons = {
-    'emergency': '🚑',
-    'non_emergency': '🚐',
-    'emergency_inhouse': '🏥',
-    'aed_critical': '⚡'
+  const packageIcons = {
+    'emergency_standard': `
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="3"></rect>
+        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path>
+        <line x1="12" y1="11" x2="12" y2="17"></line>
+        <line x1="9" y1="14" x2="15" y2="14"></line>
+      </svg>`,
+    'non_emergency': `
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+      </svg>`,
+    'emergency_inhouse': `
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"></path>
+        <line x1="9" y1="9" x2="15" y2="9"></line>
+        <line x1="12" y1="6" x2="12" y2="12"></line>
+        <rect x="9" y="16" width="6" height="5"></rect>
+      </svg>`,
+    'aed_critical': `
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" stroke="none">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+      </svg>`
   };
 
-  TRIP_TYPES.forEach((trip, idx) => {
-    const isSelected = state.selectedTripType.id === trip.id;
-    const isAlert = trip.id === 'aed_critical';
+  SERVICE_PACKAGES.forEach(pkg => {
+    const isSelected = (state.selectedPackage && state.selectedPackage.id === pkg.id) ||
+      (!state.selectedPackage && pkg.id === 'emergency_standard');
 
     const card = document.createElement('div');
-    card.className = `service-card ${isSelected ? 'selected' : ''} ${isAlert ? 'alert-card' : ''}`;
-    card.dataset.id = trip.id;
+    card.className = `service-pkg-card ${isSelected ? 'selected' : ''}`;
+    card.dataset.id = pkg.id;
+
+    // Build Equipment Grid HTML (2-column grid with check icons)
+    const equipItemsHtml = (pkg.includedEquipment || []).map(item => `
+      <div class="pkg-item-row">
+        <span class="pkg-check-circle">✓</span>
+        <span class="pkg-item-name">${item}</span>
+      </div>
+    `).join('');
+
+    // Build Staff Box HTML (Omitted completely for Bukan Kecemasan)
+    let staffBoxHtml = '';
+    if (pkg.includedStaff && pkg.includedStaff.length > 0) {
+      staffBoxHtml = `
+        <div class="pkg-staff-box">
+          <div class="pkg-staff-avatar">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div class="pkg-staff-info">
+            <div class="pkg-staff-label">STAF TERMASUK</div>
+            <div class="pkg-staff-value">${pkg.includedStaff.join(', ')}</div>
+          </div>
+        </div>
+      `;
+    }
 
     card.innerHTML = `
-      <div class="service-card-left">
-        <div class="service-icon-box">
-          <span>${serviceIcons[trip.id] || '🚑'}</span>
-        </div>
-        <div class="service-texts">
-          <div class="service-name-row">
-            <span class="service-name">${trip.name.split('(')[0]}</span>
-            <span class="service-price-pill">RM${trip.baseFare.toFixed(0)}</span>
-            <span class="service-price-sub">Kadar asas</span>
+      <div class="pkg-card-header">
+        <div class="pkg-header-left">
+          <div class="pkg-icon-box">
+            ${packageIcons[pkg.id] || '🚑'}
           </div>
-          <div class="service-desc">${trip.description}</div>
+          <div class="pkg-header-texts">
+            <div class="pkg-title">${pkg.name}</div>
+            <div class="pkg-price-row">
+              <span class="pkg-price-val">RM${pkg.baseFare.toFixed(0)}</span>
+              <span class="pkg-price-divider">|</span>
+              <span class="pkg-price-sub">Kadar asas</span>
+            </div>
+          </div>
+        </div>
+        <div class="pkg-header-right">
+          <span class="pkg-selected-badge" style="display: ${isSelected ? 'flex' : 'none'};">✓</span>
+          <span class="pkg-chevron-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </span>
         </div>
       </div>
-      <div class="custom-radio-circle"></div>
+
+      <div class="pkg-card-body" style="display: ${isSelected ? 'block' : 'none'};">
+        <div class="pkg-example-cases">${pkg.exampleCases}</div>
+        <div class="pkg-body-divider"></div>
+        <div class="pkg-section-title">ALATAN TERMASUK</div>
+        <div class="pkg-equipment-grid">
+          ${equipItemsHtml}
+        </div>
+        ${staffBoxHtml}
+      </div>
     `;
 
     card.addEventListener('click', () => {
       playClickSound();
-      container.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      state.selectedTripType = trip;
+
+      // Set selected package
+      state.selectedPackage = pkg;
+      state.selectedTripType = pkg;
+
+      // Reset stale additions and charges
+      state.selectedAssistance = null;
+      state.equipmentQuantities = {};
+
+      // Update accordion card states
+      container.querySelectorAll('.service-pkg-card').forEach(c => {
+        const cId = c.dataset.id;
+        const cSelected = cId === pkg.id;
+        c.classList.toggle('selected', cSelected);
+
+        const badge = c.querySelector('.pkg-selected-badge');
+        if (badge) badge.style.display = cSelected ? 'flex' : 'none';
+
+        const body = c.querySelector('.pkg-card-body');
+        if (body) body.style.display = cSelected ? 'block' : 'none';
+      });
+
       calculateAll();
     });
 
@@ -2081,6 +2123,24 @@ function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpai
   const originName = state.pickupName || state.pickupAddress || state.currentHub?.shortName || 'Lokasi Pesakit';
   const destinationName = state.destinationName || state.destinationAddress || 'Hospital Pilihan';
 
+  const pkg = state.selectedPackage || SERVICE_PACKAGES[0];
+  const packageSnapshot = {
+    id: pkg.id,
+    name: pkg.name,
+    baseFare: pkg.baseFare,
+    exampleCases: pkg.exampleCases,
+    includedEquipment: [...pkg.includedEquipment],
+    includedStaff: [...pkg.includedStaff]
+  };
+
+  const staffIncludedStr = pkg.includedStaff && pkg.includedStaff.length > 0
+    ? pkg.includedStaff.join(', ')
+    : 'Pemandu Sahaja';
+
+  const equipIncludedStr = pkg.includedEquipment && pkg.includedEquipment.length > 0
+    ? pkg.includedEquipment.join(', ')
+    : 'Tiada Tambahan';
+
   return {
     invoiceNumber: getOrGenerateInvoiceNumber(),
     hubId: state.currentHub?.id || 'kok_lanas',
@@ -2088,18 +2148,16 @@ function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpai
     originName,
     destinationName,
     distanceKm: Number(state.distanceKm || state.totalDistanceKm || 25.0),
-    tripType: state.selectedTripType?.name || 'Kecemasan Standard',
-    baseFare: Number(state.baseFare || 250.00),
+    packageId: pkg.id,
+    packageName: pkg.name,
+    packageBasePrice: Number(pkg.baseFare || 250.00),
+    packageSnapshot,
+    tripType: pkg.name || state.selectedTripType?.name || 'Kecemasan Standard',
+    baseFare: Number(pkg.baseFare || state.baseFare || 250.00),
     extraKmCost: Number(state.extraDistanceFee || 0.00),
-    assistancePackage: state.selectedAssistance ? state.selectedAssistance.name : 'Pemandu Sahaja',
-    assistanceCost: Number(state.assistanceCost || 0.00),
-    equipmentItems: Object.keys(state.equipmentQuantities || {})
-      .filter(k => state.equipmentQuantities[k] > 0)
-      .map(k => {
-        const item = (state.equipmentList || []).find(e => e.id === k);
-        return item ? (item.name + ' (' + state.equipmentQuantities[k] + 'x)') : k;
-      })
-      .join(', ') || 'Tiada Tambahan',
+    assistancePackage: staffIncludedStr,
+    assistanceCost: Number(state.staffFee || 0.00),
+    equipmentItems: equipIncludedStr,
     equipmentCost: Number(state.equipmentTotal || 0.00),
     miscFee: 0.00,
     totalFare: Number(state.grandTotal || 250.00),

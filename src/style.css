@@ -692,10 +692,23 @@ html, body {
   transform: scale(1.08);
 }
 
-.stepper-node-item.completed .node-circle {
-  background-color: var(--amc-red-light);
-  border-color: var(--amc-red);
+.stepper-node-item.active .node-title {
   color: var(--amc-red);
+  font-weight: 800;
+}
+
+.stepper-node-item.completed .node-title {
+  color: var(--text-heading);
+  font-weight: 700;
+}
+
+.stepper-nodes.stepper-3-nodes {
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.stepper-nodes.stepper-3-nodes .stepper-node-item {
+  min-width: 60px;
 }
 
 .node-title {
@@ -1279,8 +1292,274 @@ html, body {
 }
 
 /* =====================================================================
-   9. SCREEN 02 — KATEGORI PERKHIDMATAN (STEP 2)
+   9. SCREEN 02 — KATEGORI & PAKEJ PERKHIDMATAN (STEP 2 ACCORDION)
    ===================================================================== */
+.service-packages-accordion-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.service-pkg-card {
+  background-color: var(--bg-card);
+  border: 1.5px solid var(--border-light);
+  border-radius: 16px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.service-pkg-card:hover {
+  border-color: #CBD5E1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.service-pkg-card.selected {
+  border-color: #DC2626;
+  background-color: #FFFBFB;
+  box-shadow: 0 4px 18px rgba(220, 38, 38, 0.09);
+}
+
+/* Card Header */
+.pkg-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pkg-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pkg-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background-color: #FEF2F2;
+  color: #DC2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.service-pkg-card.selected .pkg-icon-box {
+  background-color: #FEE2E2;
+}
+
+.pkg-header-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pkg-title {
+  font-family: var(--font-heading);
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1.25;
+}
+
+.pkg-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.pkg-price-val {
+  font-family: var(--font-heading);
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #DC2626;
+}
+
+.pkg-price-divider {
+  font-size: 0.8rem;
+  color: #94A3B8;
+}
+
+.pkg-price-sub {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #64748B;
+}
+
+/* Right Indicators */
+.pkg-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pkg-selected-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #DC2626;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.35);
+}
+
+.pkg-chevron-icon {
+  width: 20px;
+  height: 20px;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.service-pkg-card.selected .pkg-chevron-icon {
+  color: #0F172A;
+  transform: rotate(180deg);
+}
+
+/* Card Body (Expanded Accordion Content) */
+.pkg-card-body {
+  display: none;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #FEE2E2;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.service-pkg-card.selected .pkg-card-body {
+  display: block;
+}
+
+.pkg-example-cases {
+  font-size: 0.82rem;
+  color: #475569;
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+.pkg-body-divider {
+  height: 1px;
+  background-color: #F1F5F9;
+  margin-bottom: 12px;
+}
+
+.pkg-section-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #991B1B;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.pkg-equipment-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 10px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 360px) {
+  .pkg-equipment-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pkg-item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.pkg-check-circle {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1.5px solid #DC2626;
+  color: #DC2626;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 900;
+  flex-shrink: 0;
+  background-color: #FFF5F5;
+  margin-top: 1px;
+}
+
+.pkg-item-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1E293B;
+  line-height: 1.35;
+}
+
+/* Staff Included Box */
+.pkg-staff-box {
+  background-color: #FEF2F2;
+  border: 1px solid #FEE2E2;
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.pkg-staff-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  border: 1px solid #FECACA;
+  color: #991B1B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pkg-staff-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.pkg-staff-label {
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: #991B1B;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.pkg-staff-value {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin-top: 1px;
+}
+
+.calc-step-page[data-step="2"] {
+  padding-bottom: 130px;
+}
+
 .service-cards-stack {
   display: flex;
   flex-direction: column;
@@ -1860,7 +2139,7 @@ html, body {
 }
 
 /* =====================================================================
-   13. STICKY BOTTOM FLOATING BAR (FOR STEPS 2, 3, 4)
+   13. STICKY BOTTOM FLOATING BAR (FOR STEP 2)
    ===================================================================== */
 .sticky-step-action-bar {
   position: absolute;
@@ -1868,14 +2147,14 @@ html, body {
   left: 0;
   right: 0;
   width: 100%;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(8px);
   border-top: 1px solid var(--border-light);
   padding: 10px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 -4px 16px rgba(0, 40, 35, 0.06);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
   z-index: 45;
 }
 
@@ -1892,9 +2171,9 @@ html, body {
 
 .sticky-fare-price {
   font-family: var(--font-heading);
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
-  color: var(--amc-teal-dark);
+  color: #DC2626;
 }
 
 .sticky-fare-sub {
@@ -1912,38 +2191,39 @@ html, body {
 
 .btn-nav-prev {
   background-color: #FFFFFF;
-  border: 1px solid var(--border-light);
-  color: var(--text-sub);
-  padding: 8px 14px;
-  border-radius: var(--radius-md);
-  font-size: 0.8rem;
+  border: 1.5px solid #CBD5E1;
+  color: #334155;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.2s ease;
 }
 
 .btn-nav-prev:hover {
-  background-color: #F8FAFA;
+  background-color: #F8FAFC;
+  border-color: #94A3B8;
 }
 
 .btn-nav-next {
-  background-color: var(--amc-teal);
+  background-color: var(--amc-red);
   color: #FFFFFF;
   border: none;
   padding: 8px 18px;
-  border-radius: var(--radius-md);
-  font-size: 0.8rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
-  box-shadow: var(--shadow-btn);
-  transition: var(--transition);
+  box-shadow: 0 3px 10px rgba(198, 30, 47, 0.35);
+  transition: all 0.2s ease;
 }
 
 .btn-nav-next:hover {
-  background-color: var(--amc-teal-dark);
+  background-color: var(--amc-red-dark);
 }
 
 /* =====================================================================

@@ -727,31 +727,23 @@
       </div>
     </header>
 
-      <!-- 3. Connected 5-Step Stepper (Shown when in Dispatch View) -->
+      <!-- 3. Connected 3-Step Stepper (Shown when in Dispatch View: Lokasi -> Kategori -> Invois) -->
       <div class="stepper-container" id="dispatchStepperContainer">
         <div class="stepper-track-line">
           <div class="stepper-progress-bar">
-            <div class="stepper-progress-fill" id="stepperProgressFill" style="width: 10%;"></div>
+            <div class="stepper-progress-fill" id="stepperProgressFill" style="width: 15%;"></div>
           </div>
-          <div class="stepper-nodes">
-            <button class="stepper-node-item active" data-step="1">
+          <div class="stepper-nodes stepper-3-nodes">
+            <button class="stepper-node-item active" data-step="1" id="stepNode1" aria-label="Langkah 1: Lokasi">
               <div class="node-circle">1</div>
               <span class="node-title">Lokasi</span>
             </button>
-            <button class="stepper-node-item" data-step="2">
+            <button class="stepper-node-item" data-step="2" id="stepNode2" aria-label="Langkah 2: Kategori">
               <div class="node-circle">2</div>
               <span class="node-title">Kategori</span>
             </button>
-            <button class="stepper-node-item" data-step="3">
+            <button class="stepper-node-item" data-step="3" id="stepNode3" aria-label="Langkah 3: Invois">
               <div class="node-circle">3</div>
-              <span class="node-title">Staf</span>
-            </button>
-            <button class="stepper-node-item" data-step="4">
-              <div class="node-circle">4</div>
-              <span class="node-title">Alatan</span>
-            </button>
-            <button class="stepper-node-item" data-step="5">
-              <div class="node-circle">5</div>
               <span class="node-title">Invois</span>
             </button>
           </div>
@@ -1050,72 +1042,38 @@
           </div>
 
           <!-- -------------------------------------------------------------
-               STEP 2: KATEGORI PERKHIDMATAN (SCREEN 02)
+               STEP 2: KATEGORI & PAKEJ PERKHIDMATAN (SCREEN 02)
                ------------------------------------------------------------- -->
           <div class="calc-step-page" id="step-page-2" data-step="2">
             <div class="page-title-row">
               <h2 class="page-title">Jenis perkhidmatan</h2>
             </div>
-            <div class="page-subtitle">Pilih kategori mengikut keperluan tempahan.</div>
+            <div class="page-subtitle">Pilih pakej. Staf dan alatan disertakan.</div>
 
-            <!-- 4 Service Options -->
-            <div class="service-cards-stack" id="serviceCardsContainer">
-              <!-- Populated by JS -->
+            <!-- 4 Selectable Accordion Package Cards -->
+            <div class="service-packages-accordion-stack" id="serviceCardsContainer">
+              <!-- Populated dynamically by JS -->
             </div>
 
-            <div class="disclaimer-note-pill">
+            <div class="disclaimer-note-pill" style="margin-bottom: 24px;">
               <span>ℹ️</span>
-              <span>Kategori ditentukan oleh staf bertugas.</span>
+              <span>Kategori &amp; kelengkapan disahkan oleh Pusat Operasi Al-Farhain AMC.</span>
             </div>
           </div>
 
           <!-- -------------------------------------------------------------
-               STEP 3: BANTUAN STAF / KRU PENGIRING (SCREEN 03)
+               STEP 3: SEMAK PERJALANAN / INVOIS (SCREEN 05)
                ------------------------------------------------------------- -->
           <div class="calc-step-page" id="step-page-3" data-step="3">
             <div class="page-title-row">
-              <h2 class="page-title">Kru pengiring</h2>
-            </div>
-            <div class="page-subtitle">Pemandu dan kru EMT asas termasuk.</div>
-
-            <!-- 4 Staff Options -->
-            <div class="staff-cards-stack" id="staffCardsContainer">
-              <!-- Populated by JS -->
-            </div>
-          </div>
-
-          <!-- -------------------------------------------------------------
-               STEP 4: PERALATAN & UBATAN (SCREEN 04)
-               ------------------------------------------------------------- -->
-          <div class="calc-step-page" id="step-page-4" data-step="4">
-            <div class="page-title-row">
-              <h2 class="page-title">Keperluan perjalanan</h2>
-            </div>
-            <div class="page-subtitle">Tambah peralatan mengikut keperluan.</div>
-
-            <!-- Search Equipment Input -->
-            <div class="search-bar-box">
-              <span>🔍</span>
-              <input type="text" id="equipmentSearchInput" placeholder="Cari peralatan...">
-            </div>
-
-            <!-- Equipment List with +/- Steppers -->
-            <div class="equipments-stack" id="equipmentListContainer">
-              <!-- Populated by JS -->
-            </div>
-
-            <button class="expand-all-equip-btn" id="btnShowAllEquipment">
-              <span>📑</span> <span>Lihat semua peralatan</span>
-            </button>
-          </div>
-
-          <!-- -------------------------------------------------------------
-               STEP 5: SEMAK PERJALANAN / INVOIS (SCREEN 05)
-               ------------------------------------------------------------- -->
-          <div class="calc-step-page" id="step-page-5" data-step="5">
-            <div class="page-title-row">
               <h2 class="page-title">Semak perjalanan</h2>
               <span class="title-badge-pill anggaran">ANGGARAN</span>
+            </div>
+
+            <div style="margin-bottom: 12px; text-align: left;">
+              <button type="button" class="btn-text-link" id="btnBackToStep2" style="background:none; border:none; color:var(--amc-red); font-size:0.8rem; font-weight:700; cursor:pointer; padding:4px 0; display:inline-flex; align-items:center; gap:4px;">
+                <span>←</span> <span>Tukar Pakej Perkhidmatan</span>
+              </button>
             </div>
 
             <!-- Patient & Booking Type Summary Card -->
@@ -1526,16 +1484,16 @@
 
       </main>
 
-      <!-- 5. Sticky Bottom Action Bar for Steps 2, 3, 4 (Above Dock) -->
+      <!-- 5. Sticky Bottom Action Bar for Step 2 (Above Dock) -->
       <div class="sticky-step-action-bar" id="stickyStepActionBar" style="display: none;">
         <div class="sticky-fare-block">
-          <span class="sticky-fare-label">Anggaran:</span>
-          <span class="sticky-fare-price" id="stickyFareAmount">RM253.90</span>
-          <span class="sticky-fare-sub" id="stickyFareDetailLink">Lihat butiran ▾</span>
+          <span class="sticky-fare-label" id="stickyFareLabel">Kadar asas</span>
+          <span class="sticky-fare-price" id="stickyFareAmount">RM250.00</span>
+          <span class="sticky-fare-sub" id="stickyFareDetailLink" style="display: none;">Lihat butiran ▾</span>
         </div>
         <div class="sticky-buttons-group">
-          <button class="btn-nav-prev" id="btnStickyPrev">← Kembali</button>
-          <button class="btn-nav-next" id="btnStickyNext">Teruskan →</button>
+          <button type="button" class="btn-nav-prev" id="btnStickyPrev">← Kembali</button>
+          <button type="button" class="btn-nav-next" id="btnStickyNext">Teruskan ke Invois →</button>
         </div>
       </div>
 

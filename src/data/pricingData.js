@@ -1412,40 +1412,118 @@ export const PRESET_DESTINATIONS = [
   }
 ];
 
-export const TRIP_TYPES = [
+// Official Al-Farhain Ambulance Service Packages (Consolidated Service, Staff & Equipment Tiers)
+export const SERVICE_PACKAGES = [
   {
-    id: 'emergency',
-    name: 'Kecemasan Standard (Emergency)',
+    id: 'emergency_standard',
+    legacyId: 'emergency',
+    name: 'Kecemasan Standard',
     baseFare: 250.00,
-    description: 'Kes kecemasan umum, kemalangan, serangan akut, trauma ringan/sederhana',
-    badge: 'Code Yellow / Red',
-    color: '#EF4444'
+    exampleCases: 'Kes kecemasan umum, kemalangan, serangan akut, trauma ringan/sederhana.',
+    includedEquipment: [
+      'Stretcher',
+      'Spinal Board',
+      'Scoop stretcher',
+      'Vital Sign Monitor',
+      'Immobilizer set',
+      'Upper & Lower limb immobilizer set',
+      'Sistem oksigen lengkap'
+    ],
+    includedStaff: [
+      'Clinic Assistant (CA)'
+    ],
+    iconType: 'emergency',
+    color: '#DC2626'
   },
   {
     id: 'non_emergency',
-    name: 'Bukan Kecemasan (Non-Emergency)',
+    legacyId: 'non_emergency',
+    name: 'Bukan Kecemasan',
     baseFare: 250.00,
-    description: 'Rujukan berjadual, pesakit discaj ke rumah, dialisis, temujanji hospital',
-    badge: 'Code Green',
-    color: '#10B981'
+    exampleCases: 'Rujukan berjadual, pesakit discaj ke rumah, dialisis, temujanji hospital.',
+    includedEquipment: [
+      'Stretcher',
+      'Spinal Board',
+      'Scoop stretcher',
+      'Vital Sign Monitor',
+      'Immobilizer set'
+    ],
+    includedStaff: [], // No staff specified; omitted from display
+    iconType: 'non_emergency',
+    color: '#059669'
   },
   {
     id: 'emergency_inhouse',
-    name: 'Kecemasan In-House (Emergency In House)',
+    legacyId: 'emergency_inhouse',
+    name: 'Kecemasan In-House',
     baseFare: 350.00,
-    description: 'Stabilisasi segera dari fasiliti pesakit luar / rawatan intensif di AMC',
-    badge: 'In-House Rapid',
-    color: '#F59E0B'
+    exampleCases: 'Stabilisasi segera dari fasiliti pesakit luar / rawatan intensif di AMC.',
+    includedEquipment: [
+      'Stretcher',
+      'Spinal Board',
+      'Scoop stretcher',
+      'Vital Sign Monitor',
+      'Immobilizer set',
+      'Upper & Lower limb immobilizer set',
+      'Sistem oksigen lengkap',
+      'Alat pernafasan (Ambu Bag)',
+      'Suction unit'
+    ],
+    includedStaff: [
+      'Medical Assistant (MA) / Nurse',
+      'Medical Officer (MO)'
+    ],
+    iconType: 'emergency_inhouse',
+    color: '#D97706'
   },
   {
     id: 'aed_critical',
-    name: 'Kecemasan Kritikal + AED (Cardiac / Resuscitation)',
+    legacyId: 'aed_critical',
+    name: 'Kecemasan Kritikal + AED',
     baseFare: 500.00,
-    description: 'Serangan jantung, henti nafas, pesakit kritikal memerlukan Defibrillator AED siap sedia',
-    badge: 'Code Red Resus',
+    exampleCases: 'Serangan jantung, henti nafas, pesakit kritikal memerlukan Defibrillator AED siap sedia.',
+    includedEquipment: [
+      'Stretcher',
+      'Spinal Board',
+      'Scoop stretcher',
+      'Vital Sign Monitor',
+      'Immobilizer set',
+      'Upper & Lower limb immobilizer set',
+      'Sistem oksigen lengkap',
+      'AED Equipment'
+    ],
+    includedStaff: [
+      'Medical Assistant (MA) / Nurse',
+      'Medical Officer (MO)'
+    ],
+    iconType: 'aed_critical',
     color: '#DC2626'
   }
 ];
+
+export function getServicePackageById(idOrName) {
+  if (!idOrName) return SERVICE_PACKAGES[0];
+  const query = String(idOrName).toLowerCase().trim();
+  const found = SERVICE_PACKAGES.find(pkg =>
+    pkg.id.toLowerCase() === query ||
+    pkg.legacyId.toLowerCase() === query ||
+    pkg.name.toLowerCase() === query ||
+    pkg.name.toLowerCase().includes(query)
+  );
+  return found || SERVICE_PACKAGES[0];
+}
+
+export const TRIP_TYPES = SERVICE_PACKAGES.map(pkg => ({
+  id: pkg.legacyId,
+  packageId: pkg.id,
+  name: pkg.name,
+  baseFare: pkg.baseFare,
+  description: pkg.exampleCases,
+  includedEquipment: pkg.includedEquipment,
+  includedStaff: pkg.includedStaff,
+  badge: 'Kadar asas',
+  color: pkg.color
+}));
 
 export const ASSISTANCE_PACKAGES = [
   {
