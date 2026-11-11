@@ -5,6 +5,7 @@
 // =========================================================================
 
 import { createClient } from '@supabase/supabase-js';
+import { validateAndQuotePackageBooking } from '../../src/services/servicePackageManager.js';
 
 export default async function handler(req, res) {
   // CORS & Method check
@@ -35,12 +36,28 @@ export default async function handler(req, res) {
       });
     }
 
+    // Authoritative Server-Side Pricing Validation (Never trust client-submitted totals)
+    let verifiedTotal = parseFloat(bookingData.totalFare) || 250.00;
+    try {
+      const pkgId = bookingData.packageId || bookingData.package_id || bookingData.tripType;
+      const quote = validateAndQuotePackageBooking({
+        packageId: pkgId,
+        distanceKm: Number(bookingData.distanceKm) || 25.0
+      });
+      verifiedTotal = quote.grandTotal;
+      bookingData.totalFare = verifiedTotal;
+      bookingData.packageSnapshot = quote.packageSnapshot;
+      bookingData.packageId = quote.package.id;
+      bookingData.packageVersion = quote.package.version;
+    } catch (e) {
+      console.warn('[Server Quoting Warning]: Falling back to standard quotation calculation', e.message);
+    }
+
     // Determine amount to charge
     // Full payment vs fixed commitment deposit (e.g. RM 100)
-    const rawTotal = parseFloat(bookingData.totalFare) || 250.00;
     const amountToCharge = paymentType === 'deposit'
-      ? Math.min(100.00, rawTotal)
-      : rawTotal;
+      ? Math.min(100.00, verifiedTotal)
+      : verifiedTotal;
 
     // CHIP expects amount in integer CENTS (e.g. RM 253.90 -> 25390)
     const amountInCents = Math.round(amountToCharge * 100);

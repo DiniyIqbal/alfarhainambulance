@@ -471,7 +471,8 @@ function initSidebarNavigation() {
     katalogArmadaView: 'Katalog & Armada',
     pemanduView: 'Pemandu & Jemputan',
     rakanAmbulansView: 'Rakan Ambulans & Komisen 5%',
-    partnerPortalView: 'Portal Rakan Ambulans (B2B)'
+    partnerPortalView: 'Portal Rakan Ambulans (B2B)',
+    perkhidmatanServisView: 'Perkhidmatan & Servis'
   };
 
   navBtns.forEach(btn => {
@@ -503,6 +504,8 @@ function initSidebarNavigation() {
         safeInit(() => renderHqRakanAmbulansView(), 'RefreshRakanAmbulans');
       } else if (targetId === 'partnerPortalView') {
         safeInit(() => renderPartnerPortalView(), 'RefreshPartnerPortal');
+      } else if (targetId === 'perkhidmatanServisView') {
+        safeInit(() => renderPerkhidmatanServisView(), 'RefreshPerkhidmatanServis');
       }
 
       // Handle Peta & Fleet tab activation for MapLibre GL
@@ -3258,7 +3261,20 @@ import {
   renderPartnerPortalView
 } from './partnerPortalModule.js';
 
+// =========================================================================
+// PERKHIDMATAN & SERVIS MODULE INITIALIZATION (MOCKUP b6bfcb0e)
+// =========================================================================
+import {
+  initPerkhidmatanServisModule,
+  renderPerkhidmatanServisView
+} from './perkhidmatanServisModule.js';
+
 if (document.readyState !== 'loading') {
   safeInit(() => initPartnerPortalModule(), 'PartnerPortalImmediate');
+  safeInit(() => initPerkhidmatanServisModule(), 'PerkhidmatanServisImmediate');
+} else {
+  document.addEventListener('DOMContentLoaded', () => {
+    safeInit(() => initPerkhidmatanServisModule(), 'PerkhidmatanServisOnLoad');
+  });
 }
 

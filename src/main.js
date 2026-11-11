@@ -78,6 +78,11 @@ import {
   getPartnerState
 } from './services/partnerAmbulanceService.js';
 
+import {
+  getPublishedServicePackages,
+  getServicePackageByIdOrCode
+} from './services/servicePackageManager.js';
+
 /* =========================================================================
    APPLICATION STATE (MATCHES MOCKUP DEFAULTS)
    ========================================================================= */
@@ -1262,6 +1267,18 @@ function populatePrintableInvoice(baseFare, extraKm, extraKmRate, extraDistanceF
 /* =========================================================================
    10. STEP 2: SERVICES SELECTION (SCREEN 02)
    ========================================================================= */
+function getActivePackages() {
+  try {
+    const published = getPublishedServicePackages();
+    if (Array.isArray(published) && published.length > 0) {
+      return published;
+    }
+  } catch (err) {
+    console.warn('Fallback to static SERVICE_PACKAGES:', err);
+  }
+  return SERVICE_PACKAGES;
+}
+
 function initServicesList() {
   const container = document.getElementById('serviceCardsContainer');
   if (!container) return;
@@ -1293,13 +1310,22 @@ function initServicesList() {
       </svg>`
   };
 
-  SERVICE_PACKAGES.forEach(pkg => {
-    const isSelected = (state.selectedPackage && state.selectedPackage.id === pkg.id) ||
-      (!state.selectedPackage && pkg.id === 'emergency_standard');
+  const activePackages = getActivePackages();
+
+  activePackages.forEach(pkg => {
+    const pkgCode = pkg.code || pkg.id;
+    const isSelected = (state.selectedPackage && (state.selectedPackage.id === pkg.id || state.selectedPackage.code === pkgCode || state.selectedPackage.id === pkgCode)) ||
+      (!state.selectedPackage && (pkgCode === 'emergency_standard' || pkg.id === 'emergency_standard' || pkg.id === 'pkg-1'));
+
+    if (isSelected && !state.selectedPackage) {
+      state.selectedPackage = pkg;
+      state.selectedTripType = pkg;
+    }
 
     const card = document.createElement('div');
     card.className = `service-pkg-card ${isSelected ? 'selected' : ''}`;
     card.dataset.id = pkg.id;
+    card.dataset.code = pkgCode;
 
     // Build Equipment Grid HTML (2-column grid with check icons)
     const equipItemsHtml = (pkg.includedEquipment || []).map(item => `
@@ -1328,16 +1354,18 @@ function initServicesList() {
       `;
     }
 
+    const iconKey = packageIcons[pkgCode] ? pkgCode : (packageIcons[pkg.id] ? pkg.id : 'emergency_standard');
+
     card.innerHTML = `
       <div class="pkg-card-header">
         <div class="pkg-header-left">
           <div class="pkg-icon-box">
-            ${packageIcons[pkg.id] || '🚑'}
+            ${packageIcons[iconKey] || '🚑'}
           </div>
           <div class="pkg-header-texts">
             <div class="pkg-title">${pkg.name}</div>
             <div class="pkg-price-row">
-              <span class="pkg-price-val">RM${pkg.baseFare.toFixed(0)}</span>
+              <span class="pkg-price-val">RM${Number(pkg.baseFare || 250).toFixed(0)}</span>
               <span class="pkg-price-divider">|</span>
               <span class="pkg-price-sub">Kadar asas</span>
             </div>
@@ -1354,7 +1382,7 @@ function initServicesList() {
       </div>
 
       <div class="pkg-card-body" style="display: ${isSelected ? 'block' : 'none'};">
-        <div class="pkg-example-cases">${pkg.exampleCases}</div>
+        <div class="pkg-example-cases">${pkg.exampleCases || ''}</div>
         <div class="pkg-body-divider"></div>
         <div class="pkg-section-title">ALATAN TERMASUK</div>
         <div class="pkg-equipment-grid">
@@ -1378,7 +1406,8 @@ function initServicesList() {
       // Update accordion card states
       container.querySelectorAll('.service-pkg-card').forEach(c => {
         const cId = c.dataset.id;
-        const cSelected = cId === pkg.id;
+        const cCode = c.dataset.code;
+        const cSelected = cId === pkg.id || (cCode && cCode === pkgCode);
         c.classList.toggle('selected', cSelected);
 
         const badge = c.querySelector('.pkg-selected-badge');
@@ -2126,11 +2155,13 @@ function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpai
   const pkg = state.selectedPackage || SERVICE_PACKAGES[0];
   const packageSnapshot = {
     id: pkg.id,
+    code: pkg.code || pkg.id,
+    version: pkg.version || 1,
     name: pkg.name,
-    baseFare: pkg.baseFare,
-    exampleCases: pkg.exampleCases,
-    includedEquipment: [...pkg.includedEquipment],
-    includedStaff: [...pkg.includedStaff]
+    baseFare: Number(pkg.baseFare || 250.00),
+    exampleCases: pkg.exampleCases || '',
+    includedEquipment: [...(pkg.includedEquipment || [])],
+    includedStaff: [...(pkg.includedStaff || [])]
   };
 
   const staffIncludedStr = pkg.includedStaff && pkg.includedStaff.length > 0
@@ -2149,6 +2180,8 @@ function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpai
     destinationName,
     distanceKm: Number(state.distanceKm || state.totalDistanceKm || 25.0),
     packageId: pkg.id,
+    packageCode: pkg.code || pkg.id,
+    packageVersion: pkg.version || 1,
     packageName: pkg.name,
     packageBasePrice: Number(pkg.baseFare || 250.00),
     packageSnapshot,
