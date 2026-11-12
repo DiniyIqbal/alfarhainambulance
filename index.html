@@ -880,6 +880,30 @@
               </div>
 
               <!-- Location Pickers Card -->
+              
+              <!-- 2B. SECTION: WAKTU PENGAMBILAN (TRIP SCHEDULE) -->
+              <div class="ui-card trip-schedule-card" style="margin-bottom:12px;">
+                <div class="card-mini-label">WAKTU PENGAMBILAN (TRIP SCHEDULE)</div>
+                <div class="schedule-toggle-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px;">
+                  <button type="button" class="schedule-toggle-btn active" id="btnSchedAsap" style="border:1.5px solid var(--amc-red); background:#FFF5F5; border-radius:10px; padding:10px; text-align:left; cursor:pointer;">
+                    <div style="font-size:1.1rem; margin-bottom:2px;">⚡</div>
+                    <div style="font-size:0.82rem; font-weight:800; color:#0F172A;">Secepat mungkin</div>
+                    <div style="font-size:0.68rem; color:#64748B;">Kecemasan / Segera</div>
+                  </button>
+                  <button type="button" class="schedule-toggle-btn" id="btnSchedLater" style="border:1.5px solid #E2E8F0; background:#FFF; border-radius:10px; padding:10px; text-align:left; cursor:pointer;">
+                    <div style="font-size:1.1rem; margin-bottom:2px;">📅</div>
+                    <div style="font-size:0.82rem; font-weight:800; color:#0F172A;">Jadualkan</div>
+                    <div style="font-size:0.68rem; color:#64748B;">Temujanji / Discaj</div>
+                  </button>
+                </div>
+
+                <div id="scheduledTimeInputsBox" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed #CBD5E1;">
+                  <label class="field-micro-label">* PILIH TARIKH &amp; MASA (ASIA/KUALA_LUMPUR)</label>
+                  <input type="datetime-local" id="customerScheduledDateTime" class="search-bar-box" style="width:100%; margin-top:4px; font-weight:700; font-size:0.85rem;">
+                  <div style="font-size:0.68rem; color:#059669; margin-top:4px;">⏱️ Masa perjalanan akan diselaraskan mengikut zon masa Malaysia.</div>
+                </div>
+              </div>
+
               <div class="ui-card location-nodes-card">
                 <div class="location-stops-list">
                   <div class="stops-connector-line"></div>
@@ -1153,8 +1177,8 @@
             </div>
 
             <!-- Step 5 Action Buttons -->
-            <button class="primary-action-btn" id="btnGenerateInvoiceModal">
-              <span>Proceed Payment</span>
+            <button class="primary-action-btn" id="btnSubmitCustomerBooking" style="background:var(--amc-red); color:#fff;">
+              <span>Hantar tempahan</span>
               <span>➔</span>
             </button>
 
@@ -1173,139 +1197,125 @@
         <!-- =============================================================
              VIEW 2: TUGASAN LAPANGAN (SCREEN 06 — MENUJU HOSPITAL SPEC)
              ============================================================= -->
-        <section id="driver-view" class="view-section">
-          <div class="tugasan-view-wrapper">
-            <!-- 1. Hero Banner: Menuju Hospital & AMC-1043 -->
-            <div class="tugasan-hero-banner">
-              <span class="tugasan-hero-sub">Menuju hospital</span>
-              <div class="tugasan-hero-title">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                  <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
-                </svg>
-                <span>AMC-1043</span>
+        <!-- =============================================================
+             VIEW 2: TEMPAHAN SAYA (CUSTOMER BOOKINGS MANAGEMENT)
+             ============================================================= -->
+        <section id="customer-bookings-view" class="view-section">
+          <div class="cust-bookings-page-wrapper" style="padding: 10px 4px 60px;">
+            
+            <!-- Top Bar: Title & Action -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div>
+                <h2 style="font-size:1.35rem; font-weight:800; color:var(--text-heading); margin:0;">Tempahan saya</h2>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin:2px 0 0;">Semak status permohonan, jadual &amp; jejak ambulans.</p>
               </div>
-              <span class="tugasan-hero-pill">
-                <span>🩺</span>
-                <span>Pesakit dalam ambulans</span>
-              </span>
+              <button type="button" id="btnCustNewBookingTop" style="background:var(--amc-red); color:#fff; border:none; border-radius:999px; padding:7px 14px; font-size:0.78rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 3px 10px rgba(198,30,47,0.25);">
+                <span>+</span> <span>Tempahan baharu</span>
+              </button>
             </div>
 
-            <!-- 1B. Provider Identity Card (Al-Farhain vs Approved Partner Company) -->
-            <div id="customerProviderCard" style="background:#FFFFFF;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(15,23,42,0.04);">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <span id="customerProviderBadgeIcon" style="font-size:1.25rem;">🏥</span>
-                  <div>
-                    <div id="customerProviderTypeTag" style="font-size:0.65rem;font-weight:800;text-transform:uppercase;letter-spacing:0.4px;color:#047857;">PENYEDIA PERKHIDMATAN RASMI AL-FARHAIN</div>
-                    <div id="customerProviderCompanyName" style="font-size:0.84rem;font-weight:800;color:#0F172A;">Poliklinik Al-Farhain (Armada Dalaman)</div>
-                  </div>
-                </div>
-                <button type="button" id="btnToggleProviderDemo" style="background:#F1F5F9;border:1px solid #CBD5E1;border-radius:999px;padding:4px 9px;font-size:0.65rem;font-weight:700;color:#334155;cursor:pointer;" title="Pratonton paparan Penyedia Dalaman vs Rakan Ambulans">
-                  🔄 Tukar Paparan Penyedia
-                </button>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed #E2E8F0;font-size:0.72rem;color:#475569;">
-                <span id="customerProviderPlate" style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:2px 8px;font-weight:700;color:#0F172A;">🚑 Unit: VPQ 7606</span>
-                <span id="customerProviderDriver" style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:2px 8px;font-weight:700;color:#0F172A;">👨‍✈️ Pemandu: Abe Di (EMT)</span>
-                <span style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px;padding:2px 8px;font-weight:700;color:#065F46;">✓ Diluluskan HQ AFAMS</span>
-              </div>
+            <!-- Segmented Tabs: Aktif vs Sejarah -->
+            <div class="cust-bookings-tabs-bar" style="display:flex; background:#F1F5F9; border-radius:10px; padding:3px; margin-bottom:12px;">
+              <button type="button" class="cust-tab-btn active" id="tabCustBookingsActive" data-tab="aktif" style="flex:1; border:none; background:#fff; color:var(--text-heading); font-weight:800; font-size:0.8rem; padding:8px 0; border-radius:8px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                Aktif <span id="badgeTabAktifCount" style="font-size:0.7rem; background:#E2E8F0; padding:1px 6px; border-radius:999px; margin-left:4px;">0</span>
+              </button>
+              <button type="button" class="cust-tab-btn" id="tabCustBookingsHistory" data-tab="sejarah" style="flex:1; border:none; background:transparent; color:var(--text-muted); font-weight:700; font-size:0.8rem; padding:8px 0; border-radius:8px; cursor:pointer;">
+                Sejarah <span id="badgeTabSejarahCount" style="font-size:0.7rem; background:#E2E8F0; padding:1px 6px; border-radius:999px; margin-left:4px;">0</span>
+              </button>
             </div>
 
-            <!-- 2. ETA & Remaining Distance Stat Cards -->
+            <!-- Search Filter -->
+            <div style="position:relative; margin-bottom:12px;">
+              <input type="text" id="custBookingSearchInput" class="search-bar-box" style="width:100%; padding-left:34px; font-size:0.82rem;" placeholder="Cari nombor rujukan tempahan (Cth: AMC-1043)...">
+              <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:0.9rem; color:#94A3B8;">🔍</span>
+            </div>
+
+            <!-- Loading State -->
+            <div id="custBookingsLoading" style="display:none; text-align:center; padding:30px 10px;">
+              <div style="font-size:2rem; animation:spin 1s linear infinite;">⏳</div>
+              <p style="font-size:0.8rem; color:#64748B; margin-top:8px;">Memuatkan senarai tempahan...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="custBookingsError" style="display:none; text-align:center; padding:24px 14px; background:#FEF2F2; border:1px solid #FECACA; border-radius:12px; margin-bottom:12px;">
+              <div style="font-size:1.8rem;">⚠️</div>
+              <p style="font-size:0.82rem; font-weight:700; color:#991B1B; margin:6px 0 8px;">Tidak dapat memuatkan tempahan</p>
+              <button type="button" id="btnRetryCustBookings" style="background:#DC2626; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:0.75rem; font-weight:700; cursor:pointer;">
+                Cuba Semula
+              </button>
+            </div>
+
+            <!-- Empty State -->
+            <div id="custBookingsEmpty" style="display:none; text-align:center; padding:40px 16px; background:#FFFFFF; border:1.5px dashed #CBD5E1; border-radius:14px;">
+              <div style="font-size:2.8rem; margin-bottom:8px;">🚑</div>
+              <h4 style="font-size:0.95rem; font-weight:800; color:#0F172A; margin:0 0 4px;">Tiada tempahan aktif</h4>
+              <p style="font-size:0.75rem; color:#64748B; margin:0 0 14px;">Perlukan perkhidmatan ambulans sekarang atau secara berjadual?</p>
+              <button type="button" id="btnCustEmptyCreate" style="background:var(--amc-red); color:#fff; border:none; border-radius:999px; padding:8px 18px; font-size:0.82rem; font-weight:800; cursor:pointer;">
+                Buat Tempahan Sekarang ›
+              </button>
+            </div>
+
+            <!-- Bookings List Cards Container -->
+            <div id="custBookingsListContainer" style="display:flex; flex-direction:column; gap:12px;"></div>
+
+          </div>
+        </section>
+
+        <!-- Customer Live Ambulance Tracking Modal -->
+        <div id="customerLiveTrackingModal" class="full-screen-tracking-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:10000; overflow-y:auto; flex-direction:column;">
+          <!-- Tracking Header Bar -->
+          <div style="background:var(--amc-red); color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:10001;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button type="button" id="btnCloseLiveTrackingModal" style="background:rgba(255,255,255,0.2); border:none; color:#fff; border-radius:50%; width:32px; height:32px; font-size:1.1rem; cursor:pointer;">←</button>
+              <div>
+                <h3 style="font-size:0.95rem; font-weight:800; margin:0;">Jejak Ambulans Langsung</h3>
+                <span id="trackModalRefText" style="font-size:0.7rem; opacity:0.9;">AMC-1043</span>
+              </div>
+            </div>
+            <span class="live-dot-green"></span>
+          </div>
+
+          <div class="tugasan-view-wrapper" style="padding:12px;">
+            <!-- ETA Stat Cards -->
             <div class="tugasan-stats-grid">
               <div class="tugasan-stat-card">
                 <div class="tugasan-stat-icon-wrap">⏱️</div>
                 <div class="tugasan-stat-info">
-                  <span class="tugasan-stat-val">9 min</span>
+                  <span class="tugasan-stat-val" id="trackModalEta">9 min</span>
                   <span class="tugasan-stat-lbl">Anggaran tiba</span>
                 </div>
               </div>
-
               <div class="tugasan-stat-card">
                 <div class="tugasan-stat-icon-wrap">🛣️</div>
                 <div class="tugasan-stat-info">
-                  <span class="tugasan-stat-val">4.1 km</span>
+                  <span class="tugasan-stat-val" id="trackModalDist">4.1 km</span>
                   <span class="tugasan-stat-lbl">Jarak berbaki</span>
                 </div>
               </div>
             </div>
 
-            <!-- 3. Interactive Leaflet Route Map -->
+            <!-- Provider & Vehicle Info -->
+            <div id="trackModalProviderBox" style="background:#FFFFFF;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span id="trackModalPlate" style="font-weight:800; color:#0F172A; font-size:0.85rem;">🚑 VPQ 7606</span>
+                <span id="trackModalDriver" style="font-weight:700; color:#475569; font-size:0.75rem;">👨‍✈️ Abe Di / Syalihan</span>
+              </div>
+              <div id="trackModalStatus" style="font-size:0.72rem; color:#059669; font-weight:700; margin-top:4px;">● Sedang dalam perjalanan ke lokasi pengambilan</div>
+            </div>
+
+            <!-- Map Wrap -->
             <div class="tugasan-map-wrap">
-              <div class="tugasan-map-floating-bar" id="btnLaunchTugasanNav" title="Buka aplikasi navigasi GPS">
-                <span>↗ Ikut laluan terus ke Hospital HRPZ II</span>
-                <span>›</span>
-              </div>
-              <div id="tugasanMapCanvas" class="tugasan-map-canvas"></div>
+              <div id="customerLiveMapCanvas" style="height:260px; width:100%; border-radius:12px; background:#E2E8F0;"></div>
             </div>
 
-            <!-- 4. Destination Info Card -->
-            <div class="tugasan-dest-card">
-              <div class="tugasan-dest-icon">📍</div>
-              <div>
-                <span class="tugasan-dest-title">Destinasi</span>
-                <div class="tugasan-dest-name">HRPZ II</div>
-                <span class="tugasan-dest-sub">Unit penerimaan mengikut arahan HQ / krew</span>
-              </div>
-            </div>
-
-            <!-- 5. 3-Stage Progress Timeline -->
-            <div class="tugasan-stepper-bar">
-              <div class="tugasan-step-item done">
-                <div class="tugasan-step-circle">✓</div>
-                <span class="tugasan-step-title">Pengambilan</span>
-                <span class="tugasan-step-status">Selesai</span>
-              </div>
-
-              <div style="flex: 1; height: 2px; background: var(--amc-red); margin: 0 8px -14px;"></div>
-
-              <div class="tugasan-step-item active">
-                <div class="tugasan-step-circle">●</div>
-                <span class="tugasan-step-title">Ke hospital</span>
-                <span class="tugasan-step-status">Sedang dalam perjalanan</span>
-              </div>
-
-              <div style="flex: 1; height: 2px; background: var(--border-light); margin: 0 8px -14px;"></div>
-
-              <div class="tugasan-step-item">
-                <div class="tugasan-step-circle">○</div>
-                <span class="tugasan-step-title">Serahan</span>
-                <span class="tugasan-step-status">Seterusnya</span>
-              </div>
-            </div>
-
-            <!-- 6. Main Action Buttons -->
-            <button type="button" class="tugasan-btn-primary" id="btnTugasanArrivedHospital">
-              <span>🏁</span>
-              <span>Tiba di hospital</span>
-              <span>→</span>
-            </button>
-
-            <button type="button" class="tugasan-btn-outline" id="btnTugasanOpenNav">
-              <span>↗</span>
-              <span>Buka navigasi</span>
-              <span>›</span>
-            </button>
-
-            <!-- 7. Support & Reporting Row -->
-            <div class="tugasan-support-row">
-              <button type="button" class="tugasan-support-btn" onclick="window.location.href='tel:0199000000'">
-                <span>📞 Hubungi pusat operasi</span>
-                <span>›</span>
-              </button>
-              <button type="button" class="tugasan-support-btn" id="btnTugasanReportReroute">
-                <span>🔄 Lapor perubahan laluan</span>
-                <span>›</span>
-              </button>
-            </div>
-
-            <!-- 8. Safety Notice Box -->
-            <div class="tugasan-notice-box">
-              <span>ℹ️</span>
-              <span>Kemas kini status ketika berhenti.</span>
+            <!-- Support Hotline -->
+            <div style="margin-top:14px; text-align:center;">
+              <a href="tel:0139147606" style="display:block; background:#0F172A; color:#fff; text-decoration:none; padding:10px; border-radius:10px; font-weight:800; font-size:0.82rem;">
+                📞 Hubungi Pusat Operasi HQ (013-914 7606)
+              </a>
             </div>
           </div>
-        </section>
+        </div>
 
                 <!-- =============================================================
              VIEW 3: KATALOG HARGA & PERKHIDMATAN (SCREEN KATALOG)
@@ -1507,18 +1517,17 @@
           <span class="dock-tab-title">Utama</span>
         </button>
 
-        <button class="dock-tab-item" data-tab="driver-view" style="position:relative;" title="Tugasan Lapangan">
+        <button class="dock-tab-item" data-tab="customer-bookings-view" style="position:relative;" title="Tempahan Saya" id="dockTabTempahan">
           <div style="position:relative;display:inline-flex;">
             <svg class="dock-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
-            <span style="position:absolute;top:-4px;right:-8px;background:var(--amc-red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:0.62rem;font-weight:900;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;">1</span>
+            <span id="badgeActiveCustomerBookings" style="display:none;position:absolute;top:-4px;right:-8px;background:var(--amc-red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:0.62rem;font-weight:900;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;">0</span>
           </div>
-          <span class="dock-tab-title">Tugasan</span>
+          <span class="dock-tab-title">Tempahan</span>
         </button>
 
         <button class="dock-tab-item" data-tab="catalog-view" title="Katalog Servis &amp; Peralatan">
@@ -1844,5 +1853,51 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <!-- Main Application Script -->
   <script type="module" src="./src/main.js"></script>
+
+  <!-- ==============================================================
+       MODAL: PENGESAHAN TEMPAHAN DIHANTAR (CONFIRMATION SCREEN)
+       ============================================================== -->
+  <div class="auth-modal-overlay" id="bookingConfirmationModal" style="display:none; align-items:center; justify-content:center;">
+    <div class="auth-modal-card" style="max-width:380px; text-align:center; padding:24px 20px;">
+      <div style="font-size:3rem; margin-bottom:8px;">🚑</div>
+      <span class="badge-status-pill amber" style="display:inline-block; margin-bottom:8px; font-weight:800; font-size:0.75rem;">
+        ⏳ Menunggu kelulusan
+      </span>
+      <h3 style="font-size:1.25rem; font-weight:800; color:#0F172A; margin:0 0 6px;">Permohonan Dihantar</h3>
+      <div style="font-size:0.9rem; font-weight:800; color:var(--amc-red); margin-bottom:10px;" id="confModalInvoiceRef">AMC-1045</div>
+      <p style="font-size:0.75rem; color:#475569; line-height:1.45; margin:0 0 16px; background:#F8FAFC; border:1px solid #E2E8F0; padding:10px; border-radius:8px;">
+        Permohonan tempahan anda telah berjaya dihantar ke pusat operasi AFAMS.<br><br>
+        <b>PENTING:</b> Penghantaran ini tidak menjamin ketersediaan ambulans serta-merta. Pegawai operasi kami sedang menyemak ketersediaan armada dan krew bertugas.
+      </p>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button type="button" class="primary-action-btn" id="btnConfViewMyBookings">
+          Lihat status tempahan ›
+        </button>
+        <button type="button" class="btn-nav-prev" id="btnConfBackToHome" style="width:100%; border:none; background:#F1F5F9; color:#475569;">
+          Kembali ke Utama
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================================================
+       MODAL: BUTIRAN TEMPAHAN PELANGGAN (BOOKING DETAILS MODAL)
+       ============================================================== -->
+  <div class="auth-modal-overlay" id="customerBookingDetailsModal" style="display:none; align-items:center; justify-content:center;">
+    <div class="auth-modal-card" style="max-width:420px; width:92%; max-height:90vh; overflow-y:auto; padding:20px; text-align:left;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #E2E8F0; padding-bottom:10px; margin-bottom:12px;">
+        <div>
+          <span style="font-size:0.68rem; font-weight:700; color:#64748B;">BUTIRAN TEMPAHAN</span>
+          <h3 style="font-size:1.15rem; font-weight:800; color:var(--amc-red); margin:0;" id="custDetailRefTitle">AMC-1043</h3>
+        </div>
+        <button type="button" id="btnCloseCustDetailModal" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:#64748B;">&times;</button>
+      </div>
+
+      <div id="custDetailModalContent">
+        <!-- Populated dynamically via main.js -->
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

@@ -195,6 +195,21 @@
           <span class="nav-item-label">Dashboard</span>
         </button>
 
+        <button class="nav-item-btn" data-target="pengurusanTempahanView" id="navBtnPengurusanTempahan">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </span>
+          <span class="nav-item-label">Tempahan</span>
+          <span class="nav-badge-pill" id="badgePendingBookings" style="display:none;background:#c61e2f;color:#fff;font-size:0.7rem;font-weight:700;padding:2px 7px;border-radius:12px;margin-left:auto;">0</span>
+        </button>
+
+
+
         <button class="nav-item-btn" data-target="petaFleetView">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
@@ -1151,7 +1166,195 @@
         <!-- ===================================================================
              VIEW 3: REKOD PERJALANAN (SCREENSHOT 3)
              =================================================================== -->
-        <section class="portal-view-section" id="rekodPerjalananView">
+                <!-- ===================================================================
+             VIEW: PENGURUSAN TEMPAHAN (BOOKING DESK & DISPATCH REVIEW)
+             =================================================================== -->
+        <section class="portal-view-section" id="pengurusanTempahanView">
+          
+          <!-- View Title Header -->
+          <div class="view-header-row">
+            <div>
+              <div class="view-title-wrap">
+                <h2 class="view-main-title">Pengurusan Tempahan</h2>
+                <span class="badge-data-contoh" style="background:#E6F7F6;color:var(--amc-teal-dark);">PUSAT OPERASI AFAMS</span>
+              </div>
+              <p class="view-subtitle">Semak permohonan, luluskan, tolak, agihkan ambulans &amp; krew, dan pantau perjalanan.</p>
+            </div>
+            
+            <div class="view-header-actions-right">
+              <button type="button" class="btn-primary-action" id="btnOpenManualBookingModal" style="background:var(--amc-red);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:0.82rem;font-weight:800;display:inline-flex;align-items:center;gap:6px;cursor:pointer;box-shadow:0 2px 8px rgba(198,30,47,0.2);">
+                <span>➕</span> <span>Tempahan Manual</span>
+              </button>
+              <div class="view-header-code">03 · Tempahan</div>
+            </div>
+          </div>
+
+          <!-- 4 KPI Summary Cards Row (Calculated from Real Records in Scope) -->
+          <div class="records-kpi-quad-grid">
+            
+            <!-- Card 1: Menunggu Kelulusan -->
+            <div class="kpi-card-metric" id="kpiCardPending" style="cursor:pointer;" title="Klik untuk tapis: Menunggu kelulusan">
+              <div class="kpi-icon-round amber">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#D97706" stroke-width="2.2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Menunggu kelulusan</span>
+                <span class="kpi-metric-hero" id="kpiCountPending">0</span>
+                <span class="kpi-metric-sub">Perlu semakan HQ</span>
+              </div>
+            </div>
+
+            <!-- Card 2: Diluluskan / Menunggu Agihan -->
+            <div class="kpi-card-metric" id="kpiCardApproved" style="cursor:pointer;" title="Klik untuk tapis: Diluluskan &amp; Dijadualkan">
+              <div class="kpi-icon-round cyan">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0284C7" stroke-width="2.2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Diluluskan</span>
+                <span class="kpi-metric-hero" id="kpiCountApproved">0</span>
+                <span class="kpi-metric-sub">Sedia untuk agihan</span>
+              </div>
+            </div>
+
+            <!-- Card 3: Sedang Berjalan -->
+            <div class="kpi-card-metric" id="kpiCardOngoing" style="cursor:pointer;" title="Klik untuk tapis: Sedang berjalan">
+              <div class="kpi-icon-round teal">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0D9488" stroke-width="2.2">
+                  <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                  <line x1="8" y1="2" x2="8" y2="18"></line>
+                  <line x1="16" y1="6" x2="16" y2="22"></line>
+                </svg>
+              </div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Sedang berjalan</span>
+                <span class="kpi-metric-hero" id="kpiCountOngoing">0</span>
+                <span class="kpi-metric-sub">Ambulans dalam misi</span>
+              </div>
+            </div>
+
+            <!-- Card 4: Selesai Hari Ini -->
+            <div class="kpi-card-metric" id="kpiCardCompletedToday" style="cursor:pointer;" title="Klik untuk tapis: Selesai">
+              <div class="kpi-icon-round green">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#10B981" stroke-width="2.2">
+                  <path d="M20 6L9 17l-5-5"></path>
+                </svg>
+              </div>
+              <div class="kpi-metric-texts">
+                <span class="kpi-metric-title">Selesai hari ini</span>
+                <span class="kpi-metric-hero" id="kpiCountCompletedToday">0</span>
+                <span class="kpi-metric-sub">Tamat &amp; diserah selamat</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Comprehensive Filter Bar -->
+          <div class="portal-card" style="margin-bottom:14px;padding:12px 14px;">
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
+              
+              <!-- Search box -->
+              <div style="flex:1;min-width:240px;position:relative;">
+                <input type="text" id="bookingSearchInput" class="form-input-element" style="width:100%;padding-left:32px;font-size:0.8rem;" placeholder="Cari rujukan, nama pesakit, no. telefon, atau plat...">
+                <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:0.85rem;color:#64748B;">🔍</span>
+              </div>
+
+              <!-- Filter Dropdowns Row -->
+              <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                <!-- Branch Filter -->
+                <select id="bookingBranchFilter" class="form-select-element mini" style="font-weight:600;">
+                  <option value="all" selected>Semua cawangan</option>
+                  <option value="kok_lanas">Kok Lanas HQ</option>
+                  <option value="raub">Cawangan Raub</option>
+                  <option value="machang">Machang</option>
+                  <option value="jeli">Jeli</option>
+                </select>
+
+                <!-- Status Filter -->
+                <select id="bookingStatusFilter" class="form-select-element mini" style="font-weight:600;">
+                  <option value="all" selected>Semua status</option>
+                  <option value="menunggu_kelulusan">Menunggu kelulusan</option>
+                  <option value="menunggu_agihan">Diluluskan / Menunggu agihan</option>
+                  <option value="dijadualkan">Dijadualkan</option>
+                  <option value="menuju_pengambilan">Menuju pengambilan</option>
+                  <option value="selesai">Selesai</option>
+                  <option value="ditolak">Ditolak</option>
+                  <option value="dibatalkan">Dibatalkan</option>
+                </select>
+
+                <!-- Payment Filter -->
+                <select id="bookingPaymentFilter" class="form-select-element mini" style="font-weight:600;">
+                  <option value="all" selected>Semua bayaran</option>
+                  <option value="paid">Telah dibayar</option>
+                  <option value="unpaid">Belum bayar</option>
+                  <option value="deposit">Deposit</option>
+                </select>
+
+                <!-- Provider Filter -->
+                <select id="bookingProviderFilter" class="form-select-element mini" style="font-weight:600;">
+                  <option value="all" selected>Semua penyedia</option>
+                  <option value="al-farhain">Al-Farhain AMC (Dalaman)</option>
+                  <option value="medicorp">MediCorp Ambulance</option>
+                  <option value="resq">ResQ Response Network</option>
+                </select>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Main Content Split Grid: Table + Right Detail Drawer -->
+          <div class="records-content-split-grid">
+            
+            <!-- Left Main Table Card -->
+            <div class="records-table-card portal-card">
+              <div class="table-card-top-bar">
+                <h3 class="card-heading">Senarai Tempahan &amp; Tugasan Ambulans</h3>
+                <span id="bookingsCountLabel" style="font-size:0.75rem;color:#64748B;font-weight:700;">Memuatkan...</span>
+              </div>
+
+              <div class="records-table-scroll-container">
+                <table class="amc-data-table">
+                  <thead>
+                    <tr>
+                      <th>Rujukan / Pelanggan</th>
+                      <th>Jadual</th>
+                      <th>Laluan</th>
+                      <th>Pakej &amp; Harga</th>
+                      <th>Status Tempahan</th>
+                      <th>Bayaran</th>
+                      <th>Sumber Diagih</th>
+                      <th>Tindakan</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bookingsTableBody">
+                    <!-- Populated dynamically via bookingManagementModule.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right Detail Drawer: Interactive Review & Assignment -->
+            <div class="records-drawer-card portal-card" id="bookingDetailDrawer" style="display:none;width:340px;background:#FFFFFF;border-left:1px solid #CBD5E1;padding:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid #E2E8F0;padding-bottom:8px;">
+                <h3 class="card-heading" style="font-size:0.95rem;margin:0;">Butiran &amp; Kawalan Operasi</h3>
+                <button type="button" class="drawer-close-btn" id="closeBookingDrawerBtn" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#64748B;">&times;</button>
+              </div>
+
+              <div id="bookingDrawerContent">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+<section class="portal-view-section" id="rekodPerjalananView">
           
           <!-- View Title Header -->
           <div class="view-header-row">

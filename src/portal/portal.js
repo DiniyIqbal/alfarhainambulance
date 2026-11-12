@@ -32,6 +32,8 @@ import {
 
 import { fetchRoadRoute, haversineKm, estimateDurationMin } from '../services/routingService.js';
 import { playCalculateChime, playEmergencyAlertSiren, playSuccessChime } from '../utils/soundFx.js';
+import { initBookingManagementModule, renderBookingDashboard } from './bookingManagementModule.js';
+
 import {
   createGoogleAmcMap as createAmcMap,
   createGoogleAmcMap,
@@ -253,6 +255,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   safeInit(() => initPartnerPortalModule(), 'PartnerPortalModule');
   safeInit(() => initSettingsView(), 'SettingsView');
   safeInit(() => initRecordsView(), 'RecordsView');
+  safeInit(() => initBookingManagementModule(portalState, showToast, playSuccessChime), 'BookingManagementModule');
   safeInit(() => initDispatchView(), 'DispatchView');
   safeInit(() => initBranchView(), 'BranchView');
   if (portalState.activeTab === 'petaFleetView') {
@@ -460,6 +463,7 @@ function initSidebarNavigation() {
   const breadcrumbCurrent = document.getElementById('crumbCurrentView');
 
   const viewTitles = {
+    pengurusanTempahanView: 'Pengurusan Tempahan',
     tetapanView: 'Tetapan',
     dispatchView: 'Dispatch',
     rekodPerjalananView: 'Rekod Perjalanan',
@@ -498,7 +502,9 @@ function initSidebarNavigation() {
       }
 
       // Refresh Pemandu, Rakan Ambulans, and Partner Portal (B2B) views on tab click
-      if (targetId === 'pemanduView') {
+      if (targetId === 'pengurusanTempahanView') {
+        safeInit(() => renderBookingDashboard(), 'RefreshPengurusanTempahan');
+      } else if (targetId === 'pemanduView') {
         safeInit(() => renderAllPemanduViews(), 'RefreshPemandu');
       } else if (targetId === 'rakanAmbulansView') {
         safeInit(() => renderHqRakanAmbulansView(), 'RefreshRakanAmbulans');

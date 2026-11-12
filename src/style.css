@@ -6198,3 +6198,119 @@ html, body {
   background: #B01A29;
 }
 
+
+
+/* =========================================================================
+   AL-FARHAIN AMBULANCE - CUSTOMER BOOKING MANAGEMENT ("TEMPAHAN SAYA")
+   ========================================================================= */
+
+.cust-bookings-page-wrapper {
+  animation: fadeIn 0.25s ease-out;
+}
+
+.cust-bookings-tabs-bar {
+  display: flex;
+  background: #F1F5F9;
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 12px;
+}
+
+.cust-tab-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 8px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.cust-tab-btn.active {
+  background: #FFFFFF;
+  color: var(--text-heading);
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.cust-booking-card {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cust-booking-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.full-screen-tracking-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #FFFFFF;
+  z-index: 10000;
+  overflow-y: auto;
+  flex-direction: column;
+}
+
+/* Badge Status Pill Variants */
+.badge-status-pill.amber {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.badge-status-pill.blue {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.badge-status-pill.purple {
+  background: #EDE9FE;
+  color: #5B21B6;
+}
+
+.badge-status-pill.teal {
+  background: #CCFBF1;
+  color: #115E59;
+}
+
+.badge-status-pill.cyan {
+  background: #E0F2FE;
+  color: #075985;
+}
+
+.badge-status-pill.green {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.badge-status-pill.rose,
+.badge-status-pill.red {
+  background: #FFE4E6;
+  color: #9F1239;
+}
+
+.badge-status-pill.slate {
+  background: #F1F5F9;
+  color: #475569;
+}
+
+/* Animation */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

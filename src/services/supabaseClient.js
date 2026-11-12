@@ -116,6 +116,7 @@ export function broadcastSyncEvent(type, data) {
 }
 
 export function saveLocalBookingCache(bookingRecord) {
+  if (typeof localStorage === 'undefined') return;
   try {
     const raw = localStorage.getItem('amc_all_bookings');
     const list = raw ? JSON.parse(raw) : [];

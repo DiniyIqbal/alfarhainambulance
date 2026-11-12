@@ -147,6 +147,8 @@ const state = {
   leg3Geometry: null,
 
   calcStep: 1, // 1: Lokasi, 2: Kategori, 3: Invois
+  scheduleType: 'asap', // 'asap' | 'scheduled'
+  scheduledDateTime: null,
   step1Mode: 'lokasi', // 'lokasi' | 'peta'
 
   selectedPackage: SERVICE_PACKAGES[0], // Kecemasan standard (RM250)
@@ -216,6 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSupabaseIntegration();
   initMobileAuth();
   initPaymentReturnHandler();
+  initCustomerBookingModule(state);
 
   // Initial calculation and map render
   calculateAll();
@@ -504,6 +507,8 @@ function initNavigationTabs() {
           if (state.step1Mode === 'lokasi' && miniMap) miniMap.invalidateSize();
           if (state.step1Mode === 'peta' && fullMap) fullMap.invalidateSize();
         }, 150);
+      } else if (targetId === 'customer-bookings-view') {
+        loadAndRenderCustomerBookings();
       } else if (targetId === 'driver-view') {
         setTimeout(() => {
           initTugasanMissionMap();
@@ -2225,13 +2230,18 @@ function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpai
     miscFee: 0.00,
     totalFare: Number(state.grandTotal || 250.00),
     isDieselSurge: false,
-    plateNumber: state.currentHub?.ambulancePlate || 'VPQ 7606',
-    driverName: state.currentHub?.primaryDriver || 'Pemandu Bertugas AMC',
+    plateNumber: '',
+    driverName: '',
     contactPhone: state.currentHub?.contactNumber || '013-914 7606',
     patientName,
     patientPhone,
     patientEmail,
-    status: 'Dispatched',
+    booking_status: 'pending_approval',
+    assignment_status: 'unassigned',
+    trip_status: 'not_started',
+    status: 'Menunggu kelulusan',
+    is_scheduled: state.scheduleType === 'scheduled',
+    scheduled_time: state.scheduledDateTime,
     paymentStatus,
     paymentMethod,
     created_at: new Date().toISOString()
@@ -2341,7 +2351,7 @@ function initPaymentReturnHandler() {
    ========================================================================= */
 function initActionModals() {
   // Invoice Modal
-  const btnGenModal = document.getElementById('btnGenerateInvoiceModal');
+  const btnGenModal = document.getElementById('btnSubmitCustomerBooking') || document.getElementById('btnGenerateInvoiceModal');
   const invoiceModal = document.getElementById('invoiceModal');
   const closeInvModal = document.getElementById('closeInvoiceModalBtn');
   const btnConfirmClose = document.getElementById('btnConfirmBookingClose');
@@ -2400,13 +2410,37 @@ function initActionModals() {
   // Cash upon arrival
   if (btnPayCashArrival) {
     btnPayCashArrival.addEventListener('click', async () => {
-      playSuccessChime();
-      const booking = getCurrentBookingPayload('cash', 'unpaid');
-      localStorage.setItem('amc_active_invoice', booking.invoiceNumber);
-      await insertBookingToSupabase(booking);
-      renderUserProfileRecords();
-      if (invoiceModal) invoiceModal.classList.remove('show');
-      alert(`Tempahan ambulans telah direkodkan (${booking.invoiceNumber}). Bayaran tunai RM ${(booking.totalFare || 250).toFixed(2)} akan dikutip semasa ketibaan ambulans.`);
+      try {
+        btnPayCashArrival.disabled = true;
+        btnPayCashArrival.innerHTML = '<span>⏳ Menghantar tempahan...</span>';
+        playSuccessChime();
+
+        const bookingPayload = getCurrentBookingPayload('cash', 'unpaid');
+        bookingPayload.isScheduled = state.scheduleType === 'scheduled';
+        bookingPayload.scheduledTime = state.scheduledDateTime;
+
+        const res = await createPatientBooking(bookingPayload);
+        const booking = res.data || bookingPayload;
+        const inv = booking.invoice_number || booking.invoiceNumber;
+
+        localStorage.setItem('amc_active_invoice', inv);
+        renderUserProfileRecords();
+        if (invoiceModal) invoiceModal.classList.remove('show');
+
+        // Show confirmation modal
+        const confModal = document.getElementById('bookingConfirmationModal');
+        const confRef = document.getElementById('confModalInvoiceRef');
+        if (confRef) confRef.textContent = inv;
+        if (confModal) confModal.style.display = 'flex';
+
+        btnPayCashArrival.disabled = false;
+        btnPayCashArrival.innerHTML = '<span>💵 Tunai Semasa Ketibaan</span>';
+      } catch (err) {
+        console.error('Error submitting booking:', err);
+        alert('Ralat semasa menghantar tempahan: ' + err.message);
+        btnPayCashArrival.disabled = false;
+        btnPayCashArrival.innerHTML = '<span>💵 Tunai Semasa Ketibaan</span>';
+      }
     });
   }
 
