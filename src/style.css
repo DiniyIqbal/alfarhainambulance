@@ -5709,3 +5709,492 @@ html, body {
   text-align: center;
   font-weight: 500;
 }
+
+/* =========================================================================
+   PICKUP LOCATION EXPERIENCE & ENHANCED LOCATION PICKER (AFAMS)
+   ========================================================================= */
+
+.pickup-picker-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pickup-modal-header {
+  margin-bottom: 2px;
+}
+
+.pickup-modal-title {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-heading);
+  margin: 0 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pickup-modal-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.pickup-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #F8FAFC;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 2px 10px;
+  transition: all 0.2s ease;
+}
+
+.pickup-search-box:focus-within {
+  border-color: var(--amc-red);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(198, 30, 47, 0.12);
+}
+
+.pickup-search-icon {
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin-right: 8px;
+  user-select: none;
+}
+
+.pickup-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  outline: none;
+  font-family: inherit;
+}
+
+.pickup-search-clear {
+  background: #E2E8F0;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: #475569;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease;
+}
+
+.pickup-search-clear:hover {
+  background: #CBD5E1;
+}
+
+.pickup-chips-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 2px 6px 2px;
+  scrollbar-width: thin;
+}
+
+.pickup-chip-btn {
+  white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.74rem;
+  font-weight: 700;
+  border: 1.5px solid #E2E8F0;
+  background: #F8FAFC;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.pickup-chip-btn:hover {
+  background: #EDF2F7;
+  border-color: #CBD5E1;
+}
+
+.pickup-chip-btn.active {
+  background: var(--amc-red);
+  color: #FFFFFF;
+  border-color: var(--amc-red);
+  box-shadow: 0 2px 6px rgba(198, 30, 47, 0.25);
+}
+
+.pickup-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pickup-action-pill-btn {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.pickup-action-pill-btn:hover {
+  background: #F8FAFC;
+  border-color: var(--amc-teal);
+  color: var(--amc-teal-dark);
+}
+
+.pickup-action-pill-btn.primary {
+  border-color: rgba(0, 125, 119, 0.3);
+  background: #F0FDFA;
+  color: #0F766E;
+}
+
+.pickup-action-pill-btn.primary:hover {
+  background: #CCFBF1;
+  border-color: #0D9488;
+}
+
+.pickup-region-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #F1F5F9;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.pickup-region-select {
+  border: 1px solid #CBD5E1;
+  border-radius: var(--radius-sm);
+  background: #FFFFFF;
+  padding: 3px 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #334155;
+  outline: none;
+}
+
+.pickup-results-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.pickup-result-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  transition: all 0.18s ease;
+}
+
+.pickup-result-card:hover {
+  border-color: var(--amc-red);
+  background: #FFFBFB;
+  box-shadow: 0 4px 12px rgba(198, 30, 47, 0.08);
+}
+
+.pickup-result-card.selected {
+  border-color: var(--amc-red);
+  background: #FFF0F2;
+}
+
+.pickup-res-left {
+  flex: 1;
+}
+
+.pickup-res-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+
+.pickup-res-name {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--text-heading);
+}
+
+.pickup-res-badge-verified {
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+  border-radius: var(--radius-full);
+  padding: 1px 6px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.pickup-res-badge-category {
+  background: #F1F5F9;
+  color: #475569;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--radius-full);
+  padding: 1px 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.pickup-res-addr {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.pickup-res-source {
+  font-size: 0.66rem;
+  color: #94A3B8;
+  margin-top: 3px;
+}
+
+.pickup-res-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.pickup-distance-pill {
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  color: #1D4ED8;
+  border-radius: var(--radius-full);
+  padding: 2px 7px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.pickup-distance-sub {
+  font-size: 0.62rem;
+  color: #94A3B8;
+}
+
+.pickup-text-search-btn {
+  background: #F8FAFC;
+  border: 1.5px dashed #CBD5E1;
+  border-radius: var(--radius-md);
+  padding: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0284C7;
+  cursor: pointer;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+  transition: all 0.15s ease;
+}
+
+.pickup-text-search-btn:hover {
+  background: #F0F9FF;
+  border-color: #38BDF8;
+}
+
+/* =========================================================================
+   CONFIRMATION DRAWER / STEP VIEW
+   ========================================================================= */
+
+.pickup-confirm-box {
+  background: #FFFFFF;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.confirm-place-header {
+  background: #FFF0F2;
+  border: 1.5px solid #FFE4E6;
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.confirm-place-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--amc-red);
+  margin-bottom: 2px;
+}
+
+.confirm-place-address {
+  font-size: 0.76rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.confirm-category-selector-row {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.confirm-cat-pill {
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  color: #475569;
+  cursor: pointer;
+}
+
+.confirm-cat-pill.active {
+  background: var(--amc-red);
+  color: #FFFFFF;
+  border-color: var(--amc-red);
+}
+
+.confirm-map-container {
+  height: 160px;
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-light);
+  overflow: hidden;
+  position: relative;
+}
+
+.confirm-pin-helper {
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.confirm-broad-warning {
+  background: #FFFBEB;
+  border: 1.5px solid #FCD34D;
+  color: #B45309;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.confirm-inputs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.confirm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.confirm-field label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-heading);
+}
+
+.confirm-field input {
+  padding: 8px 10px;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  background: #F8FAFC;
+  outline: none;
+  font-family: inherit;
+}
+
+.confirm-field input:focus {
+  border-color: var(--amc-red);
+  background: #FFFFFF;
+}
+
+.confirm-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-confirm-cancel {
+  background: #F1F5F9;
+  border: 1.5px solid #CBD5E1;
+  border-radius: var(--radius-md);
+  padding: 12px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-confirm-cancel:hover {
+  background: #E2E8F0;
+}
+
+.btn-confirm-submit {
+  background: var(--amc-red);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 12px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(198, 30, 47, 0.25);
+  transition: all 0.15s ease;
+}
+
+.btn-confirm-submit:hover {
+  background: #B01A29;
+}
+

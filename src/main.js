@@ -83,6 +83,19 @@ import {
   getServicePackageByIdOrCode
 } from './services/servicePackageManager.js';
 
+import {
+  LocationSearchSession,
+  getDeviceCurrentLocation,
+  PICKUP_CATEGORIES,
+  SEARCH_REGIONS
+} from './services/locationSearchService.js';
+
+import {
+  searchVerifiedFacilities,
+  findVerifiedFacilityMatch,
+  calculateDirectDistanceKm
+} from './data/verifiedFacilitiesData.js';
+
 /* =========================================================================
    APPLICATION STATE (MATCHES MOCKUP DEFAULTS)
    ========================================================================= */
@@ -90,11 +103,18 @@ const state = {
   currentHub: HUBS.KOK_LANAS,
   originCoords: HUBS.KOK_LANAS.coords,
 
-  // Stop 2: Customer Pickup Point (Home / Residence)
+  // Stop 2: Customer Pickup Point (Home / Hospital / Clinic / Verified Facility / Custom Pin)
   pickupPresetId: 'kediaman_kb',
   pickupName: 'Bandar Kota Bharu',
   pickupAddress: 'Bandar Kota Bharu, 15000 Kota Bharu, Kelantan',
   pickupCoords: [6.1248, 102.2544],
+  pickupOriginalCoords: [6.1248, 102.2544],
+  pickupCategory: 'Rumah / Kediaman',
+  pickupPlaceId: null,
+  pickupFacilityId: null,
+  pickupSource: 'preset',
+  pickupInstructions: '',
+  pickupLocationConfirmed: true,
 
   // Stop 3: Destination Point (Hospital / Drop-off)
   selectedDestId: 'hrpz',
@@ -2178,6 +2198,16 @@ function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpai
     hubName: state.currentHub?.name || 'HQ Pusat Rawatan Al-Farhain',
     originName,
     destinationName,
+    pickupCategory: state.pickupCategory || 'Rumah / Kediaman',
+    pickupName: state.pickupName || originName,
+    pickupAddress: state.pickupAddress || originName,
+    pickupCoords: state.pickupCoords || null,
+    pickupOriginalCoords: state.pickupOriginalCoords || state.pickupCoords || null,
+    pickupPlaceId: state.pickupPlaceId || null,
+    pickupFacilityId: state.pickupFacilityId || null,
+    pickupSource: state.pickupSource || 'custom',
+    pickupInstructions: state.pickupInstructions || '',
+    pickupLocationConfirmed: Boolean(state.pickupLocationConfirmed),
     distanceKm: Number(state.distanceKm || state.totalDistanceKm || 25.0),
     packageId: pkg.id,
     packageCode: pkg.code || pkg.id,
@@ -2476,14 +2506,51 @@ function initActionModals() {
 /* =========================================================================
    18. LOCATION PICKER MODAL (PANGKALAN, PICKUP, DESTINASI)
    ========================================================================= */
-function setPatientPickupLocation(name, address, coords, presetId = 'custom') {
-  state.pickupPresetId = presetId;
-  state.pickupName = name;
-  state.pickupAddress = address || name;
-  state.pickupCoords = coords;
+function setPatientPickupLocation(arg1, address, coords, presetId = 'custom') {
+  if (typeof arg1 === 'object' && arg1 !== null && !Array.isArray(arg1)) {
+    const opts = arg1;
+    state.pickupPresetId = opts.source === 'preset' ? (opts.placeId || 'preset') : 'custom';
+    state.pickupName = (opts.name || 'Lokasi Pesakit').trim();
+    state.pickupAddress = (opts.address || opts.name || '').trim();
+    state.pickupCoords = opts.coords;
+    state.pickupOriginalCoords = opts.originalCoords || opts.coords;
+    state.pickupCategory = opts.category || 'Rumah / Kediaman';
+    state.pickupPlaceId = opts.placeId || null;
+    state.pickupFacilityId = opts.facilityId || null;
+    state.pickupSource = opts.source || 'custom';
+    state.pickupInstructions = (opts.instructions || '').trim();
+    state.pickupLocationConfirmed = Boolean(opts.confirmed !== false);
+  } else {
+    state.pickupPresetId = presetId;
+    state.pickupName = (arg1 || 'Lokasi Pesakit').trim();
+    state.pickupAddress = (address || arg1 || '').trim();
+    state.pickupCoords = coords;
+    state.pickupOriginalCoords = coords;
+    state.pickupCategory = 'Rumah / Kediaman';
+    state.pickupPlaceId = null;
+    state.pickupFacilityId = null;
+    state.pickupSource = presetId;
+    state.pickupInstructions = '';
+    state.pickupLocationConfirmed = true;
+  }
 
   const displayEl = document.getElementById('displayPickupName');
-  if (displayEl) displayEl.textContent = state.pickupName;
+  if (displayEl) {
+    displayEl.textContent = state.pickupName;
+  }
+
+  // Update pickup stop item label/subtext if category is a hospital/clinic
+  const pickupStopItem = document.getElementById('stopPickupRow');
+  if (pickupStopItem) {
+    const label = pickupStopItem.querySelector('.stop-label');
+    if (label) {
+      if (state.pickupCategory && state.pickupCategory !== 'Rumah / Kediaman' && state.pickupCategory !== 'Lain-lain') {
+        label.textContent = `Pengambilan (${state.pickupCategory})`;
+      } else {
+        label.textContent = 'Pengambilan';
+      }
+    }
+  }
 
   calculateMultiLegRoute(true);
 }
@@ -2671,169 +2738,7 @@ function initLocationModal() {
   // STOP 2: LOKASI PENGAMBILAN PESAKIT (PATIENT ADDRESS)
   if (rowPickup) {
     rowPickup.addEventListener('click', () => {
-      playClickSound();
-      title.textContent = 'Tetapkan Lokasi Pengambilan Pesakit';
-
-      const hubPresets = PRESET_PICKUP_LOCATIONS[state.currentHub.id] || PRESET_PICKUP_LOCATIONS.kok_lanas;
-
-      content.innerHTML = `
-        <div class="modal-hub-banner">
-          <span>🏛️</span>
-          <div>
-            <span style="font-size:0.7rem; color:var(--text-muted); display:block;">Pangkalan Bertolak (Kiraan jarak bermula dari sini):</span>
-            <strong style="color:var(--amc-teal-dark);">${state.currentHub.name}</strong>
-          </div>
-        </div>
-
-        <div class="patient-search-wrapper">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="pickupSearchInput" class="patient-search-input" placeholder="Taip alamat rumah pesakit / taman / kampung..." autocomplete="off">
-          <button type="button" id="clearPickupSearchBtn" class="search-clear-btn" style="display:none;">&times;</button>
-        </div>
-
-        <div id="geocodingResultsContainer" class="geocoding-results-list" style="display:none;"></div>
-
-        <button type="button" class="pick-map-action-btn" id="btnPickOnMapModal">
-          <span>🗺️</span>
-          <span>Pilih / Tetapkan Pin Rumah Pada Peta Terus</span>
-          <span>➔</span>
-        </button>
-
-        <div class="presets-section-title">Kawasan Kediaman Utama (${state.currentHub.shortName})</div>
-        <div id="presetsListContainer" style="display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; padding-right:2px;">
-          ${renderPresetPickupCards(hubPresets)}
-        </div>
-      `;
-
-      const btnPickMap = content.querySelector('#btnPickOnMapModal');
-      if (btnPickMap) {
-        btnPickMap.addEventListener('click', () => {
-          playClickSound();
-          modal.classList.remove('show');
-          const btnPeta = document.getElementById('btnModePeta');
-          if (btnPeta) btnPeta.click();
-          alert('Sila klik pada mana-mana lokasi di atas peta atau seret pin biru (📍) untuk menetapkan kedudukan rumah pesakit.');
-        });
-      }
-
-      const searchInput = content.querySelector('#pickupSearchInput');
-      const clearBtn = content.querySelector('#clearPickupSearchBtn');
-      const geocodingBox = content.querySelector('#geocodingResultsContainer');
-      const presetsBox = content.querySelector('#presetsListContainer');
-
-      // Setup Google Places API (New) Autocomplete with Malaysia boundary & branch bias
-      if (searchInput) {
-        setupPlacesAutocomplete(searchInput, {
-          biasCoords: state.currentHub.coords,
-          onPlaceSelect: (selectedPlace) => {
-            playClickSound();
-            setPatientPickupLocation(
-              selectedPlace.name,
-              selectedPlace.address,
-              selectedPlace.coords,
-              'google_places'
-            );
-            modal.classList.remove('show');
-          }
-        });
-      }
-
-      if (clearBtn && searchInput) {
-        clearBtn.addEventListener('click', () => {
-          searchInput.value = '';
-          clearBtn.style.display = 'none';
-          geocodingBox.style.display = 'none';
-          presetsBox.innerHTML = renderPresetPickupCards(hubPresets);
-          attachPresetClickListeners();
-          searchInput.focus();
-        });
-      }
-
-      let debounceTimer = null;
-      if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-          const q = e.target.value.trim();
-          if (clearBtn) clearBtn.style.display = q ? 'flex' : 'none';
-
-          const filtered = hubPresets.filter(p =>
-            p.name.toLowerCase().includes(q.toLowerCase()) ||
-            (p.address && p.address.toLowerCase().includes(q.toLowerCase())) ||
-            (p.area && p.area.toLowerCase().includes(q.toLowerCase()))
-          );
-          presetsBox.innerHTML = renderPresetPickupCards(filtered.length ? filtered : hubPresets);
-          attachPresetClickListeners();
-
-          clearTimeout(debounceTimer);
-          if (q.length >= 3) {
-            debounceTimer = setTimeout(async () => {
-              geocodingBox.style.display = 'block';
-              geocodingBox.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:8px; text-align:center;">🔍 Mencari alamat tepat di peta OSM...</div>';
-
-              const results = await searchAddressGeocode(q, state.currentHub.state);
-              if (results.length) {
-                geocodingBox.innerHTML = `
-                  <div style="font-size:0.68rem; font-weight:800; color:#0284C7; text-transform:uppercase; margin-bottom:4px;">
-                    Hasil Carian Alamat OSM (${results.length})
-                  </div>
-                  ${results.map(r => {
-                    const estDist = haversineKm(state.originCoords, r.coords, 1.28);
-                    const estMin = estimateDurationMin(estDist);
-                    return `
-                      <div class="geocoding-result-item" data-geo-name="${escapeHtml(r.name)}" data-geo-address="${escapeHtml(r.address)}" data-lat="${r.coords[0]}" data-lng="${r.coords[1]}">
-                        <div style="flex:1; padding-right:8px;">
-                          <div style="font-size:0.8rem; font-weight:700; color:var(--text-heading);">${escapeHtml(r.name)}</div>
-                          <div style="font-size:0.68rem; color:var(--text-muted); line-height:1.3;">${escapeHtml(r.address)}</div>
-                        </div>
-                        <div style="text-align:right;">
-                          <span class="dist-badge-live">~${estDist} KM</span>
-                          <span class="dist-time-sub">~${estMin} min respon</span>
-                        </div>
-                      </div>
-                    `;
-                  }).join('')}
-                `;
-
-                geocodingBox.querySelectorAll('.geocoding-result-item').forEach(item => {
-                  item.addEventListener('click', () => {
-                    const lat = parseFloat(item.dataset.lat);
-                    const lng = parseFloat(item.dataset.lng);
-                    playClickSound();
-                    setPatientPickupLocation(
-                      item.dataset.geoName,
-                      item.dataset.geoAddress,
-                      [lat, lng],
-                      'geocoded'
-                    );
-                    modal.classList.remove('show');
-                  });
-                });
-              } else {
-                geocodingBox.innerHTML = '<div style="font-size:0.72rem; color:var(--text-muted); padding:6px; text-align:center;">Tiada alamat tepat dijumpai. Anda boleh pilih dari senarai di bawah atau letak pin pada peta.</div>';
-              }
-            }, 400);
-          } else {
-            geocodingBox.style.display = 'none';
-          }
-        });
-      }
-
-      function attachPresetClickListeners() {
-        presetsBox.querySelectorAll('.service-card').forEach(c => {
-          c.addEventListener('click', () => {
-            const pId = c.dataset.pickupId;
-            const found = hubPresets.find(p => p.id === pId);
-            if (found && found.coords) {
-              playClickSound();
-              setPatientPickupLocation(found.name, found.address, found.coords, found.id);
-              modal.classList.remove('show');
-            }
-          });
-        });
-      }
-
-      attachPresetClickListeners();
-      modal.classList.add('show');
-      if (searchInput) setTimeout(() => searchInput.focus(), 200);
+      openPickupLocationModal();
     });
   }
 
@@ -2892,6 +2797,574 @@ function initStop4Controls() {
       openMedicalCenterModal('stop4');
     });
   }
+}
+
+/* =========================================================================
+   ENHANCED PICKUP LOCATION PICKER & SEARCH ORCHESTRATOR (AFAMS)
+   ========================================================================= */
+
+let currentPickupSearchSession = null;
+let confirmMapInstance = null;
+let confirmMarkerInstance = null;
+
+function openPickupLocationModal() {
+  const modal = document.getElementById('locationPickerModal');
+  const title = document.getElementById('locationModalTitle');
+  const content = document.getElementById('locationPickerContent');
+  if (!modal || !content) return;
+
+  playClickSound();
+  title.textContent = 'Lokasi pengambilan pesakit';
+
+  let activeCategory = 'all';
+  let activeRegionId = 'branch_near';
+
+  content.innerHTML = `
+    <div class="pickup-picker-wrapper">
+      <div class="pickup-modal-header">
+        <p class="pickup-modal-subtitle">Pilih lokasi sebenar pesakit untuk diambil.</p>
+      </div>
+
+      <!-- Search Input -->
+      <div class="pickup-search-box">
+        <span class="pickup-search-icon">🔍</span>
+        <input type="text" id="pickupSearchInput" class="pickup-search-input" placeholder="Cari alamat, hospital, klinik atau nama tempat" autocomplete="off">
+        <button type="button" id="clearPickupSearchBtn" class="pickup-search-clear" style="display:none;" title="Padam carian">&times;</button>
+      </div>
+
+      <!-- Category Filter Chips -->
+      <div class="pickup-chips-row" id="pickupCatChipsRow">
+        ${PICKUP_CATEGORIES.map(c => `
+          <button type="button" class="pickup-chip-btn ${c.id === 'all' ? 'active' : ''}" data-cat="${escapeHtml(c.id)}">
+            <span>${c.icon}</span> <span>${escapeHtml(c.label)}</span>
+          </button>
+        `).join('')}
+      </div>
+
+      <!-- Quick Actions: Device GPS & Interactive Pin Placement -->
+      <div class="pickup-quick-actions">
+        <button type="button" class="pickup-action-pill-btn primary" id="btnPickupDeviceGps">
+          <span>📍</span> <span>Gunakan lokasi semasa</span>
+        </button>
+        <button type="button" class="pickup-action-pill-btn" id="btnPickupPickOnMap">
+          <span>🗺️</span> <span>Pilih pada peta</span>
+        </button>
+      </div>
+
+      <!-- Optional Search Area Filter -->
+      <div class="pickup-region-bar">
+        <span>Kawasan carian:</span>
+        <select id="pickupRegionSelect" class="pickup-region-select">
+          ${SEARCH_REGIONS.map(r => `
+            <option value="${r.id}" ${r.id === 'branch_near' ? 'selected' : ''}>${escapeHtml(r.label)}</option>
+          `).join('')}
+        </select>
+      </div>
+
+      <!-- Search Results List -->
+      <div id="pickupResultsList" class="pickup-results-container">
+        <div style="text-align:center; padding:16px; color:var(--text-muted); font-size:0.75rem;">
+          Memuatkan fasiliti & kawasan sekitar...
+        </div>
+      </div>
+
+      <!-- Text Search Fallback -->
+      <div id="pickupFallbackSearchContainer" style="display:none;">
+        <button type="button" id="btnPickupTextSearch" class="pickup-text-search-btn">
+          <span>🔍</span> <span>Cari lebih banyak tempat di Google Maps (Carian Teks)</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  const searchInput = content.querySelector('#pickupSearchInput');
+  const clearBtn = content.querySelector('#clearPickupSearchBtn');
+  const chipsRow = content.querySelector('#pickupCatChipsRow');
+  const regionSelect = content.querySelector('#pickupRegionSelect');
+  const resultsContainer = content.querySelector('#pickupResultsList');
+  const fallbackBox = content.querySelector('#pickupFallbackSearchContainer');
+  const btnTextSearch = content.querySelector('#btnPickupTextSearch');
+  const btnGps = content.querySelector('#btnPickupDeviceGps');
+  const btnMap = content.querySelector('#btnPickupPickOnMap');
+
+  // Initialize search session
+  if (currentPickupSearchSession) {
+    currentPickupSearchSession.destroy();
+  }
+
+  currentPickupSearchSession = new LocationSearchSession({
+    hubCoords: state.currentHub.coords,
+    defaultCategory: activeCategory,
+    defaultRegionId: activeRegionId,
+    onLoading: (isLoading) => {
+      if (isLoading && searchInput?.value.trim().length >= 2) {
+        resultsContainer.innerHTML = `
+          <div style="text-align:center; padding:24px; color:var(--text-muted); font-size:0.78rem;">
+            <div class="spinner" style="display:inline-block; margin-bottom:8px;">⏳</div>
+            <div>Mencari lokasi di direktori & Google Maps...</div>
+          </div>
+        `;
+      }
+    },
+    onResults: (results, meta) => {
+      renderPickupResults(results, resultsContainer, meta);
+      if (fallbackBox) {
+        fallbackBox.style.display = (meta.query && meta.query.length >= 2 && !meta.isTextSearchFallback)
+          ? 'block'
+          : 'none';
+      }
+    },
+    onError: (err) => {
+      resultsContainer.innerHTML = `
+        <div style="text-align:center; padding:16px; background:#FFF1F2; border:1px solid #FECDD3; border-radius:8px; color:#9F1239; font-size:0.76rem;">
+          <div style="font-size:1.4rem; margin-bottom:4px;">⚠️</div>
+          <strong>Penyedia carian tidak dapat dihubungi</strong>
+          <p style="margin:4px 0 8px 0;">Sila cuba semula atau pilih lokasi terus pada peta.</p>
+          <button type="button" class="pickup-action-pill-btn" id="btnRetrySearch">Cuba Semula</button>
+        </div>
+      `;
+      const retryBtn = resultsContainer.querySelector('#btnRetrySearch');
+      if (retryBtn) {
+        retryBtn.addEventListener('click', () => {
+          currentPickupSearchSession.executeSearch(searchInput.value);
+        });
+      }
+    }
+  });
+
+  // Handle Search Input
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      // Invalidate confirmed state while typing
+      state.pickupLocationConfirmed = false;
+      const q = e.target.value;
+      if (clearBtn) clearBtn.style.display = q ? 'flex' : 'none';
+      currentPickupSearchSession.onInput(q);
+    });
+
+    searchInput.addEventListener('compositionstart', () => {
+      currentPickupSearchSession.setCompositionState(true);
+    });
+    searchInput.addEventListener('compositionend', (e) => {
+      currentPickupSearchSession.setCompositionState(false);
+      currentPickupSearchSession.onInput(e.target.value);
+    });
+  }
+
+  // Clear Button
+  if (clearBtn && searchInput) {
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearBtn.style.display = 'none';
+      state.pickupLocationConfirmed = false;
+      currentPickupSearchSession.onInput('');
+      searchInput.focus();
+    });
+  }
+
+  // Category Chips
+  if (chipsRow) {
+    chipsRow.querySelectorAll('.pickup-chip-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        playClickSound();
+        chipsRow.querySelectorAll('.pickup-chip-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeCategory = btn.dataset.cat;
+        currentPickupSearchSession.setCategory(activeCategory);
+      });
+    });
+  }
+
+  // Region Bias Select
+  if (regionSelect) {
+    regionSelect.addEventListener('change', () => {
+      activeRegionId = regionSelect.value;
+      currentPickupSearchSession.setRegion(activeRegionId);
+    });
+  }
+
+  // Fallback Text Search Button
+  if (btnTextSearch) {
+    btnTextSearch.addEventListener('click', () => {
+      playClickSound();
+      currentPickupSearchSession.executeSearch(searchInput?.value || '', {
+        immediate: true,
+        isTextSearchFallback: true
+      });
+    });
+  }
+
+  // Quick Action: Device Geolocation
+  if (btnGps) {
+    btnGps.addEventListener('click', async () => {
+      playClickSound();
+      resultsContainer.innerHTML = `
+        <div style="text-align:center; padding:24px; color:#0F766E; font-size:0.8rem;">
+          <div style="font-size:1.6rem; margin-bottom:6px;">📡</div>
+          <strong>Mengakses lokasi GPS peranti...</strong>
+          <p style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">Sila benarkan akses lokasi pada peranti anda jika diminta.</p>
+        </div>
+      `;
+
+      try {
+        const deviceLocation = await getDeviceCurrentLocation();
+        playSuccessChime();
+        openPickupConfirmationView(deviceLocation);
+      } catch (err) {
+        resultsContainer.innerHTML = `
+          <div style="padding:14px; background:#FFFBEB; border:1.5px solid #FCD34D; border-radius:8px; color:#92400E; font-size:0.76rem; text-align:center;">
+            <div style="font-size:1.4rem; margin-bottom:4px;">⚠️</div>
+            <strong>${escapeHtml(err.message)}</strong>
+            <p style="margin:6px 0 10px 0; font-size:0.72rem;">Anda masih boleh memilih lokasi dengan menaip nama tempat atau meletakkan pin pada peta.</p>
+            <div style="display:flex; justify-content:center; gap:8px;">
+              <button type="button" class="pickup-action-pill-btn primary" id="btnDismissGpsErr">Kembali ke Senarai</button>
+              <button type="button" class="pickup-action-pill-btn" id="btnGpsPickMap">Pilih pada Peta</button>
+            </div>
+          </div>
+        `;
+
+        resultsContainer.querySelector('#btnDismissGpsErr')?.addEventListener('click', () => {
+          currentPickupSearchSession.executeSearch(searchInput?.value || '', { immediate: true });
+        });
+
+        resultsContainer.querySelector('#btnGpsPickMap')?.addEventListener('click', () => {
+          openPickupConfirmationView({
+            name: 'Lokasi Peta Pilihan Pengguna',
+            address: 'Ditetapkan secara manual pada peta',
+            coords: state.pickupCoords || state.currentHub.coords,
+            category: 'Rumah / Kediaman',
+            isBroadArea: false,
+            source: 'map_pin'
+          });
+        });
+      }
+    });
+  }
+
+  // Quick Action: Pick on Map
+  if (btnMap) {
+    btnMap.addEventListener('click', () => {
+      playClickSound();
+      openPickupConfirmationView({
+        name: 'Lokasi Peta Pilihan Pengguna',
+        address: 'Ditetapkan secara manual pada peta',
+        coords: state.pickupCoords || state.currentHub.coords,
+        category: 'Rumah / Kediaman',
+        isBroadArea: false,
+        source: 'map_pin'
+      });
+    });
+  }
+
+  // Initial execution to populate verified directory facilities
+  currentPickupSearchSession.executeSearch('', { immediate: true });
+
+  modal.classList.add('show');
+  if (searchInput) setTimeout(() => searchInput.focus(), 250);
+}
+
+function renderPickupResults(results, container, meta = {}) {
+  if (!container) return;
+
+  if (!results || results.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:24px 16px; color:var(--text-muted); font-size:0.78rem;">
+        <div style="font-size:2rem; margin-bottom:6px;">📍</div>
+        <strong style="color:var(--text-heading); font-size:0.86rem; display:block;">Tiada lokasi dijumpai bagi kategori ini</strong>
+        <p style="margin:4px 0 12px 0; font-size:0.72rem; line-height:1.4;">
+          Cuba carian semua kategori atau letakkan pin terus pada peta.
+        </p>
+        <div style="display:flex; justify-content:center; gap:8px;">
+          <button type="button" class="pickup-action-pill-btn primary" id="btnSearchAllEmptyFallback">
+            🔍 Cari semua lokasi
+          </button>
+          <button type="button" class="pickup-action-pill-btn" id="btnPickMapEmptyFallback">
+            🗺️ Pilih pada peta
+          </button>
+        </div>
+      </div>
+    `;
+
+    container.querySelector('#btnSearchAllEmptyFallback')?.addEventListener('click', () => {
+      playClickSound();
+      const allChip = document.querySelector('#pickupCatChipsRow .pickup-chip-btn[data-cat="all"]');
+      if (allChip) allChip.click();
+    });
+
+    container.querySelector('#btnPickMapEmptyFallback')?.addEventListener('click', () => {
+      playClickSound();
+      openPickupConfirmationView({
+        name: 'Lokasi Peta Pilihan Pengguna',
+        address: 'Ditetapkan secara manual pada peta',
+        coords: state.pickupCoords || state.currentHub.coords,
+        category: 'Rumah / Kediaman',
+        isBroadArea: false,
+        source: 'map_pin'
+      });
+    });
+    return;
+  }
+
+  const categoryIcons = {
+    'Hospital Kerajaan': '🏥',
+    'Hospital Swasta': '🏨',
+    'Klinik Swasta': '💊',
+    'Klinik Kesihatan': '🩺',
+    'Pusat Dialisis': '🩸',
+    'Rumah / Kediaman': '🏠',
+    'Lokasi Lain': '📍'
+  };
+
+  container.innerHTML = results.map((item, idx) => {
+    const icon = categoryIcons[item.category] || '📍';
+    const isSelected = state.pickupCoords && item.coords &&
+      Math.abs(state.pickupCoords[0] - item.coords[0]) < 0.0001 &&
+      Math.abs(state.pickupCoords[1] - item.coords[1]) < 0.0001;
+
+    let distHtml = '';
+    if (typeof item.directDistanceKm === 'number') {
+      distHtml = `
+        <span class="pickup-distance-pill">~${item.directDistanceKm} KM</span>
+        <span class="pickup-distance-sub">(lurus)</span>
+      `;
+    }
+
+    return `
+      <div class="pickup-result-card ${isSelected ? 'selected' : ''}" data-idx="${idx}">
+        <div class="pickup-res-left">
+          <div class="pickup-res-title-row">
+            <span style="font-size:1rem;">${icon}</span>
+            <span class="pickup-res-name">${escapeHtml(item.name)}</span>
+            ${item.isVerified ? `<span class="pickup-res-badge-verified">✓ Disahkan AMC</span>` : ''}
+            ${item.category ? `<span class="pickup-res-badge-category">${escapeHtml(item.category)}</span>` : ''}
+          </div>
+          <div class="pickup-res-addr">${escapeHtml(item.address || item.name)}</div>
+          <div class="pickup-res-source">Sumber: ${escapeHtml(item.sourceLabel || 'Direktori')}</div>
+        </div>
+        <div class="pickup-res-right">
+          ${distHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.pickup-result-card').forEach(card => {
+    card.addEventListener('click', async () => {
+      playClickSound();
+      const idx = parseInt(card.dataset.idx, 10);
+      const chosen = results[idx];
+      if (!chosen) return;
+
+      card.style.opacity = '0.6';
+
+      try {
+        const resolved = await currentPickupSearchSession.resolvePlaceDetails(chosen);
+        openPickupConfirmationView(resolved);
+      } catch (e) {
+        openPickupConfirmationView(chosen);
+      }
+    });
+  });
+}
+
+function openPickupConfirmationView(placeItem) {
+  const modal = document.getElementById('locationPickerModal');
+  const title = document.getElementById('locationModalTitle');
+  const content = document.getElementById('locationPickerContent');
+  if (!modal || !content) return;
+
+  title.textContent = 'Sahkan Lokasi Pengambilan';
+
+  let currentCategory = placeItem.category || 'Rumah / Kediaman';
+  let confirmedCoords = placeItem.coords ? [...placeItem.coords] : [...state.currentHub.coords];
+  const originalCoords = placeItem.coords ? [...placeItem.coords] : [...state.currentHub.coords];
+  let isPinAdjusted = false;
+
+  const categoryOptions = [
+    { id: 'Rumah / Kediaman', label: 'Rumah / Kediaman', icon: '🏠' },
+    { id: 'Hospital Kerajaan', label: 'Hospital Kerajaan', icon: '🏥' },
+    { id: 'Hospital Swasta', label: 'Hospital Swasta', icon: '🏨' },
+    { id: 'Klinik Swasta', label: 'Klinik Swasta', icon: '💊' },
+    { id: 'Lain-lain', label: 'Lain-lain', icon: '📍' }
+  ];
+
+  content.innerHTML = `
+    <div class="pickup-confirm-box">
+      <!-- Selected Facility / Place Header Card -->
+      <div class="confirm-place-header">
+        <div class="confirm-place-name">${escapeHtml(placeItem.name)}</div>
+        <div class="confirm-place-address">${escapeHtml(placeItem.address || placeItem.name)}</div>
+
+        <!-- Category Selector -->
+        <div style="font-size:0.68rem; font-weight:800; color:var(--text-muted); margin-top:8px; text-transform:uppercase;">
+          Kategori Lokasi Pengambilan:
+        </div>
+        <div class="confirm-category-selector-row" id="confirmCatSelectorRow">
+          ${categoryOptions.map(cat => `
+            <button type="button" class="confirm-cat-pill ${cat.id === currentCategory ? 'active' : ''}" data-cat="${escapeHtml(cat.id)}">
+              <span>${cat.icon}</span> <span>${escapeHtml(cat.label)}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      ${placeItem.isBroadArea ? `
+        <div class="confirm-broad-warning">
+          <strong>⚠️ Kawasan Pusat Bandar / Daerah:</strong>
+          <div>Pilihan ini merujuk kepada kawasan umum. Sila seret pin merah pada peta atau masukkan alamat jalan/premis penuh bagi memastikan kru ambulans tiba ke lokasi tepat.</div>
+        </div>
+      ` : ''}
+
+      <!-- Interactive Pin Map -->
+      <div class="confirm-map-container" id="confirmPickupMiniMap"></div>
+      <div class="confirm-pin-helper" id="confirmPinHelperText">
+        <span>📍</span>
+        <span id="confirmCoordsLabel">Koordinat: ${confirmedCoords[0].toFixed(5)}, ${confirmedCoords[1].toFixed(5)}</span>
+        <span style="font-weight:400; font-size:0.66rem; color:#78350F; margin-left:auto;">(Seret pin untuk melaraskan pintu masuk ambulans)</span>
+      </div>
+
+      <!-- Specific Entrance & Unit Inputs -->
+      <div class="confirm-inputs-grid">
+        <div class="confirm-field">
+          <label>No. Rumah / Blok / Tingkat / Wad (Pilihan):</label>
+          <input type="text" id="confirmUnitInput" placeholder="Cth: No. 14, Jalan Melati 2 / Wad 4A Tingkat 2" value="${escapeHtml(placeItem.unitNotes || '')}">
+        </div>
+
+        <div class="confirm-field">
+          <label>Pintu Masuk Ambulans / Panduan Laluan (Pilihan):</label>
+          <input type="text" id="confirmEntranceInput" placeholder="Cth: Unit Kecemasan & Trauma (A&E) / Lobi Utama / Pagar Belakang" value="${escapeHtml(placeItem.entranceNotes || '')}">
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="confirm-actions-row">
+        <button type="button" class="btn-confirm-cancel" id="btnConfirmBackSearch">
+          ← Tukar Carian
+        </button>
+        <button type="button" class="btn-confirm-submit" id="btnConfirmSubmitPickup">
+          <span>Sahkan Pengambilan</span> <span>➔</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Attach Category Selector
+  const catRow = content.querySelector('#confirmCatSelectorRow');
+  if (catRow) {
+    catRow.querySelectorAll('.confirm-cat-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        catRow.querySelectorAll('.confirm-cat-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCategory = btn.dataset.cat;
+      });
+    });
+  }
+
+  // Initialize Interactive Draggable Leaflet / Google Mini Map
+  const coordsLabel = content.querySelector('#confirmCoordsLabel');
+  setTimeout(() => {
+    initConfirmDraggableMap('confirmPickupMiniMap', confirmedCoords, (newCoords) => {
+      confirmedCoords = newCoords;
+      isPinAdjusted = true;
+      if (coordsLabel) {
+        coordsLabel.textContent = `Koordinat: ${confirmedCoords[0].toFixed(5)}, ${confirmedCoords[1].toFixed(5)} (Pin dilaraskan)`;
+      }
+    });
+  }, 100);
+
+  // Back to Search
+  content.querySelector('#btnConfirmBackSearch')?.addEventListener('click', () => {
+    playClickSound();
+    openPickupLocationModal();
+  });
+
+  // Submit and Confirm Pickup
+  content.querySelector('#btnConfirmSubmitPickup')?.addEventListener('click', () => {
+    playClickSound();
+    const unitText = content.querySelector('#confirmUnitInput')?.value.trim() || '';
+    const entranceText = content.querySelector('#confirmEntranceInput')?.value.trim() || '';
+
+    const instructionParts = [unitText, entranceText].filter(Boolean);
+    const fullInstructions = instructionParts.join(' • ');
+
+    setPatientPickupLocation({
+      name: placeItem.name,
+      address: placeItem.address || placeItem.name,
+      coords: confirmedCoords,
+      originalCoords: isPinAdjusted ? originalCoords : confirmedCoords,
+      category: currentCategory,
+      placeId: placeItem.placeId || null,
+      facilityId: placeItem.id || null,
+      source: placeItem.source || 'custom',
+      instructions: fullInstructions,
+      confirmed: true
+    });
+
+    modal.classList.remove('show');
+  });
+}
+
+function initConfirmDraggableMap(containerId, coords, onPinMoved) {
+  if (confirmMapInstance) {
+    try { confirmMapInstance.remove(); } catch (e) {}
+    confirmMapInstance = null;
+  }
+
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (typeof window.L !== 'undefined') {
+    try {
+      confirmMapInstance = window.L.map(containerId, {
+        zoomControl: true,
+        attributionControl: false
+      }).setView(coords, 16);
+
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+      }).addTo(confirmMapInstance);
+
+      const customIcon = window.L.divIcon({
+        className: 'custom-confirm-pin',
+        html: `<div style="background:#C61E2F; width:30px; height:30px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); border:2.5px solid #FFFFFF; box-shadow:0 3px 10px rgba(198,30,47,0.5); display:flex; align-items:center; justify-content:center;"><span style="transform:rotate(45deg); font-size:14px; color:#FFFFFF; font-weight:900;">📍</span></div>`,
+        iconSize: [30, 30],
+        iconAnchor: [15, 30]
+      });
+
+      confirmMarkerInstance = window.L.marker(coords, {
+        draggable: true,
+        icon: customIcon
+      }).addTo(confirmMapInstance);
+
+      confirmMarkerInstance.on('dragend', (e) => {
+        const latLng = e.target.getLatLng();
+        if (typeof onPinMoved === 'function') {
+          onPinMoved([latLng.lat, latLng.lng]);
+        }
+      });
+
+      confirmMapInstance.on('click', (e) => {
+        confirmMarkerInstance.setLatLng(e.latlng);
+        if (typeof onPinMoved === 'function') {
+          onPinMoved([e.latlng.lat, e.latlng.lng]);
+        }
+      });
+
+      setTimeout(() => {
+        try { confirmMapInstance.invalidateSize(); } catch (e) {}
+      }, 150);
+      return;
+    } catch (err) {
+      console.warn('[ConfirmMap] Leaflet init error:', err);
+    }
+  }
+
+  // Fallback placeholder if Leaflet is not ready
+  container.innerHTML = `
+    <div style="height:100%; display:flex; align-items:center; justify-content:center; background:#F8FAFC; color:#64748B; font-size:0.75rem; text-align:center; padding:10px;">
+      📍 Kedudukan Pin: ${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}
+    </div>
+  `;
 }
 
 /* =========================================================================
