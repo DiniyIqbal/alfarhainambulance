@@ -23,6 +23,10 @@ import {
   getStoredUserProfile
 } from './supabaseClient.js';
 
+import {
+  initiateChipPayment
+} from './chipPaymentService.js';
+
 let appState = null;
 let currentTab = 'aktif';
 let currentSearch = '';
@@ -198,7 +202,16 @@ function setupCustomerBookingsListeners() {
   const detailModal = document.getElementById('customerBookingDetailsModal');
   if (btnCloseModal && detailModal) {
     btnCloseModal.addEventListener('click', () => {
+      detailModal.classList.remove('show');
       detailModal.style.display = 'none';
+    });
+  }
+  if (detailModal) {
+    detailModal.addEventListener('click', (e) => {
+      if (e.target === detailModal) {
+        detailModal.classList.remove('show');
+        detailModal.style.display = 'none';
+      }
     });
   }
 
@@ -207,7 +220,16 @@ function setupCustomerBookingsListeners() {
   const trackModal = document.getElementById('customerLiveTrackingModal');
   if (btnCloseTrack && trackModal) {
     btnCloseTrack.addEventListener('click', () => {
+      trackModal.classList.remove('show');
       trackModal.style.display = 'none';
+    });
+  }
+  if (trackModal) {
+    trackModal.addEventListener('click', (e) => {
+      if (e.target === trackModal) {
+        trackModal.classList.remove('show');
+        trackModal.style.display = 'none';
+      }
     });
   }
 }
@@ -473,9 +495,37 @@ export function openCustomerBookingDetails(booking) {
   const isPending = custStatus.code === 'menunggu_kelulusan';
   const isApproved = custStatus.code === 'menunggu_agihan' || custStatus.code === 'dijadualkan';
 
+  // Schedule Display
+  const isSched = Boolean(booking.is_scheduled || booking.isScheduled);
+  const schedTime = booking.scheduled_time || booking.scheduledTime;
+  let scheduleDisplay = '⚡ Secepat mungkin (Kecemasan / Segera)';
+  if (isSched && schedTime) {
+    try {
+      const d = new Date(schedTime);
+      scheduleDisplay = `📅 ${d.toLocaleDateString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric' })}, ${d.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}`;
+    } catch (_) {
+      scheduleDisplay = '📅 Dijadualkan';
+    }
+  }
+
+  // Patient Info
+  const patientName = (booking.patient_name || booking.patientName || 'Pesakit AMC').trim();
+  const patientPhone = (booking.patient_phone || booking.patientPhone || '—').trim();
+
+  // Payment status
+  const payStatus = (booking.payment_status || booking.paymentStatus || 'unpaid').toLowerCase();
+  const isPaid = payStatus === 'paid';
+  const payMethod = booking.payment_method || booking.paymentMethod || 'cash';
+  const isChipPending = payMethod === 'chip' && !isPaid;
+
+  const closeModal = () => {
+    modal.classList.remove('show');
+    modal.style.display = 'none';
+  };
+
   contentEl.innerHTML = `
     <!-- Status Badge & Description -->
-    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:12px; margin-bottom:14px;">
+    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:12px; margin-bottom:14px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <span class="badge-status-pill" style="background:${custStatus.badgeBg}; color:${custStatus.badgeColor}; font-weight:800; font-size:0.78rem; padding:4px 10px; border-radius:999px;">
           ${custStatus.icon} ${custStatus.label}
@@ -517,23 +567,40 @@ export function openCustomerBookingDetails(booking) {
       </div>
     </div>
 
-    <!-- Route & Patient -->
-    <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:10px; padding:12px; margin-bottom:12px; font-size:0.78rem;">
-      <div style="font-weight:800; color:#0F172A; margin-bottom:6px;">LALUAN &amp; MAKLUMAT PENGAMBILAN</div>
-      <div style="margin-bottom:6px;">
+    <!-- Route & Patient Details Card -->
+    <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:12px; margin-bottom:12px; font-size:0.78rem;">
+      <div style="font-weight:800; color:#0F172A; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #F1F5F9; padding-bottom:6px;">
+        <span>LALUAN &amp; MAKLUMAT TRIP</span>
+        <span style="font-size:0.68rem; font-weight:700; color:var(--amc-red);">${escapeHtml(scheduleDisplay)}</span>
+      </div>
+
+      <div style="margin-bottom:8px; padding-bottom:6px; border-bottom:1px dashed #E2E8F0;">
+        <span style="font-size:0.68rem; font-weight:700; color:#64748B;">PESAKIT / WARIS</span>
+        <div style="font-weight:700; color:#0F172A;">${escapeHtml(patientName)} <span style="font-weight:500; color:#475569;">(${escapeHtml(patientPhone)})</span></div>
+      </div>
+
+      <div style="margin-bottom:8px;">
         <span style="font-size:0.68rem; font-weight:700; color:#64748B;">LOKASI PENGAMBILAN (${escapeHtml(booking.pickup_category || 'Rumah / Kediaman')})</span>
         <div style="font-weight:700; color:#0F172A;">${escapeHtml(booking.origin_name || 'Pengambilan')}</div>
-        ${booking.pickup_instructions ? `<div style="font-size:0.7rem; color:#047857; margin-top:2px;">Nota Masuk/Wad: ${escapeHtml(booking.pickup_instructions)}</div>` : ''}
+        ${booking.pickup_instructions ? `<div style="font-size:0.7rem; color:#047857; margin-top:2px;">Nota: ${escapeHtml(booking.pickup_instructions)}</div>` : ''}
       </div>
+
       <div>
         <span style="font-size:0.68rem; font-weight:700; color:#64748B;">PUSAT PERUBATAN TUJUAN</span>
         <div style="font-weight:700; color:#0F172A;">${escapeHtml(booking.destination_name || 'Hospital')}</div>
       </div>
+
+      ${(booking.stop4_name || booking.return_name) ? `
+        <div style="margin-top:8px; padding-top:6px; border-top:1px dashed #E2E8F0;">
+          <span style="font-size:0.68rem; font-weight:700; color:#0284C7;">🔄 ${booking.stop4_type === 'return' ? 'HANTAR PULANG' : 'DESTINASI KE-2'}</span>
+          <div style="font-weight:700; color:#0F172A;">${escapeHtml(booking.stop4_name || booking.return_name)}</div>
+        </div>
+      ` : ''}
     </div>
 
     <!-- Assigned Resources (Hidden if not assigned yet) -->
     ${isAssigned ? `
-      <div style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:10px; padding:12px; margin-bottom:12px; font-size:0.78rem;">
+      <div style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:12px; padding:12px; margin-bottom:12px; font-size:0.78rem;">
         <div style="font-weight:800; color:#065F46; margin-bottom:6px;">AMBULANS &amp; KREW DIAGIHKAN</div>
         <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
           <span style="color:#047857;">Kenderaan:</span>
@@ -551,28 +618,61 @@ export function openCustomerBookingDetails(booking) {
     ` : ''}
 
     <!-- Package & Price Breakdown -->
-    <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:10px; padding:12px; margin-bottom:14px; font-size:0.78rem;">
+    <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:12px; margin-bottom:14px; font-size:0.78rem;">
       <div style="font-weight:800; color:#0F172A; margin-bottom:8px;">PAKEJ &amp; BUTIRAN HARGA</div>
-      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-        <span>Pakej: ${escapeHtml(pkg.name)}</span>
-        <b>RM${Number(pkg.baseFare || 250).toFixed(2)}</b>
-      </div>
-      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-        <span>Caj jarak (${Number(booking.distance_km || 25).toFixed(1)} km):</span>
-        <span>RM${Number(booking.extra_km_cost || 0).toFixed(2)}</span>
-      </div>
-      <div style="display:flex; justify-content:space-between; border-top:1px dashed #CBD5E1; padding-top:6px; font-weight:800; font-size:0.88rem; color:var(--amc-red);">
+      
+      ${booking.is_event_standby ? `
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span>Pakej Acara: Standby ${booking.standby_hours || 4} Jam</span>
+          <b>RM${amount.toFixed(2)}</b>
+        </div>
+        ${booking.standby_event_name ? `
+          <div style="font-size:0.7rem; color:#64748B; margin-bottom:4px;">Acara: ${escapeHtml(booking.standby_event_name)}</div>
+        ` : ''}
+      ` : `
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span>Pakej: ${escapeHtml(pkg.name)}</span>
+          <b>RM${Number(pkg.baseFare || 250).toFixed(2)}</b>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span>Caj jarak (${Number(booking.distance_km || 25).toFixed(1)} km):</span>
+          <span>RM${Number(booking.extra_km_cost || 0).toFixed(2)}</span>
+        </div>
+      `}
+
+      ${(pkg.includedStaff && pkg.includedStaff.length > 0) ? `
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.72rem; color:#475569;">
+          <span>Staf Termasuk:</span>
+          <span style="color:#10B981; font-weight:700;">${escapeHtml(pkg.includedStaff.join(', '))}</span>
+        </div>
+      ` : ''}
+
+      ${(pkg.includedEquipment && pkg.includedEquipment.length > 0) ? `
+        <div style="margin-bottom:6px; font-size:0.7rem; color:#64748B;">
+          <span>Alatan: ${escapeHtml(pkg.includedEquipment.slice(0, 4).join(', '))}${pkg.includedEquipment.length > 4 ? ' + lagi' : ''}</span>
+        </div>
+      ` : ''}
+
+      <div style="display:flex; justify-content:space-between; border-top:1px dashed #CBD5E1; padding-top:6px; font-weight:800; font-size:0.92rem; color:var(--amc-red);">
         <span>Jumlah Anggaran / Sah:</span>
         <span>RM${amount.toFixed(2)}</span>
       </div>
-      <div style="font-size:0.7rem; color:#64748B; margin-top:4px;">
-        Kaedah Bayaran: <b>${booking.payment_method === 'chip' ? 'Gerbang CHIP Online' : 'Tunai Semasa Ketibaan'}</b> (${booking.payment_status || 'unpaid'})
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:0.72rem; color:#64748B;">
+        <span>Kaedah Bayaran: <b>${payMethod === 'chip' ? 'Gerbang CHIP Online' : 'Tunai Semasa Ketibaan'}</b></span>
+        <span style="font-weight:800; color:${isPaid ? '#059669' : '#D97706'};">${isPaid ? '✅ Lunas' : '⏳ Belum Bayar'}</span>
       </div>
+
+      ${isChipPending ? `
+        <button type="button" id="btnDetailPayChip" style="width:100%; margin-top:10px; background:linear-gradient(135deg, #007D77 0%, #005F5A 100%); color:#fff; border:none; border-radius:8px; padding:10px; font-size:0.82rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 3px 10px rgba(0,125,119,0.25);">
+          <span>💳</span> <span>Bayar Sekarang (CHIP Online)</span>
+        </button>
+      ` : ''}
     </div>
 
     <!-- Rejection reason if rejected -->
     ${booking.rejection_reason ? `
-      <div style="background:#FEF2F2; border:1px solid #FECACA; border-radius:8px; padding:10px; margin-bottom:14px; font-size:0.75rem; color:#991B1B;">
+      <div style="background:#FEF2F2; border:1px solid #FECACA; border-radius:10px; padding:10px; margin-bottom:14px; font-size:0.75rem; color:#991B1B;">
         <b>Sebab Penolakan HQ:</b> ${escapeHtml(booking.rejection_reason)}
       </div>
     ` : ''}
@@ -580,37 +680,61 @@ export function openCustomerBookingDetails(booking) {
     <!-- Action Buttons -->
     <div style="display:flex; flex-direction:column; gap:8px;">
       ${canTrack ? `
-        <button type="button" id="btnDetailOpenTracking" style="background:#0D9488; color:#fff; border:none; border-radius:8px; padding:10px; font-size:0.82rem; font-weight:800; cursor:pointer;">
-          🚑 Jejak Ambulans Langsung
+        <button type="button" id="btnDetailOpenTracking" style="background:#0D9488; color:#fff; border:none; border-radius:8px; padding:10px; font-size:0.82rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <span>🚑</span> <span>Jejak Ambulans Langsung</span>
         </button>
       ` : ''}
 
       ${isPending ? `
-        <button type="button" id="btnDetailCancelPending" style="background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5; border-radius:8px; padding:8px; font-size:0.78rem; font-weight:700; cursor:pointer;">
+        <button type="button" id="btnDetailCancelPending" style="background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5; border-radius:8px; padding:9px; font-size:0.78rem; font-weight:700; cursor:pointer;">
           ✕ Batal Permohonan Tempahan
         </button>
       ` : ''}
 
       ${isApproved ? `
-        <button type="button" id="btnDetailRequestCancelOrResched" style="background:#F8FAFC; color:#334155; border:1px solid #CBD5E1; border-radius:8px; padding:8px; font-size:0.78rem; font-weight:700; cursor:pointer;">
+        <button type="button" id="btnDetailRequestCancelOrResched" style="background:#F8FAFC; color:#334155; border:1px solid #CBD5E1; border-radius:8px; padding:9px; font-size:0.78rem; font-weight:700; cursor:pointer;">
           ⚠️ Mohon Batal / Jadual Semula
         </button>
       ` : ''}
 
-      <a href="tel:0139147606" style="display:block; text-align:center; background:#F1F5F9; color:#0F172A; text-decoration:none; border-radius:8px; padding:8px; font-size:0.78rem; font-weight:700;">
-        📞 Hubungi Pusat Operasi HQ
+      <a href="tel:0139147606" style="display:flex; align-items:center; justify-content:center; gap:6px; background:#F1F5F9; color:#0F172A; text-decoration:none; border-radius:8px; padding:9px; font-size:0.78rem; font-weight:700; border:1px solid #E2E8F0;">
+        <span>📞</span> <span>Hubungi Pusat Operasi HQ</span>
       </a>
     </div>
   `;
 
+  modal.classList.add('show');
   modal.style.display = 'flex';
 
   // Attach button actions
   const btnTrack = document.getElementById('btnDetailOpenTracking');
   if (btnTrack) {
     btnTrack.addEventListener('click', () => {
-      modal.style.display = 'none';
+      closeModal();
       openCustomerLiveTracking(booking);
+    });
+  }
+
+  const btnPayChip = document.getElementById('btnDetailPayChip');
+  if (btnPayChip) {
+    btnPayChip.addEventListener('click', async () => {
+      const originalText = btnPayChip.innerHTML;
+      btnPayChip.disabled = true;
+      btnPayChip.innerHTML = '<span>⏳ Membuka Gerbang CHIP...</span>';
+      try {
+        const res = await initiateChipPayment(booking, 'full');
+        if (res.success && res.checkoutUrl) {
+          window.location.href = res.checkoutUrl;
+        } else {
+          alert('Ralat Pembayaran: ' + (res.error || 'Sila cuba lagi.'));
+          btnPayChip.disabled = false;
+          btnPayChip.innerHTML = originalText;
+        }
+      } catch (err) {
+        alert('Ralat Pembayaran: ' + err.message);
+        btnPayChip.disabled = false;
+        btnPayChip.innerHTML = originalText;
+      }
     });
   }
 
@@ -635,7 +759,7 @@ export function openCustomerBookingDetails(booking) {
 
       if (res.success) {
         alert('Tempahan anda telah berjaya dibatalkan.');
-        modal.style.display = 'none';
+        closeModal();
         loadAndRenderCustomerBookings();
       } else {
         alert(res.error || 'Gagal membatalkan tempahan.');
@@ -662,7 +786,7 @@ export function openCustomerBookingDetails(booking) {
           customerEmail: user.email || booking.patient_email
         });
         alert(res.message || 'Permohonan anjakan masa dihantar.');
-        modal.style.display = 'none';
+        closeModal();
         loadAndRenderCustomerBookings();
       } else {
         // Cancellation request
@@ -674,7 +798,7 @@ export function openCustomerBookingDetails(booking) {
           customerEmail: user.email || booking.patient_email
         });
         alert(res.message || 'Permohonan pembatalan dihantar untuk semakan HQ.');
-        modal.style.display = 'none';
+        closeModal();
         loadAndRenderCustomerBookings();
       }
     });

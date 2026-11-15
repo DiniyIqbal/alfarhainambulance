@@ -81,10 +81,11 @@ export default async function handler(req, res) {
     const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
     const baseUrl = `${proto}://${host}`;
 
-    const invoiceNo = bookingData.invoiceNumber || bookingData.invoice_number;
+    const rawEmail = (bookingData.patientEmail || bookingData.patient_email || '').trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const patientEmail = emailRegex.test(rawEmail) ? rawEmail : 'pesakit@alfarhain.my';
     const patientName = (bookingData.patientName || bookingData.patient_name || 'Pesakit AMC').trim();
     const patientPhone = (bookingData.patientPhone || bookingData.patient_phone || '0139147606').trim();
-    const patientEmail = (bookingData.patientEmail || bookingData.patient_email || 'pesakit@alfarhain.my').trim();
 
     // Safe Mock Mode fallback if CHIP credentials are placeholder / unconfigured in local dev
     const isMock = !secretKey ||
@@ -113,6 +114,17 @@ export default async function handler(req, res) {
       });
     }
 
+    // Determine Webhook callback URL
+    // CHIP forbids custom ports in success_callback (e.g. localhost:5173)
+    let webhookCallbackUrl = process.env.CHIP_WEBHOOK_URL;
+    if (!webhookCallbackUrl) {
+      if (!host.includes(':') && !host.includes('localhost')) {
+        webhookCallbackUrl = `${baseUrl}/api/payment/webhook`;
+      } else {
+        webhookCallbackUrl = 'https://alfarhainambulance.vercel.app/api/payment/webhook';
+      }
+    }
+
     // Construct CHIP Purchase payload
     const purchaseTitle = paymentType === 'deposit'
       ? `Deposit Tempahan Ambulans AMC (${invoiceNo})`
@@ -139,7 +151,7 @@ export default async function handler(req, res) {
       success_redirect: `${baseUrl}/?payment=success&invoice=${encodeURIComponent(invoiceNo)}`,
       failure_redirect: `${baseUrl}/?payment=failed&invoice=${encodeURIComponent(invoiceNo)}`,
       cancel_redirect: `${baseUrl}/?payment=cancelled&invoice=${encodeURIComponent(invoiceNo)}`,
-      success_callback: `${baseUrl}/api/payment/webhook`
+      success_callback: webhookCallbackUrl
     };
 
     // Call CHIP Collect REST API
@@ -156,9 +168,10 @@ export default async function handler(req, res) {
 
     if (!chipResponse.ok) {
       console.error('[CHIP API Error]:', chipData);
+      const parsedErrorMsg = extractChipErrorMessage(chipData);
       return res.status(chipResponse.status).json({
         success: false,
-        error: chipData?.message || chipData?.error || 'Ralat semasa menjana sesi pembayaran CHIP.',
+        error: parsedErrorMsg,
         details: chipData,
         code: 'CHIP_GATEWAY_ERROR'
       });
@@ -206,7 +219,7 @@ async function recordPendingBookingToSupabase(bookingData, paymentMeta) {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const invoiceNo = bookingData.invoiceNumber;
+    const invoiceNo = bookingData.invoiceNumber || bookingData.invoice_number;
 
     // Upsert booking record
     const { error } = await supabase
@@ -245,4 +258,36 @@ async function recordPendingBookingToSupabase(bookingData, paymentMeta) {
     console.warn('[CHIP Supabase Exception]:', dbErr.message);
   }
 }
+
+/**
+ * Parses and extracts readable error message from CHIP Collect API response
+ */
+function extractChipErrorMessage(chipData) {
+  if (!chipData) return 'Ralat tidak diketahui dari gerbang pembayaran CHIP.';
+  if (typeof chipData.message === 'string') return chipData.message;
+  if (typeof chipData.error === 'string') return chipData.error;
+  if (typeof chipData === 'string') return chipData;
+
+  // Check field-level validation errors
+  for (const key of Object.keys(chipData)) {
+    const val = chipData[key];
+    if (Array.isArray(val) && val.length > 0) {
+      const first = val[0];
+      if (typeof first === 'string') return `${key}: ${first}`;
+      if (first && typeof first.message === 'string') return `${key}: ${first.message}`;
+    } else if (typeof val === 'object' && val !== null) {
+      for (const subKey of Object.keys(val)) {
+        const subVal = val[subKey];
+        if (Array.isArray(subVal) && subVal.length > 0) {
+          const item = subVal[0];
+          if (typeof item === 'string') return `${key}.${subKey}: ${item}`;
+          if (item && typeof item.message === 'string') return `${key}.${subKey}: ${item.message}`;
+        }
+      }
+    }
+  }
+
+  return 'Ralat semasa menjana sesi pembayaran CHIP.';
+}
+
 

@@ -1857,8 +1857,9 @@
   <!-- ==============================================================
        MODAL: PENGESAHAN TEMPAHAN DIHANTAR (CONFIRMATION SCREEN)
        ============================================================== -->
-  <div class="auth-modal-overlay" id="bookingConfirmationModal" style="display:none; align-items:center; justify-content:center;">
-    <div class="auth-modal-card" style="max-width:380px; text-align:center; padding:24px 20px;">
+  <div class="modal-overlay" id="bookingConfirmationModal">
+    <div class="modal-card" style="max-width:390px; text-align:center; padding:24px 20px; border-radius:var(--radius-xl); box-shadow:0 25px 60px rgba(0,0,0,0.35);">
+      <button class="modal-close-btn" onclick="document.getElementById('bookingConfirmationModal').classList.remove('show'); document.getElementById('bookingConfirmationModal').style.display='none';">&times;</button>
       <div style="font-size:3rem; margin-bottom:8px;">🚑</div>
       <span class="badge-status-pill amber" style="display:inline-block; margin-bottom:8px; font-weight:800; font-size:0.75rem;">
         ⏳ Menunggu kelulusan
@@ -1883,18 +1884,16 @@
   <!-- ==============================================================
        MODAL: BUTIRAN TEMPAHAN PELANGGAN (BOOKING DETAILS MODAL)
        ============================================================== -->
-  <div class="auth-modal-overlay" id="customerBookingDetailsModal" style="display:none; align-items:center; justify-content:center;">
-    <div class="auth-modal-card" style="max-width:420px; width:92%; max-height:90vh; overflow-y:auto; padding:20px; text-align:left;">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #E2E8F0; padding-bottom:10px; margin-bottom:12px;">
-        <div>
-          <span style="font-size:0.68rem; font-weight:700; color:#64748B;">BUTIRAN TEMPAHAN</span>
-          <h3 style="font-size:1.15rem; font-weight:800; color:var(--amc-red); margin:0;" id="custDetailRefTitle">AMC-1043</h3>
-        </div>
-        <button type="button" id="btnCloseCustDetailModal" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:#64748B;">&times;</button>
+  <div class="modal-overlay" id="customerBookingDetailsModal">
+    <div class="modal-card" style="max-width:440px; width:92%; max-height:88vh; overflow-y:auto; padding:22px; text-align:left; border-radius:var(--radius-xl); box-shadow:0 25px 60px rgba(0,0,0,0.35);">
+      <button class="modal-close-btn" id="btnCloseCustDetailModal" aria-label="Tutup">&times;</button>
+      <div style="border-bottom:1px solid #E2E8F0; padding-bottom:10px; margin-bottom:14px; padding-right:32px;">
+        <span style="font-size:0.68rem; font-weight:700; color:#64748B; letter-spacing:0.5px; text-transform:uppercase;">Butiran Tempahan</span>
+        <h3 style="font-size:1.25rem; font-weight:800; color:var(--amc-red); margin:2px 0 0;" id="custDetailRefTitle">AMC-1043</h3>
       </div>
 
       <div id="custDetailModalContent">
-        <!-- Populated dynamically via main.js -->
+        <!-- Populated dynamically via customerBookingModule.js -->
       </div>
     </div>
   </div>
