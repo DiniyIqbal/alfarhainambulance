@@ -266,6 +266,18 @@ export function checkResourceConflicts({
 export async function createPatientBooking(bookingInput, allBookings = []) {
   const errors = [];
 
+  // Fallback to locally cached bookings if caller did not supply full list
+  if (!allBookings || allBookings.length === 0) {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const cached = JSON.parse(localStorage.getItem('amc_local_bookings') || '[]');
+        if (Array.isArray(cached) && cached.length > 0) {
+          allBookings = cached;
+        }
+      }
+    } catch (_) {}
+  }
+
   if (!bookingInput.originName && !bookingInput.pickupName && !bookingInput.pickupAddress) {
     errors.push('Lokasi pengambilan pesakit adalah wajib.');
   }
@@ -279,8 +291,11 @@ export async function createPatientBooking(bookingInput, allBookings = []) {
     errors.push('Nama dan nombor telefon pesakit / waris adalah wajib.');
   }
 
-  if (bookingInput.isScheduled && bookingInput.scheduledTime) {
-    const schedDate = new Date(bookingInput.scheduledTime);
+  const isScheduledBooking = Boolean(bookingInput.isScheduled || bookingInput.is_scheduled);
+  const scheduledTimeValue = bookingInput.scheduledTime || bookingInput.scheduled_time;
+
+  if (isScheduledBooking && scheduledTimeValue) {
+    const schedDate = new Date(scheduledTimeValue);
     if (isNaN(schedDate.getTime())) {
       errors.push('Format tarikh dan masa jadual tidak sah.');
     } else if (schedDate.getTime() < Date.now() - (5 * 60 * 1000)) {
@@ -297,10 +312,10 @@ export async function createPatientBooking(bookingInput, allBookings = []) {
     email: bookingInput.patientEmail,
     hubId: bookingInput.hubId,
     pickupCoords: bookingInput.pickupCoords,
-    scheduledTime: bookingInput.scheduledTime
+    scheduledTime: scheduledTimeValue
   });
 
-  const existing = allBookings.find(b => b.idempotency_key === key || b.idempotencyKey === key);
+  const existing = (allBookings || []).find(b => b.idempotency_key === key || b.idempotencyKey === key);
   if (existing) {
     return {
       success: true,
@@ -323,14 +338,26 @@ export async function createPatientBooking(bookingInput, allBookings = []) {
     includedStaff: [...(pkg.includedStaff || [])]
   };
 
+  const isEventStandby = Boolean(bookingInput.isEventStandby || bookingInput.is_event_standby);
+  const standbyHours = Number(bookingInput.standbyHours || bookingInput.standby_hours || 4);
+  const standbyEventName = bookingInput.standbyEventName || bookingInput.standby_event_name || '';
+
+  const baseFareValue = bookingInput.baseFare !== undefined
+    ? Number(bookingInput.baseFare)
+    : Number(packageSnapshot.baseFare);
+
+  const totalFareValue = bookingInput.totalFare !== undefined
+    ? Number(bookingInput.totalFare)
+    : baseFareValue;
+
   const pricingSnapshot = {
-    distanceKm: Number(bookingInput.distanceKm || 25.0),
-    baseFare: Number(packageSnapshot.baseFare),
+    distanceKm: Number(bookingInput.distanceKm || (isEventStandby ? 0 : 25.0)),
+    baseFare: baseFareValue,
     extraKmCost: Number(bookingInput.extraKmCost || 0.00),
     assistanceCost: Number(bookingInput.assistanceCost || 0.00),
     equipmentCost: Number(bookingInput.equipmentCost || 0.00),
     miscFee: 0.00,
-    totalFare: Number(bookingInput.totalFare || packageSnapshot.baseFare),
+    totalFare: totalFareValue,
     calculatedAt: new Date().toISOString()
   };
 
@@ -348,10 +375,14 @@ export async function createPatientBooking(bookingInput, allBookings = []) {
     stop4Name: bookingInput.stop4Name || null,
     stop4Address: bookingInput.stop4Address || null,
     stop4Coords: bookingInput.stop4Coords || null,
-    totalDistanceKm: Number(bookingInput.distanceKm || 25.0)
+    totalDistanceKm: Number(pricingSnapshot.distanceKm)
   };
 
   const invoiceNumber = bookingInput.invoiceNumber || `AMC-${Date.now().toString().slice(-4)}`;
+
+  const tripTypeDerived = bookingInput.tripType || (isEventStandby
+    ? `Ambulance Standby (Event - ${standbyHours} Jam)`
+    : packageSnapshot.name);
 
   const newBooking = {
     id: bookingInput.id || undefined,
@@ -361,7 +392,7 @@ export async function createPatientBooking(bookingInput, allBookings = []) {
     origin_name: routeSnapshot.originName,
     destination_name: routeSnapshot.destinationName,
     distance_km: pricingSnapshot.distanceKm,
-    trip_type: packageSnapshot.name,
+    trip_type: tripTypeDerived,
     base_fare: pricingSnapshot.baseFare,
     extra_km_cost: pricingSnapshot.extraKmCost,
     assistance_package: packageSnapshot.includedStaff.join(', ') || 'Pemandu Sahaja',
@@ -371,6 +402,11 @@ export async function createPatientBooking(bookingInput, allBookings = []) {
     misc_fee: pricingSnapshot.miscFee,
     total_fare: pricingSnapshot.totalFare,
     is_diesel_surge: false,
+
+    // Event standby metadata
+    is_event_standby: isEventStandby,
+    standby_hours: standbyHours,
+    standby_event_name: standbyEventName,
 
     // Initial Decoupled State: unassigned & pending approval
     booking_status: 'pending_approval',
@@ -387,8 +423,8 @@ export async function createPatientBooking(bookingInput, allBookings = []) {
     assigned_driver_id: null,
     assigned_crew: [],
 
-    is_scheduled: Boolean(bookingInput.isScheduled),
-    scheduled_time: bookingInput.scheduledTime ? new Date(bookingInput.scheduledTime).toISOString() : null,
+    is_scheduled: isScheduledBooking,
+    scheduled_time: scheduledTimeValue ? new Date(scheduledTimeValue).toISOString() : null,
 
     patient_name: bookingInput.patientName,
     patient_phone: bookingInput.patientPhone,

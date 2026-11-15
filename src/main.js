@@ -96,6 +96,15 @@ import {
   calculateDirectDistanceKm
 } from './data/verifiedFacilitiesData.js';
 
+import {
+  initCustomerBookingModule,
+  loadAndRenderCustomerBookings
+} from './services/customerBookingModule.js';
+
+import {
+  createPatientBooking
+} from './services/bookingManagementService.js';
+
 /* =========================================================================
    APPLICATION STATE (MATCHES MOCKUP DEFAULTS)
    ========================================================================= */
@@ -1009,20 +1018,30 @@ function populateCostItems(baseFare, extraKm, extraKmRate, extraDistanceFee, sta
 
   const pkg = state.selectedPackage || SERVICE_PACKAGES[0];
 
-  let html = `
-    <div class="cost-item-row">
-      <span>Kadar asas: ${pkg.name} (${BASE_SETTINGS.standardBaseKm.toFixed(0)} km)</span>
-      <span class="cost-item-price">RM${baseFare.toFixed(2)}</span>
-    </div>
-  `;
-
-  if (extraKm > 0) {
-    html += `
+  let html = '';
+  if (state.bookingType === 'event_standby') {
+    html = `
       <div class="cost-item-row">
-        <span>Lebihan jarak (${extraKm.toFixed(1)} km × RM${extraKmRate.toFixed(0)})</span>
-        <span class="cost-item-price">RM${extraDistanceFee.toFixed(2)}</span>
+        <span>Kadar Acara Standby (${state.standbyDurationHours} Jam) - ${state.standbyEventName || 'Acara / Sukan'}</span>
+        <span class="cost-item-price">RM${baseFare.toFixed(2)}</span>
       </div>
     `;
+  } else {
+    html = `
+      <div class="cost-item-row">
+        <span>Kadar asas: ${pkg.name} (${BASE_SETTINGS.standardBaseKm.toFixed(0)} km)</span>
+        <span class="cost-item-price">RM${baseFare.toFixed(2)}</span>
+      </div>
+    `;
+
+    if (extraKm > 0) {
+      html += `
+        <div class="cost-item-row">
+          <span>Lebihan jarak (${extraKm.toFixed(1)} km × RM${extraKmRate.toFixed(0)})</span>
+          <span class="cost-item-price">RM${extraDistanceFee.toFixed(2)}</span>
+        </div>
+      `;
+    }
   }
 
   // Display included staff if package specifies staff
@@ -1129,24 +1148,40 @@ function populatePrintableInvoice(baseFare, extraKm, extraKmRate, extraDistanceF
       <tr class="invoice-section-hdr">
         <td colspan="3">1. MAKLUMAT PAKEJ PERKHIDMATAN &amp; TAMBANG ASAS</td>
       </tr>
-      <tr>
-        <td><strong>Kadar Asas (${pkg.name})</strong></td>
-        <td>
-          Kadar tetap sehingga ${BASE_SETTINGS.standardBaseKm.toFixed(0)} KM<br>
-          <small style="color:#64748B;">${routeBreakdownText}</small>
-        </td>
-        <td style="text-align: right; font-weight: 700;">RM ${baseFare.toFixed(2)}</td>
-      </tr>
     `;
 
-    if (extraKm > 0) {
+    if (state.bookingType === 'event_standby') {
       rows += `
         <tr>
-          <td><strong>Caj Tambahan Jarak</strong></td>
-          <td>${extraKm.toFixed(1)} KM &times; RM ${extraKmRate.toFixed(2)} / KM</td>
-          <td style="text-align: right; font-weight: 700;">RM ${extraDistanceFee.toFixed(2)}</td>
+          <td><strong>Pakej Standby Acara (${state.standbyDurationHours} Jam)</strong></td>
+          <td>
+            Kadar pakej acara perubatan &amp; sukan (${state.standbyEventName || 'Tapak Acara'})<br>
+            <small style="color:#64748B;">Ambulans siap sedia + Krew EMT bertugas di lokasi program</small>
+          </td>
+          <td style="text-align: right; font-weight: 700;">RM ${baseFare.toFixed(2)}</td>
         </tr>
       `;
+    } else {
+      rows += `
+        <tr>
+          <td><strong>Kadar Asas (${pkg.name})</strong></td>
+          <td>
+            Kadar tetap sehingga ${BASE_SETTINGS.standardBaseKm.toFixed(0)} KM<br>
+            <small style="color:#64748B;">${routeBreakdownText}</small>
+          </td>
+          <td style="text-align: right; font-weight: 700;">RM ${baseFare.toFixed(2)}</td>
+        </tr>
+      `;
+
+      if (extraKm > 0) {
+        rows += `
+          <tr>
+            <td><strong>Caj Tambahan Jarak</strong></td>
+            <td>${extraKm.toFixed(1)} KM &times; RM ${extraKmRate.toFixed(2)} / KM</td>
+            <td style="text-align: right; font-weight: 700;">RM ${extraDistanceFee.toFixed(2)}</td>
+          </tr>
+        `;
+      }
     }
 
     // 2. STAF TERMASUK (Omitted completely for Bukan Kecemasan)
@@ -2177,6 +2212,7 @@ function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpai
   const originName = state.pickupName || state.pickupAddress || state.currentHub?.shortName || 'Lokasi Pesakit';
   const destinationName = state.destinationName || state.destinationAddress || 'Hospital Pilihan';
 
+  const isEventStandby = state.bookingType === 'event_standby';
   const pkg = state.selectedPackage || SERVICE_PACKAGES[0];
   const packageSnapshot = {
     id: pkg.id,
@@ -2197,6 +2233,13 @@ function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpai
     ? pkg.includedEquipment.join(', ')
     : 'Tiada Tambahan';
 
+  const tripTypeTitle = isEventStandby
+    ? `Ambulance Standby (Event - ${state.standbyDurationHours || 4} Jam)`
+    : (pkg.name || state.selectedTripType?.name || 'Kecemasan Standard');
+
+  const baseFareCalculated = Number(state.baseFare !== undefined ? state.baseFare : (pkg.baseFare || 250.00));
+  const grandTotalCalculated = Number(state.grandTotal !== undefined ? state.grandTotal : 250.00);
+
   return {
     invoiceNumber: getOrGenerateInvoiceNumber(),
     hubId: state.currentHub?.id || 'kok_lanas',
@@ -2213,22 +2256,22 @@ function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpai
     pickupSource: state.pickupSource || 'custom',
     pickupInstructions: state.pickupInstructions || '',
     pickupLocationConfirmed: Boolean(state.pickupLocationConfirmed),
-    distanceKm: Number(state.distanceKm || state.totalDistanceKm || 25.0),
+    distanceKm: isEventStandby ? 0 : Number(state.distanceKm || state.totalDistanceKm || 25.0),
     packageId: pkg.id,
     packageCode: pkg.code || pkg.id,
     packageVersion: pkg.version || 1,
     packageName: pkg.name,
     packageBasePrice: Number(pkg.baseFare || 250.00),
     packageSnapshot,
-    tripType: pkg.name || state.selectedTripType?.name || 'Kecemasan Standard',
-    baseFare: Number(pkg.baseFare || state.baseFare || 250.00),
-    extraKmCost: Number(state.extraDistanceFee || 0.00),
+    tripType: tripTypeTitle,
+    baseFare: baseFareCalculated,
+    extraKmCost: isEventStandby ? 0.00 : Number(state.extraDistanceFee || 0.00),
     assistancePackage: staffIncludedStr,
     assistanceCost: Number(state.staffFee || 0.00),
     equipmentItems: equipIncludedStr,
     equipmentCost: Number(state.equipmentTotal || 0.00),
     miscFee: 0.00,
-    totalFare: Number(state.grandTotal || 250.00),
+    totalFare: grandTotalCalculated,
     isDieselSurge: false,
     plateNumber: '',
     driverName: '',
@@ -2236,12 +2279,21 @@ function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpai
     patientName,
     patientPhone,
     patientEmail,
+    patientNotes: isEventStandby ? `Acara Standby: ${state.standbyEventName || 'Program'} (${state.standbyDurationHours} Jam)` : '',
     booking_status: 'pending_approval',
     assignment_status: 'unassigned',
     trip_status: 'not_started',
     status: 'Menunggu kelulusan',
     is_scheduled: state.scheduleType === 'scheduled',
     scheduled_time: state.scheduledDateTime,
+    isScheduled: state.scheduleType === 'scheduled',
+    scheduledTime: state.scheduledDateTime,
+    isEventStandby,
+    is_event_standby: isEventStandby,
+    standbyHours: Number(state.standbyDurationHours || 4),
+    standby_hours: Number(state.standbyDurationHours || 4),
+    standbyEventName: state.standbyEventName || '',
+    standby_event_name: state.standbyEventName || '',
     paymentStatus,
     paymentMethod,
     created_at: new Date().toISOString()
@@ -2361,6 +2413,40 @@ function initActionModals() {
 
   if (btnGenModal && invoiceModal) {
     btnGenModal.addEventListener('click', () => {
+      // Validate patient details and coordinates before opening invoice modal
+      const patientNameVal = (state.patientInfo?.name || '').trim();
+      const patientPhoneVal = (state.patientInfo?.phone || '').trim();
+
+      if (!patientNameVal) {
+        alert('Sila lengkapkan nama pesakit.');
+        switchCalcStep(1);
+        const nameInput = document.getElementById('patientNameInput');
+        if (nameInput) nameInput.focus();
+        return;
+      }
+
+      if (!state.pickupCoords || !Array.isArray(state.pickupCoords) || state.pickupCoords.length < 2) {
+        alert('Sila sahkan lokasi pengambilan pesakit pada peta terlebih dahulu.');
+        switchCalcStep(1);
+        return;
+      }
+
+      if (state.scheduleType === 'scheduled') {
+        if (!state.scheduledDateTime) {
+          alert('Sila pilih tarikh dan masa jadual pengambilan.');
+          switchCalcStep(1);
+          const dtInput = document.getElementById('customerScheduledDateTime');
+          if (dtInput) dtInput.focus();
+          return;
+        }
+        const schedTime = new Date(state.scheduledDateTime).getTime();
+        if (isNaN(schedTime) || schedTime < Date.now() - (5 * 60 * 1000)) {
+          alert('Masa jadual perjalanan tidak boleh pada waktu lampau.');
+          switchCalcStep(1);
+          return;
+        }
+      }
+
       playCalculateChime();
       invoiceModal.classList.add('show');
     });
@@ -2386,15 +2472,25 @@ function initActionModals() {
         playClickSound();
 
         const booking = getCurrentBookingPayload('chip', 'pending');
-        const result = await initiateChipPayment(booking, 'full');
+        booking.isScheduled = state.scheduleType === 'scheduled';
+        booking.scheduledTime = state.scheduledDateTime;
+
+        const res = await createPatientBooking(booking);
+        if (!res.success) {
+          throw new Error(res.error || 'Gagal mengesahkan maklumat tempahan');
+        }
+        const savedBooking = res.data || booking;
+
+        const result = await initiateChipPayment(savedBooking, 'full');
 
         if (!result.success || !result.checkoutUrl) {
           throw new Error(result.error || 'Gagal memulakan transaksi CHIP.');
         }
 
         // Save active invoice and booking to Supabase
-        localStorage.setItem('amc_active_invoice', booking.invoiceNumber);
-        await insertBookingToSupabase(booking);
+        const invNum = savedBooking.invoice_number || savedBooking.invoiceNumber;
+        localStorage.setItem('amc_active_invoice', invNum);
+        await insertBookingToSupabase(savedBooking);
 
         // Redirect to CHIP payment page
         window.location.href = result.checkoutUrl;
@@ -2420,6 +2516,9 @@ function initActionModals() {
         bookingPayload.scheduledTime = state.scheduledDateTime;
 
         const res = await createPatientBooking(bookingPayload);
+        if (!res.success) {
+          throw new Error(res.error || 'Gagal merekod tempahan');
+        }
         const booking = res.data || bookingPayload;
         const inv = booking.invoice_number || booking.invoiceNumber;
 
