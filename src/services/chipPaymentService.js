@@ -12,12 +12,29 @@
  * @returns {Promise<{ success: boolean, checkoutUrl?: string, purchaseId?: string, isMock?: boolean, error?: string }>}
  */
 export async function initiateChipPayment(bookingData, paymentType = 'full') {
-  if (!bookingData || !bookingData.invoiceNumber) {
+  const invoiceNo = bookingData?.invoiceNumber || bookingData?.invoice_number;
+  if (!bookingData || !invoiceNo) {
     return {
       success: false,
       error: 'Maklumat invois tempahan tidak lengkap.'
     };
   }
+
+  const normalizedBooking = {
+    ...bookingData,
+    invoiceNumber: invoiceNo,
+    invoice_number: invoiceNo,
+    totalFare: bookingData.totalFare !== undefined ? bookingData.totalFare : (bookingData.total_fare || 250.00),
+    total_fare: bookingData.total_fare !== undefined ? bookingData.total_fare : (bookingData.totalFare || 250.00),
+    patientName: (bookingData.patientName || bookingData.patient_name || 'Pesakit AMC').trim(),
+    patient_name: (bookingData.patient_name || bookingData.patientName || 'Pesakit AMC').trim(),
+    patientPhone: (bookingData.patientPhone || bookingData.patient_phone || '0139147606').trim(),
+    patient_phone: (bookingData.patient_phone || bookingData.patientPhone || '0139147606').trim(),
+    patientEmail: (bookingData.patientEmail || bookingData.patient_email || 'pesakit@alfarhain.my').trim(),
+    patient_email: (bookingData.patient_email || bookingData.patientEmail || 'pesakit@alfarhain.my').trim(),
+    distanceKm: bookingData.distanceKm !== undefined ? bookingData.distanceKm : (bookingData.distance_km || 25.0),
+    distance_km: bookingData.distance_km !== undefined ? bookingData.distance_km : (bookingData.distanceKm || 25.0)
+  };
 
   try {
     const response = await fetch('/api/payment/create-checkout', {
@@ -26,7 +43,7 @@ export async function initiateChipPayment(bookingData, paymentType = 'full') {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        bookingData,
+        bookingData: normalizedBooking,
         paymentType
       })
     });

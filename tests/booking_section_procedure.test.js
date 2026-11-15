@@ -32,6 +32,10 @@ import {
   SERVICE_PACKAGES
 } from '../src/data/pricingData.js';
 
+import {
+  initiateChipPayment
+} from '../src/services/chipPaymentService.js';
+
 let passed = 0;
 let failed = 0;
 
@@ -249,6 +253,63 @@ async function runTests() {
     assert.strictEqual(chipBooking.data.payment_method, 'chip');
     assert.strictEqual(chipBooking.data.payment_status, 'pending');
     assert.strictEqual(chipBooking.data.booking_status, 'pending_approval');
+  });
+
+  // Test 7: initiateChipPayment Invoice Payload Normalization
+  test('7. CHIP Payment Initiation: Accepts both snake_case and camelCase booking payloads', async () => {
+    // Mock global.fetch
+    const originalFetch = global.fetch;
+    let interceptedBody = null;
+    global.fetch = async (url, options) => {
+      interceptedBody = JSON.parse(options.body);
+      return {
+        ok: true,
+        json: async () => ({
+          success: true,
+          checkoutUrl: 'https://gate.chip-in.asia/checkout/test-pur-123',
+          purchaseId: 'pur_123',
+          isMock: true,
+          amountToCharge: 251.80
+        })
+      };
+    };
+
+    try {
+      // Create a booking through createPatientBooking
+      const bookingRes = await createPatientBooking({
+        invoiceNumber: 'AMC-20261115-7777',
+        originName: 'Bandar Kota Bharu',
+        destinationName: 'Hospital Raja Perempuan Zainab II',
+        pickupCoords: [6.1248, 102.2544],
+        patientName: 'Ahmad bin Razali',
+        patientPhone: '013-9147606',
+        distanceKm: 25.6,
+        baseFare: 250.00,
+        extraKmCost: 1.80,
+        totalFare: 251.80
+      });
+
+      assert.strictEqual(bookingRes.success, true);
+
+      // Pass the savedBooking to initiateChipPayment
+      const chipRes = await initiateChipPayment(bookingRes.data);
+      assert.strictEqual(chipRes.success, true, `initiateChipPayment failed: ${chipRes.error}`);
+      assert.strictEqual(chipRes.checkoutUrl, 'https://gate.chip-in.asia/checkout/test-pur-123');
+      assert.strictEqual(interceptedBody.bookingData.invoiceNumber, 'AMC-20261115-7777');
+      assert.strictEqual(interceptedBody.bookingData.invoice_number, 'AMC-20261115-7777');
+
+      // Test with raw payload having ONLY invoice_number
+      const snakeOnlyRes = await initiateChipPayment({ invoice_number: 'AMC-SNAKE-999' });
+      assert.strictEqual(snakeOnlyRes.success, true);
+      assert.strictEqual(interceptedBody.bookingData.invoiceNumber, 'AMC-SNAKE-999');
+
+      // Test with missing invoice number completely
+      const missingRes = await initiateChipPayment({ otherField: 'val' });
+      assert.strictEqual(missingRes.success, false);
+      assert.strictEqual(missingRes.error, 'Maklumat invois tempahan tidak lengkap.');
+    } finally {
+      global.fetch = originalFetch;
+    }
   });
 
   console.log(`\nResults: ${passed} passed, ${failed} failed`);

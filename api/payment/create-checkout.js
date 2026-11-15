@@ -28,7 +28,8 @@ export default async function handler(req, res) {
   try {
     const { bookingData, paymentType = 'full' } = req.body || {};
 
-    if (!bookingData || !bookingData.invoiceNumber) {
+    const invoiceNo = bookingData?.invoiceNumber || bookingData?.invoice_number;
+    if (!bookingData || !invoiceNo) {
       return res.status(400).json({
         success: false,
         error: 'Maklumat tempahan tidak lengkap (invoiceNumber diperlukan).',
@@ -37,15 +38,16 @@ export default async function handler(req, res) {
     }
 
     // Authoritative Server-Side Pricing Validation (Never trust client-submitted totals)
-    let verifiedTotal = parseFloat(bookingData.totalFare) || 250.00;
+    let verifiedTotal = parseFloat(bookingData.totalFare !== undefined ? bookingData.totalFare : bookingData.total_fare) || 250.00;
     try {
-      const pkgId = bookingData.packageId || bookingData.package_id || bookingData.tripType;
+      const pkgId = bookingData.packageId || bookingData.package_id || bookingData.tripType || bookingData.trip_type;
       const quote = validateAndQuotePackageBooking({
         packageId: pkgId,
-        distanceKm: Number(bookingData.distanceKm) || 25.0
+        distanceKm: Number(bookingData.distanceKm !== undefined ? bookingData.distanceKm : bookingData.distance_km) || 25.0
       });
       verifiedTotal = quote.grandTotal;
       bookingData.totalFare = verifiedTotal;
+      bookingData.total_fare = verifiedTotal;
       bookingData.packageSnapshot = quote.packageSnapshot;
       bookingData.packageId = quote.package.id;
       bookingData.packageVersion = quote.package.version;
@@ -79,10 +81,10 @@ export default async function handler(req, res) {
     const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
     const baseUrl = `${proto}://${host}`;
 
-    const invoiceNo = bookingData.invoiceNumber;
-    const patientName = (bookingData.patientName || 'Pesakit AMC').trim();
-    const patientPhone = (bookingData.patientPhone || '0139147606').trim();
-    const patientEmail = (bookingData.patientEmail || 'pesakit@alfarhain.my').trim();
+    const invoiceNo = bookingData.invoiceNumber || bookingData.invoice_number;
+    const patientName = (bookingData.patientName || bookingData.patient_name || 'Pesakit AMC').trim();
+    const patientPhone = (bookingData.patientPhone || bookingData.patient_phone || '0139147606').trim();
+    const patientEmail = (bookingData.patientEmail || bookingData.patient_email || 'pesakit@alfarhain.my').trim();
 
     // Safe Mock Mode fallback if CHIP credentials are placeholder / unconfigured in local dev
     const isMock = !secretKey ||
