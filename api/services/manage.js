@@ -21,6 +21,7 @@ import {
   getServiceAuditLogs,
   validateAndQuotePackageBooking
 } from '../../src/services/servicePackageManager.js';
+import { applyCors, requireAuth, getClientIp, HQ_ADMIN_ROLES } from '../_lib/security.js';
 
 const rateLimitWindow = new Map();
 
@@ -38,13 +39,7 @@ function checkRateLimit(ip = 'local', limit = 60) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (applyCors(req, res, 'POST, GET, OPTIONS')) return;
 
   // Public GET for customer booking flow (published active packages only)
   if (req.method === 'GET') {
@@ -63,7 +58,7 @@ export default async function handler(req, res) {
     });
   }
 
-  const clientIp = req.headers?.['x-forwarded-for'] || '127.0.0.1';
+  const clientIp = getClientIp(req);
   if (!checkRateLimit(clientIp, 60)) {
     return res.status(429).json({
       success: false,
@@ -72,7 +67,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { operation, actor = {}, payload = {} } = req.body || {};
+    // NOTE: any `actor` field in the request body is ignored on purpose.
+    const { operation, payload = {} } = req.body || {};
+    let actor = null;
 
     if (!operation) {
       return res.status(400).json({
@@ -90,14 +87,9 @@ export default async function handler(req, res) {
     ];
 
     if (adminOperations.includes(operation)) {
-      const userRole = actor?.role || 'admin';
-      const allowedRoles = ['admin', 'hq_admin', 'branch_manager', 'superadmin'];
-      if (!allowedRoles.includes(userRole.toLowerCase())) {
-        return res.status(403).json({
-          success: false,
-          error: 'Akses ditolak. Anda tidak mempunyai kebenaran pentadbir untuk mengubah rekod perkhidmatan.'
-        });
-      }
+      const ctx = await requireAuth(req, res, { roles: HQ_ADMIN_ROLES });
+      if (!ctx) return;
+      actor = ctx.actor;
     }
 
     let result;

@@ -164,7 +164,7 @@ CREATE POLICY "Staf dibenarkan membaca peranan sendiri" ON public.staff_roles
     FOR SELECT USING (auth.uid() = user_id);
 
 -- Restrict direct client writes to invitations; managed via backend API
+-- SECURITY: previously readable by ANY signed-in user. Admin-only policy
+-- now lives in supabase_security_hardening.sql (run it last).
 DROP POLICY IF EXISTS "Pentadbir dibenarkan membaca jemputan" ON public.driver_invitations;
-CREATE POLICY "Pentadbir dibenarkan membaca jemputan" ON public.driver_invitations
-    FOR SELECT USING (auth.role() = 'authenticated');
 

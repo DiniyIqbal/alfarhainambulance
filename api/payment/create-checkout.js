@@ -2,20 +2,24 @@
 // AL-FARHAIN MEDICAL CENTER (AMC) - CHIP PAYMENT CHECKOUT ENDPOINT
 // Vercel Serverless Function: POST /api/payment/create-checkout
 // Strictly server-side: Never exposes CHIP_SECRET_KEY or credentials to client.
+//
+// Security rules:
+//   * The amount charged is ALWAYS quoted on the server (no client fallback)
+//   * Simulation (mock) mode is only allowed on the local dev server
+//   * An existing booking may only be (re)used for payment by its owner:
+//       - signed-in patient  -> patient_user_id must match the JWT user
+//       - guest              -> guest_access_token must match
+//     and never once it has been paid
 // =========================================================================
 
-import { createClient } from '@supabase/supabase-js';
 import { validateAndQuotePackageBooking } from '../../src/services/servicePackageManager.js';
+import { applyCors, getRequestContext, getSupabaseAdmin, isDevServer } from '../_lib/security.js';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const INVOICE_RE = /^[A-Za-z0-9_-]{3,50}$/;
 
 export default async function handler(req, res) {
-  // CORS & Method check
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (applyCors(req, res, 'POST, OPTIONS')) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({
@@ -28,8 +32,8 @@ export default async function handler(req, res) {
   try {
     const { bookingData, paymentType = 'full' } = req.body || {};
 
-    const invoiceNo = bookingData?.invoiceNumber || bookingData?.invoice_number;
-    if (!bookingData || !invoiceNo) {
+    const invoiceNo = String(bookingData?.invoiceNumber || bookingData?.invoice_number || '').trim();
+    if (!bookingData || !INVOICE_RE.test(invoiceNo)) {
       return res.status(400).json({
         success: false,
         error: 'Maklumat tempahan tidak lengkap (invoiceNumber diperlukan).',
@@ -37,34 +41,28 @@ export default async function handler(req, res) {
       });
     }
 
-    // Authoritative Server-Side Pricing Validation (Never trust client-submitted totals)
-    let verifiedTotal = parseFloat(bookingData.totalFare !== undefined ? bookingData.totalFare : bookingData.total_fare) || 250.00;
+    // ---- Authoritative server-side pricing (no fallback to client totals) ----
+    let quote;
     try {
       const pkgId = bookingData.packageId || bookingData.package_id || bookingData.tripType || bookingData.trip_type;
-      const quote = validateAndQuotePackageBooking({
+      quote = validateAndQuotePackageBooking({
         packageId: pkgId,
-        distanceKm: Number(bookingData.distanceKm !== undefined ? bookingData.distanceKm : bookingData.distance_km) || 25.0
+        distanceKm: Number(bookingData.distanceKm !== undefined ? bookingData.distanceKm : bookingData.distance_km) || 0
       });
-      verifiedTotal = quote.grandTotal;
-      bookingData.totalFare = verifiedTotal;
-      bookingData.total_fare = verifiedTotal;
-      bookingData.packageSnapshot = quote.packageSnapshot;
-      bookingData.packageId = quote.package.id;
-      bookingData.packageVersion = quote.package.version;
     } catch (e) {
-      console.warn('[Server Quoting Warning]: Falling back to standard quotation calculation', e.message);
+      console.error('[Create Checkout] Server quotation failed:', e.message);
+      return res.status(400).json({
+        success: false,
+        error: 'Harga tempahan tidak dapat disahkan oleh pelayan. Sila cuba semula.',
+        code: 'QUOTE_FAILED'
+      });
     }
 
-    // Determine amount to charge
-    // Full payment vs fixed commitment deposit (e.g. RM 100)
-    const amountToCharge = paymentType === 'deposit'
-      ? Math.min(100.00, verifiedTotal)
-      : verifiedTotal;
-
-    // CHIP expects amount in integer CENTS (e.g. RM 253.90 -> 25390)
+    const verifiedTotal = quote.grandTotal;
+    const amountToCharge = paymentType === 'deposit' ? Math.min(100.00, verifiedTotal) : verifiedTotal;
     const amountInCents = Math.round(amountToCharge * 100);
 
-    if (amountInCents < 100) { // minimum RM 1.00
+    if (amountInCents < 100) {
       return res.status(400).json({
         success: false,
         error: 'Jumlah bayaran minimum adalah RM 1.00.',
@@ -75,77 +73,106 @@ export default async function handler(req, res) {
     const secretKey = (process.env.CHIP_SECRET_KEY || '').trim();
     const brandId = (process.env.CHIP_BRAND_ID || '').trim();
     const chipApiUrl = (process.env.CHIP_API_URL || 'https://gate.chip-in.asia/api/v1').replace(/\/+$/, '');
+    const chipConfigured = Boolean(secretKey && brandId &&
+      secretKey !== 'masukkan_test_secret_key_anda_di_sini' &&
+      brandId !== 'masukkan_test_brand_id_anda_di_sini');
 
-    // Determine return base URL from request headers
+    if (!chipConfigured && !isDevServer()) {
+      console.error('[CHIP Checkout] CHIP credentials missing in a deployed environment.');
+      return res.status(503).json({
+        success: false,
+        error: 'Pembayaran dalam talian tidak tersedia buat masa ini. Sila pilih bayaran tunai.',
+        code: 'PAYMENT_GATEWAY_UNAVAILABLE'
+      });
+    }
+
+    // ---- Ownership: who is paying for this invoice? ----
+    const ctx = await getRequestContext(req);
+    const userId = ctx.user && !ctx.isDevFallback ? ctx.user.id : null;
+    const guestToken = String(bookingData.guestAccessToken || bookingData.guest_access_token || '');
+
+    const admin = getSupabaseAdmin();
+    if (!admin && !isDevServer()) {
+      return res.status(503).json({ success: false, error: 'Pelayan belum dikonfigurasi.', code: 'SERVER_NOT_CONFIGURED' });
+    }
+
+    let existing = null;
+    if (admin) {
+      const { data, error } = await admin
+        .from('ambulance_bookings')
+        .select('id, payment_status, patient_user_id, guest_access_token')
+        .eq('invoice_number', invoiceNo)
+        .maybeSingle();
+      if (error) throw error;
+      existing = data;
+
+      if (existing) {
+        if (existing.payment_status === 'paid') {
+          return res.status(409).json({ success: false, error: 'Tempahan ini telah dibayar.', code: 'ALREADY_PAID' });
+        }
+        const ownsAsUser = existing.patient_user_id && userId && existing.patient_user_id === userId;
+        const ownsAsGuest = existing.guest_access_token && guestToken && existing.guest_access_token === guestToken;
+        const isStaff = ctx.actor && ['hq_admin', 'branch_manager', 'dispatcher', 'hq_finance'].includes(ctx.access?.role);
+        if (!ownsAsUser && !ownsAsGuest && !isStaff) {
+          return res.status(403).json({ success: false, error: 'Anda tidak dibenarkan membuat bayaran bagi tempahan ini.', code: 'NOT_BOOKING_OWNER' });
+        }
+      }
+    }
+
+    // ---- Redirect / callback URLs ----
     const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:5173';
-    const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
-    const baseUrl = `${proto}://${host}`;
+    const proto = req.headers['x-forwarded-proto'] || (String(host).includes('localhost') ? 'http' : 'https');
+    const baseUrl = (process.env.APP_BASE_URL || `${proto}://${host}`).replace(/\/+$/, '');
 
     const rawEmail = (bookingData.patientEmail || bookingData.patient_email || '').trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const patientEmail = emailRegex.test(rawEmail) ? rawEmail : 'pesakit@alfarhain.my';
-    const patientName = (bookingData.patientName || bookingData.patient_name || 'Pesakit AMC').trim();
-    const patientPhone = (bookingData.patientPhone || bookingData.patient_phone || '0139147606').trim();
+    const patientEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail) ? rawEmail : 'pesakit@alfarhain.my';
+    const patientName = String(bookingData.patientName || bookingData.patient_name || 'Pesakit AMC').trim().slice(0, 150);
+    const patientPhone = String(bookingData.patientPhone || bookingData.patient_phone || '').trim().slice(0, 50);
 
-    // Safe Mock Mode fallback if CHIP credentials are placeholder / unconfigured in local dev
-    const isMock = !secretKey ||
-      secretKey === 'masukkan_test_secret_key_anda_di_sini' ||
-      !brandId ||
-      brandId === 'masukkan_test_brand_id_anda_di_sini';
+    const paymentRecord = {
+      admin,
+      existing,
+      bookingData,
+      invoiceNo,
+      userId,
+      guestToken: UUID_RE.test(guestToken) ? guestToken : null,
+      verifiedTotal,
+      quote,
+      amountDue: amountToCharge
+    };
 
-    if (isMock) {
-      console.warn('[CHIP Checkout] CHIP credentials not fully configured. Operating in simulation mode.');
+    // ---- Local dev simulation ----
+    if (!chipConfigured) {
+      console.warn('[CHIP Checkout] Simulation mode (local dev server only).');
       const mockPurchaseId = `mock_pur_${Date.now()}`;
-      const mockCheckoutUrl = `${baseUrl}/?payment=success&invoice=${encodeURIComponent(invoiceNo)}&mock=true&amount=${amountToCharge}`;
-
-      await recordPendingBookingToSupabase(bookingData, {
-        chipPurchaseId: mockPurchaseId,
-        paymentStatus: 'pending',
-        paymentMethod: 'fpx_simulation',
-        paidAmount: amountToCharge
-      });
-
+      await recordPendingPayment({ ...paymentRecord, purchaseId: mockPurchaseId, method: 'fpx_simulation' });
       return res.status(200).json({
         success: true,
         isMock: true,
         purchaseId: mockPurchaseId,
-        checkoutUrl: mockCheckoutUrl,
+        checkoutUrl: `${baseUrl}/?payment=success&invoice=${encodeURIComponent(invoiceNo)}&mock=true&amount=${amountToCharge}`,
+        amountToCharge,
         message: 'Mod simulasi: Kunci CHIP belum dikonfigurasi penuh.'
       });
     }
 
-    // Determine Webhook callback URL
-    // CHIP forbids custom ports in success_callback (e.g. localhost:5173)
     let webhookCallbackUrl = process.env.CHIP_WEBHOOK_URL;
     if (!webhookCallbackUrl) {
-      if (!host.includes(':') && !host.includes('localhost')) {
-        webhookCallbackUrl = `${baseUrl}/api/payment/webhook`;
-      } else {
-        webhookCallbackUrl = 'https://alfarhainambulance.vercel.app/api/payment/webhook';
-      }
+      webhookCallbackUrl = String(host).includes(':') || String(host).includes('localhost')
+        ? 'https://alfarhainambulance.vercel.app/api/payment/webhook'
+        : `${baseUrl}/api/payment/webhook`;
     }
 
-    // Construct CHIP Purchase payload
     const purchaseTitle = paymentType === 'deposit'
       ? `Deposit Tempahan Ambulans AMC (${invoiceNo})`
       : `Tambang Ambulans AMC (${invoiceNo})`;
 
     const purchasePayload = {
       brand_id: brandId,
-      client: {
-        email: patientEmail,
-        phone: patientPhone,
-        full_name: patientName
-      },
+      client: { email: patientEmail, phone: patientPhone, full_name: patientName },
       purchase: {
         currency: 'MYR',
-        products: [
-          {
-            name: purchaseTitle,
-            price: amountInCents,
-            quantity: 1
-          }
-        ]
+        products: [{ name: purchaseTitle, price: amountInCents, quantity: 1 }]
       },
       reference: invoiceNo,
       success_redirect: `${baseUrl}/?payment=success&invoice=${encodeURIComponent(invoiceNo)}`,
@@ -154,109 +181,95 @@ export default async function handler(req, res) {
       success_callback: webhookCallbackUrl
     };
 
-    // Call CHIP Collect REST API
     const chipResponse = await fetch(`${chipApiUrl}/purchases/`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${secretKey}`,
-        'Content-Type': 'application/json'
-      },
+      headers: { Authorization: `Bearer ${secretKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(purchasePayload)
     });
-
     const chipData = await chipResponse.json();
 
     if (!chipResponse.ok) {
       console.error('[CHIP API Error]:', chipData);
-      const parsedErrorMsg = extractChipErrorMessage(chipData);
-      return res.status(chipResponse.status).json({
+      return res.status(502).json({
         success: false,
-        error: parsedErrorMsg,
-        details: chipData,
+        error: extractChipErrorMessage(chipData),
         code: 'CHIP_GATEWAY_ERROR'
       });
     }
 
-    const purchaseId = chipData.id;
-    const checkoutUrl = chipData.checkout_url;
-
-    // Record pending transaction in Supabase
-    await recordPendingBookingToSupabase(bookingData, {
-      chipPurchaseId: purchaseId,
-      paymentStatus: 'pending',
-      paymentMethod: 'chip',
-      paidAmount: amountToCharge
-    });
+    await recordPendingPayment({ ...paymentRecord, purchaseId: chipData.id, method: 'chip' });
 
     return res.status(200).json({
       success: true,
-      purchaseId,
-      checkoutUrl,
+      purchaseId: chipData.id,
+      checkoutUrl: chipData.checkout_url,
       amountToCharge
     });
-
   } catch (err) {
     console.error('[Create Checkout Exception]:', err);
     return res.status(500).json({
       success: false,
-      error: err.message || 'Ralat pelayan dalaman semasa memproses bayaran.',
+      error: 'Ralat pelayan dalaman semasa memproses bayaran.',
       code: 'INTERNAL_SERVER_ERROR'
     });
   }
 }
 
 /**
- * Helper to record or update booking in Supabase with payment metadata
+ * Binds the CHIP purchase to the booking and stores the server-quoted amount.
+ * Uses the service-role client; never touches an already-paid booking.
  */
-async function recordPendingBookingToSupabase(bookingData, paymentMeta) {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    console.warn('[CHIP Supabase] Supabase credentials not found on server. Skipping server DB update.');
+async function recordPendingPayment({
+  admin, existing, bookingData, invoiceNo, userId, guestToken, verifiedTotal, quote, amountDue, purchaseId, method
+}) {
+  if (!admin) {
+    console.warn('[CHIP Checkout] No service-role key: payment not persisted (local dev).');
     return;
   }
 
-  try {
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    const invoiceNo = bookingData.invoiceNumber || bookingData.invoice_number;
+  const paymentFields = {
+    payment_status: 'pending',
+    payment_method: method,
+    chip_purchase_id: purchaseId,
+    amount_due: amountDue,
+    total_fare: verifiedTotal,
+    base_fare: quote.baseFare,
+    extra_km_cost: quote.extraDistanceFee,
+    package_id: quote.package?.id || null,
+    updated_at: new Date().toISOString()
+  };
 
-    // Upsert booking record
-    const { error } = await supabase
+  if (existing) {
+    const { error } = await admin
       .from('ambulance_bookings')
-      .upsert({
-        invoice_number: invoiceNo,
-        hub_id: bookingData.hubId || 'kok_lanas',
-        hub_name: bookingData.hubName || 'HQ Kok Lanas',
-        origin_name: bookingData.originName || 'Pangkalan',
-        destination_name: bookingData.destinationName || 'Hospital',
-        distance_km: bookingData.distanceKm || 26.3,
-        trip_type: bookingData.tripType || 'Kecemasan Sehala',
-        base_fare: bookingData.baseFare || 250.00,
-        extra_km_cost: bookingData.extraKmCost || 0.00,
-        assistance_package: bookingData.assistancePackage || 'Pemandu Sahaja',
-        assistance_cost: bookingData.assistanceCost || 0.00,
-        equipment_items: bookingData.equipmentItems || '',
-        equipment_cost: bookingData.equipmentCost || 0.00,
-        misc_fee: bookingData.miscFee || 0.00,
-        total_fare: bookingData.totalFare || 250.00,
-        patient_name: bookingData.patientName || '',
-        patient_phone: bookingData.patientPhone || '',
-        plate_number: bookingData.plateNumber || 'VPQ 9147',
-        driver_name: bookingData.driverName || 'Pemandu Bertugas',
-        status: 'Dispatched',
-        payment_status: paymentMeta.paymentStatus || 'pending',
-        payment_method: paymentMeta.paymentMethod || 'chip',
-        chip_purchase_id: paymentMeta.chipPurchaseId || null,
-        paid_amount: paymentMeta.paidAmount || null
-      }, { onConflict: 'invoice_number' });
-
-    if (error) {
-      console.warn('[CHIP Supabase Upsert Warning]:', error.message);
-    }
-  } catch (dbErr) {
-    console.warn('[CHIP Supabase Exception]:', dbErr.message);
+      .update(paymentFields)
+      .eq('id', existing.id)
+      .neq('payment_status', 'paid');
+    if (error) throw new Error(`Gagal mengemas kini tempahan: ${error.message}`);
+    return;
   }
+
+  const { error } = await admin.from('ambulance_bookings').insert({
+    ...paymentFields,
+    invoice_number: invoiceNo,
+    patient_user_id: userId,
+    guest_access_token: guestToken,
+    hub_id: bookingData.hubId || bookingData.hub_id || 'kok_lanas',
+    hub_name: bookingData.hubName || bookingData.hub_name || 'HQ Kok Lanas',
+    origin_name: bookingData.originName || bookingData.origin_name || 'Lokasi Pesakit',
+    destination_name: bookingData.destinationName || bookingData.destination_name || 'Hospital',
+    distance_km: Number(bookingData.distanceKm ?? bookingData.distance_km) || 0,
+    trip_type: bookingData.tripType || bookingData.trip_type || quote.package?.name || 'Perjalanan Ambulans',
+    assistance_package: bookingData.assistancePackage || bookingData.assistance_package || 'Pemandu Sahaja',
+    patient_name: bookingData.patientName || bookingData.patient_name || '',
+    patient_phone: bookingData.patientPhone || bookingData.patient_phone || '',
+    patient_email: bookingData.patientEmail || bookingData.patient_email || '',
+    plate_number: '',
+    driver_name: '',
+    booking_status: 'pending_approval',
+    status: 'Menunggu kelulusan'
+  });
+  if (error) throw new Error(`Gagal merekod tempahan: ${error.message}`);
 }
 
 /**
@@ -268,7 +281,6 @@ function extractChipErrorMessage(chipData) {
   if (typeof chipData.error === 'string') return chipData.error;
   if (typeof chipData === 'string') return chipData;
 
-  // Check field-level validation errors
   for (const key of Object.keys(chipData)) {
     const val = chipData[key];
     if (Array.isArray(val) && val.length > 0) {
@@ -289,5 +301,3 @@ function extractChipErrorMessage(chipData) {
 
   return 'Ralat semasa menjana sesi pembayaran CHIP.';
 }
-
-

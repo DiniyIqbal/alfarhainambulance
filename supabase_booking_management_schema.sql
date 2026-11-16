@@ -118,17 +118,10 @@ CREATE INDEX IF NOT EXISTS idx_booking_notifs_created ON public.booking_notifica
 -- 3. Row Level Security & Policies
 ALTER TABLE public.booking_notifications ENABLE ROW LEVEL SECURITY;
 
+-- SECURITY: recipient-scoped policies live in supabase_security_hardening.sql (run it last).
 DROP POLICY IF EXISTS "Allow public read booking_notifications" ON public.booking_notifications;
-CREATE POLICY "Allow public read booking_notifications" 
-ON public.booking_notifications FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "Allow public insert booking_notifications" ON public.booking_notifications;
-CREATE POLICY "Allow public insert booking_notifications" 
-ON public.booking_notifications FOR INSERT WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Allow public update booking_notifications" ON public.booking_notifications;
-CREATE POLICY "Allow public update booking_notifications" 
-ON public.booking_notifications FOR UPDATE USING (true);
 
 -- 4. Enable Realtime Replication for Booking Notifications
 DO $$

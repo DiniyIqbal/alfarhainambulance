@@ -8,7 +8,9 @@
 import {
   getSupabaseClient,
   saveLocalBookingCache,
-  broadcastSyncEvent
+  broadcastSyncEvent,
+  ensureGuestBookingToken,
+  toBookingRow
 } from './supabaseClient.js';
 
 import {
@@ -387,6 +389,8 @@ export async function createPatientBooking(bookingInput, allBookings = []) {
   const newBooking = {
     id: bookingInput.id || undefined,
     invoice_number: invoiceNumber,
+    // Secret that lets this browser track the booking without an account.
+    guest_access_token: bookingInput.guestAccessToken || ensureGuestBookingToken(invoiceNumber) || undefined,
     invoiceNumber: invoiceNumber,
     hub_id: bookingInput.hubId || 'kok_lanas',
     hub_name: bookingInput.hubName || 'HQ Pusat Rawatan Al-Farhain',
@@ -515,14 +519,17 @@ export async function createPatientBooking(bookingInput, allBookings = []) {
   const supabase = getSupabaseClient();
   if (supabase) {
     try {
-      const { data, error } = await supabase
+      // Only real snake_case columns are sent (the camelCase aliases above are
+      // for the UI). No .select(): guests have no read access under RLS; the
+      // database trigger assigns ownership and the initial statuses.
+      const { error } = await supabase
         .from('ambulance_bookings')
-        .insert([newBooking])
-        .select();
+        .insert([toBookingRow(newBooking)]);
 
-      if (!error && data && data[0]) {
-        return { success: true, data: data[0] };
+      if (!error) {
+        return { success: true, data: newBooking };
       }
+      console.error('Supabase booking insert failed (kept locally):', error.message);
     } catch (e) {
       console.warn('Supabase booking creation notice (persisted locally):', e.message);
     }

@@ -10,7 +10,8 @@ import {
   getSupabaseClient,
   updateBookingStatusInSupabase,
   fetchActiveMissionForDriver,
-  subscribeToUnifiedSync
+  subscribeToUnifiedSync,
+  DEMO_MODE
 } from '../services/supabaseClient.js';
 import { playSuccessChime, playClickSound, playEmergencyAlertSiren as playAlertSound } from '../utils/soundFx.js';
 import { createGoogleAmcMap } from '../services/googleMapsService.js';
@@ -68,7 +69,7 @@ const state = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await enforceDriverRole();
+  if (!(await enforceDriverRole())) return;
   initNavigationTabs();
   initStepActions();
   initChecklists();
@@ -160,14 +161,21 @@ function applyDriverModeUI(isPartner) {
 
 async function enforceDriverRole() {
   const user = await getCurrentAuthUser();
+  const role = user ? resolveUserRole(user.email, user.user_metadata, user.app_access) : null;
+
+  // Production: only server-verified drivers (or HQ staff previewing) may stay.
+  if (!DEMO_MODE && !['driver', 'partner_driver', 'hq'].includes(role)) {
+    window.location.replace('/index.html');
+    return false;
+  }
+
   if (user) {
-    const role = resolveUserRole(user.email, user.user_metadata);
-    const email = (user.email || '').toLowerCase();
-    const isPartner = role === 'partner_driver' || email.includes('medicare');
+    const isPartner = role === 'partner_driver' || (DEMO_MODE && (user.email || '').toLowerCase().includes('medicare'));
     applyDriverModeUI(isPartner);
   } else {
     applyDriverModeUI(false);
   }
+  return true;
 }
 
 // =====================================================================

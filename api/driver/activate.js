@@ -5,29 +5,14 @@
 // =========================================================================
 
 import crypto from 'crypto';
-import { createClient } from '@supabase/supabase-js';
-
-function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) return null;
-  return createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
+import { applyCors, getSupabaseAdmin, isDevServer } from '../_lib/security.js';
 
 function hashToken(code) {
   return crypto.createHash('sha256').update(code.trim().toUpperCase()).digest('hex');
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (applyCors(req, res, 'POST, OPTIONS')) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({
@@ -161,16 +146,12 @@ export default async function handler(req, res) {
         if (userCreated && userCreated.user) {
           authUserId = userCreated.user.id;
         } else if (createAuthErr) {
-          // If user already exists in auth, update their password
-          const { data: listUser } = await supabase.auth.admin.listUsers();
-          const existingUser = listUser?.users?.find(u => u.email.toLowerCase() === cleanEmail);
-          if (existingUser) {
-            authUserId = existingUser.id;
-            await supabase.auth.admin.updateUserById(existingUser.id, {
-              password: password,
-              user_metadata: { role: 'driver', full_name: fullName || redemption.full_name }
-            });
-          }
+          // Existing account: link it, but NEVER change its password here.
+          // (An invitation must not be usable to take over an existing login.)
+          // The driver signs in with their existing password, or uses
+          // "Lupa kata laluan" to reset it via email.
+          const { data: existingId } = await supabase.rpc('app_find_user_id_by_email', { p_email: cleanEmail });
+          if (existingId) authUserId = existingId;
         }
       } catch (authErr) {
         console.warn('Supabase Auth Admin fallback:', authErr.message);
@@ -231,7 +212,10 @@ export default async function handler(req, res) {
       });
     }
 
-    // Mock Offline / Local Mode
+    // Mock Offline / Local Mode (local dev server only)
+    if (!isDevServer()) {
+      return res.status(503).json({ success: false, error: 'Pelayan belum dikonfigurasi.', code: 'SERVER_NOT_CONFIGURED' });
+    }
     return res.status(200).json({
       success: true,
       message: 'Permohonan dihantar (Simulasi Luar Talian). Menunggu kelulusan HQ.',
@@ -248,7 +232,7 @@ export default async function handler(req, res) {
     console.error('Error in /api/driver/activate:', err);
     return res.status(500).json({
       success: false,
-      error: 'Ralat pelayan semasa mengaktifkan pemandu: ' + err.message,
+      error: 'Ralat pelayan semasa mengaktifkan pemandu.',
       code: 'SERVER_ERROR'
     });
   }

@@ -1,29 +1,21 @@
 // =========================================================================
--- AL-FARHAIN AMBULANCE MEDICAL SYSTEM (AFAMS)
--- SERVERLESS ENDPOINT: POST /api/driver/invite
--- Strictly server-side: Generates cryptographic activation codes, computes SHA-256 hashes,
--- prevents duplicate active invitations, and audits staff actions.
+// AL-FARHAIN AMBULANCE MEDICAL SYSTEM (AFAMS)
+// SERVERLESS ENDPOINT: POST /api/driver/invite
+// Strictly server-side: Generates cryptographic activation codes, computes SHA-256 hashes,
+// prevents duplicate active invitations, and audits staff actions.
+// Caller must be HQ admin / branch manager (verified JWT).
 // =========================================================================
 
 import crypto from 'crypto';
-import { createClient } from '@supabase/supabase-js';
-
-function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) return null;
-  return createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
+import { applyCors, requireAuth, getSupabaseAdmin, isDevServer, canAccessBranch, HQ_ADMIN_ROLES } from '../_lib/security.js';
 
 function generateSecureCode() {
   // Alphanumeric characters excluding visually ambiguous letters (0, O, 1, I, L)
+  // 10 symbols from a 31-char alphabet (~8e14 combinations), unbiased via crypto.randomInt.
   const charset = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
   let randomPart = '';
-  const randomBytes = crypto.randomBytes(6);
-  for (let i = 0; i < 6; i++) {
-    randomPart += charset[randomBytes[i] % charset.length];
+  for (let i = 0; i < 10; i++) {
+    randomPart += charset[crypto.randomInt(charset.length)];
   }
   return `AMC-${randomPart}`;
 }
@@ -38,13 +30,7 @@ function maskCode(code) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (applyCors(req, res, 'POST, OPTIONS')) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({
@@ -54,6 +40,10 @@ export default async function handler(req, res) {
     });
   }
 
+  const ctx = await requireAuth(req, res, { roles: HQ_ADMIN_ROLES });
+  if (!ctx) return;
+  const actor = ctx.actor; // from verified JWT + staff_roles, never from the body
+
   try {
     const {
       fullName,
@@ -62,9 +52,16 @@ export default async function handler(req, res) {
       branchId = 'kok_lanas',
       validHours = 48,
       internalNotes = '',
-      assignedPlate = null,
-      actor = { name: 'Pentadbir HQ', role: 'hq_admin', email: 'abedi@alfarhain.my' }
+      assignedPlate = null
     } = req.body || {};
+
+    if (!canAccessBranch(actor, branchId)) {
+      return res.status(403).json({
+        success: false,
+        error: `Akses ditolak: Anda hanya boleh menjemput pemandu bagi cawangan ${actor.branchId}.`,
+        code: 'CROSS_BRANCH_FORBIDDEN'
+      });
+    }
 
     // 1. Validation
     if (!fullName || !email || !phone) {
@@ -85,10 +82,8 @@ export default async function handler(req, res) {
     const codeHash = hashToken(plainCode);
     const maskedCode = maskCode(plainCode);
 
-    // Build base URL for activation link
-    const origin = req.headers.origin || req.headers.host 
-      ? `https://${req.headers.host}`
-      : 'https://alfarhainambulance.com';
+    // Build base URL for activation link (APP_BASE_URL avoids Host-header spoofing)
+    const origin = (process.env.APP_BASE_URL || (req.headers.host ? `https://${req.headers.host}` : 'https://alfarhainambulance.vercel.app')).replace(/\/+$/, '');
     const activationLink = `${origin}/?act=${encodeURIComponent(plainCode)}&email=${encodeURIComponent(cleanEmail)}`;
 
     const supabase = getSupabaseAdmin();
@@ -133,9 +128,10 @@ export default async function handler(req, res) {
           delivery_status: 'Manual', // default until email provider configured
           internal_notes: internalNotes || null,
           expires_at: expiresAt,
+          created_by: ctx.isDevFallback ? null : actor.id,
           created_by_name: actor.name || 'Pentadbir HQ'
         })
-        .select()
+        .select('id, masked_code, full_name, email, phone, branch_id, assigned_plate, status, delivery_status, expires_at, created_at')
         .single();
 
       if (insertErr) {
@@ -144,6 +140,7 @@ export default async function handler(req, res) {
 
       // 4. Log Audit Event
       await supabase.from('driver_audit_logs').insert({
+        actor_id: ctx.isDevFallback ? null : actor.id,
         actor_name: actor.name || 'Pentadbir HQ',
         actor_role: actor.role || 'hq_admin',
         target_email: cleanEmail,
@@ -169,7 +166,10 @@ export default async function handler(req, res) {
       });
     }
 
-    // In-memory fallback if Supabase credentials are not configured in local environment
+    // In-memory fallback (local dev server only)
+    if (!isDevServer()) {
+      return res.status(503).json({ success: false, error: 'Pelayan belum dikonfigurasi.', code: 'SERVER_NOT_CONFIGURED' });
+    }
     return res.status(201).json({
       success: true,
       message: 'Jemputan pemandu berjaya dicipta (Mod Pangkalan Data Tempatan).',
@@ -195,7 +195,7 @@ export default async function handler(req, res) {
     console.error('Error in /api/driver/invite:', err);
     return res.status(500).json({
       success: false,
-      error: 'Ralat pelayan semasa menjana jemputan pemandu: ' + err.message,
+      error: 'Ralat pelayan semasa menjana jemputan pemandu.',
       code: 'SERVER_ERROR'
     });
   }

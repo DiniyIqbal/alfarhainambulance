@@ -42,7 +42,9 @@ import {
   getStoredUserProfile,
   saveStoredUserProfile,
   resolveUserRole,
-  redirectBasedOnRole
+  redirectBasedOnRole,
+  hideDemoLoginUi,
+  DEMO_MODE
 } from './services/supabaseClient.js';
 
 import {
@@ -2204,7 +2206,7 @@ function getOrGenerateInvoiceNumber() {
 
 function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpaid') {
   const user = getStoredUserProfile();
-  const patientEmail = (user?.email || state.patientInfo?.email || 'pesakit.demo@gmail.com').trim();
+  const patientEmail = (user?.email || state.patientInfo?.email || '').trim();
   const patientName = (state.patientInfo?.name || user?.user_metadata?.name || user?.user_metadata?.full_name || 'Pesakit AMC').trim();
   const patientPhone = (state.patientInfo?.phone || user?.user_metadata?.phone || '+60 12-345 6789').trim();
 
@@ -2322,11 +2324,10 @@ function initPaymentReturnHandler() {
     playSuccessChime();
 
     if (returnInfo.invoice) {
-      updateBookingStatusInSupabase(returnInfo.invoice, 'Dispatched', {
-        payment_status: 'PAID',
-        payment_method: 'chip'
-      });
-      setTimeout(() => renderUserProfileRecords(), 150);
+      // Display only. The booking is marked paid in the database exclusively by
+      // /api/payment/webhook after it re-verifies the purchase with CHIP.
+      saveLocalBookingCache({ invoice_number: returnInfo.invoice, payment_method: 'chip' });
+      setTimeout(() => renderUserProfileRecords(), 1500);
     }
 
     if (statusIcon) statusIcon.textContent = '🎉';
@@ -4005,13 +4006,16 @@ async function initMobileAuth() {
   let authMode = 'login'; // 'login' | 'register'
   let gateMode = 'login'; // 'login' | 'register'
 
+  // Production builds: remove 1-click demo logins entirely
+  hideDemoLoginUi();
+
   // 1. Check existing session on mobile load
   const currentUser = await getCurrentAuthUser();
   updateMobileAuthUI(currentUser);
 
   if (currentUser) {
     setMobileGateLocked(false);
-    const userRole = resolveUserRole(currentUser.email, currentUser.user_metadata);
+    const userRole = resolveUserRole(currentUser.email, currentUser.user_metadata, currentUser.app_access);
     const urlParams = new URLSearchParams(window.location.search);
     if (userRole === 'driver' && !urlParams.has('stay_patient')) {
       window.location.href = '/driver.html';
@@ -4074,6 +4078,7 @@ async function initMobileAuth() {
   // Quick Demo Account Auto-Fill Handlers
   document.querySelectorAll('.btn-demo-quick-mobile').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (!DEMO_MODE) return;
       const email = btn.dataset.email;
       const pass = btn.dataset.pass;
       const target = btn.dataset.targetForm;
@@ -4668,7 +4673,7 @@ async function initMobileAuth() {
         updateMobileAuthUI(user);
         setMobileGateLocked(false);
 
-        const userRole = resolveUserRole(user.email, user.user_metadata);
+        const userRole = resolveUserRole(user.email, user.user_metadata, user.app_access);
         if (userRole === 'driver') {
           if (statusMsg) {
             statusMsg.textContent = 'Log masuk pemandu berjaya! Membuka portal pemandu...';
@@ -4703,6 +4708,7 @@ async function initMobileAuth() {
   // 6. Quick Demo Logins on Mobile (Both Gatekeeper & Modal)
   document.querySelectorAll('.btn-demo-quick-auth-mobile').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (!DEMO_MODE) return;
       playClickSound();
       const email = btn.dataset.email;
       const name = btn.dataset.name;
@@ -4732,7 +4738,7 @@ async function initMobileAuth() {
       playSuccessChime();
       if (modal) modal.classList.remove('show');
 
-      const userRole = resolveUserRole(email, mockUser.user_metadata);
+      const userRole = resolveUserRole(email, mockUser.user_metadata, null);
       if (userRole === 'driver') {
         setTimeout(() => {
           window.location.href = '/driver.html';

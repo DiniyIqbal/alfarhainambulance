@@ -4,16 +4,32 @@ import { createClient } from '@supabase/supabase-js';
 // Default / Stored Credentials
 let clientInstance = null;
 
+const META_ENV = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
+
+/**
+ * Demo mode: 1-click demo accounts, local mock users and the in-app Supabase
+ * config override. Enabled ONLY on the local dev server, or when a build
+ * explicitly sets VITE_ENABLE_DEMO=true (e.g. a sales demo deployment that
+ * is NOT connected to the production database).
+ * Real data is protected by RLS regardless of this flag.
+ */
+export const DEMO_MODE = Boolean(META_ENV.DEV) || META_ENV.VITE_ENABLE_DEMO === 'true';
+
 export function getStoredSupabaseConfig() {
-  const metaEnv = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
   const procEnv = (typeof process !== 'undefined' && process.env) ? process.env : {};
 
-  const envUrl = metaEnv.VITE_SUPABASE_URL || procEnv.VITE_SUPABASE_URL || '';
-  const envKey = metaEnv.VITE_SUPABASE_ANON_KEY || metaEnv.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  const envUrl = META_ENV.VITE_SUPABASE_URL || procEnv.VITE_SUPABASE_URL || '';
+  const envKey = META_ENV.VITE_SUPABASE_ANON_KEY || META_ENV.VITE_SUPABASE_PUBLISHABLE_KEY ||
                  procEnv.VITE_SUPABASE_ANON_KEY || procEnv.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 
-  const localUrl = (typeof localStorage !== 'undefined') ? (localStorage.getItem('amc_supabase_url') || '') : '';
-  const localKey = (typeof localStorage !== 'undefined') ? (localStorage.getItem('amc_supabase_anon_key') || '') : '';
+  // The localStorage override lets anyone point the app at another backend;
+  // only honour it in demo/dev builds.
+  let localUrl = '';
+  let localKey = '';
+  if (DEMO_MODE && typeof localStorage !== 'undefined') {
+    localUrl = localStorage.getItem('amc_supabase_url') || '';
+    localKey = localStorage.getItem('amc_supabase_anon_key') || '';
+  }
 
   const url = localUrl || envUrl;
   const anonKey = localKey || envKey;
@@ -49,6 +65,10 @@ export function getSupabaseClient() {
 }
 
 export function saveSupabaseConfig(url, anonKey) {
+  if (!DEMO_MODE) {
+    console.warn('Supabase configuration override is disabled in production builds.');
+    return getSupabaseClient();
+  }
   localStorage.setItem('amc_supabase_url', url.trim());
   localStorage.setItem('amc_supabase_anon_key', anonKey.trim());
   clientInstance = null; // Reset instance to recreate with new credentials
@@ -115,6 +135,75 @@ export function broadcastSyncEvent(type, data) {
   } catch (e) {}
 }
 
+/* -------------------------------------------------------------------------
+   Guest booking access tokens
+   A guest (not signed in) cannot read bookings through RLS. When a guest
+   creates a booking, a random token is stored with it and kept in this
+   browser only; get_guest_booking(invoice, token) returns that one booking.
+   ------------------------------------------------------------------------- */
+const GUEST_TOKEN_KEY = 'amc_guest_booking_tokens';
+
+function randomUuid() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+function readGuestTokens() {
+  try {
+    return JSON.parse(localStorage.getItem(GUEST_TOKEN_KEY) || '{}') || {};
+  } catch {
+    return {};
+  }
+}
+
+export function getGuestBookingToken(invoiceNumber) {
+  if (!invoiceNumber || typeof localStorage === 'undefined') return null;
+  return readGuestTokens()[invoiceNumber] || null;
+}
+
+/** Returns the existing token for this invoice, or creates and stores one. */
+export function ensureGuestBookingToken(invoiceNumber) {
+  if (!invoiceNumber || typeof localStorage === 'undefined') return null;
+  const tokens = readGuestTokens();
+  if (!tokens[invoiceNumber]) {
+    tokens[invoiceNumber] = randomUuid();
+    // keep the 20 most recent
+    const trimmed = Object.fromEntries(Object.entries(tokens).slice(-20));
+    try {
+      localStorage.setItem(GUEST_TOKEN_KEY, JSON.stringify(trimmed));
+    } catch (e) {}
+    return trimmed[invoiceNumber] || tokens[invoiceNumber];
+  }
+  return tokens[invoiceNumber];
+}
+
+/** Keeps only real table columns (snake_case) and drops undefined values. */
+export function toBookingRow(record) {
+  return Object.fromEntries(
+    Object.entries(record || {}).filter(([k, v]) => v !== undefined && !/[A-Z]/.test(k))
+  );
+}
+
+/** Authorization header for /api/* calls (empty object when signed out). */
+export async function getAuthHeaders() {
+  const supabase = getSupabaseClient();
+  if (!supabase) return {};
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 export function saveLocalBookingCache(bookingRecord) {
   if (typeof localStorage === 'undefined') return;
   try {
@@ -152,8 +241,9 @@ export async function insertBookingToSupabase(bookingData) {
     misc_fee: Number(bookingData.miscFee || bookingData.misc_fee || 0.00),
     total_fare: Number(bookingData.totalFare || bookingData.total_fare || 250.00),
     is_diesel_surge: Boolean(bookingData.isDieselSurge || bookingData.is_diesel_surge),
-    plate_number: bookingData.plateNumber || bookingData.plate_number || 'VPQ 7606',
-    driver_name: bookingData.driverName || bookingData.driver_name || 'Abe Di / Syalihan',
+    // Assignment is done by HQ; patients never pick a vehicle/driver.
+    plate_number: bookingData.plateNumber || bookingData.plate_number || '',
+    driver_name: bookingData.driverName || bookingData.driver_name || '',
     contact_phone: bookingData.contactPhone || bookingData.contact_phone || '013-914 7606',
     patient_name: bookingData.patientName || bookingData.patient_name || 'Pesakit AMC',
     patient_phone: bookingData.patientPhone || bookingData.patient_phone || '013-914 7606',
@@ -202,30 +292,27 @@ export async function insertBookingToSupabase(bookingData) {
       patient_email: newRecord.patient_email,
       payment_status: newRecord.payment_status,
       payment_method: newRecord.payment_method,
-      status: newRecord.status
+      status: newRecord.status,
+      // lets a guest track this booking via get_guest_booking()
+      guest_access_token: bookingData.guest_access_token || ensureGuestBookingToken(newRecord.invoice_number)
     };
 
-    let { data, error } = await supabase
+    // No .select(): guests have no SELECT permission (RLS), and the server-side
+    // trigger decides ownership/status anyway.
+    const { error } = await supabase
       .from('ambulance_bookings')
-      .insert([insertObj])
-      .select();
-
-    // If new columns are not yet in Supabase schema, retry with legacy fields
-    if (error && (error.message.includes('patient_email') || error.message.includes('payment_status') || error.message.includes('payment_method'))) {
-      delete insertObj.patient_email;
-      delete insertObj.payment_status;
-      delete insertObj.payment_method;
-      const retry = await supabase.from('ambulance_bookings').insert([insertObj]).select();
-      data = retry.data;
-      error = retry.error;
-    }
+      .insert([insertObj]);
 
     if (error) {
-      console.warn('Supabase insert notice (saved locally):', error.message);
-      return { success: true, offlineFallback: true, data: newRecord };
+      // 23505 = invoice already stored (e.g. by createPatientBooking): not an error.
+      if (error.code === '23505') {
+        return { success: true, data: newRecord };
+      }
+      console.error('Supabase insert failed (saved locally only):', error.message);
+      return { success: true, offlineFallback: true, error: error.message, data: newRecord };
     }
 
-    return { success: true, data: data[0] };
+    return { success: true, data: newRecord };
   } catch (err) {
     console.warn('Supabase insert exception (saved locally):', err.message);
     return { success: true, offlineFallback: true, data: newRecord };
@@ -270,14 +357,49 @@ export async function fetchBookingsFromSupabase(limit = 20) {
 }
 
 // Fetch patient's actual ambulance bookings (synced with Supabase + Local Cache)
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function fetchPatientBookingsFromSupabase(user) {
+  const supabase = getSupabaseClient();
+
+  if (supabase) {
+    const results = [];
+
+    // 1. Signed-in patient: only rows they own (RLS enforces this too).
+    if (user && UUID_PATTERN.test(user.id || '')) {
+      try {
+        const { data, error } = await supabase
+          .from('ambulance_bookings')
+          .select('*')
+          .eq('patient_user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
+        if (!error && Array.isArray(data)) results.push(...data);
+      } catch (e) {
+        console.warn('Fetch own bookings notice:', e.message);
+      }
+    }
+
+    // 2. Bookings made as a guest from this browser (token-based).
+    const tokens = readGuestTokens();
+    const seen = new Set(results.map((b) => b.invoice_number));
+    for (const [invoice, token] of Object.entries(tokens)) {
+      if (seen.has(invoice)) continue;
+      try {
+        const { data } = await supabase.rpc('get_guest_booking', { p_invoice: invoice, p_token: token });
+        if (data) results.push(data);
+      } catch (e) {}
+    }
+
+    results.forEach(saveLocalBookingCache);
+    return results;
+  }
+
+  // ---- Offline / demo mode: filter the local cache ----
   if (!user) return [];
   const email = (user.email || '').toLowerCase().trim();
   const phone = (user.user_metadata?.phone || '').replace(/[^0-9]/g, '');
   const name = (user.user_metadata?.name || user.user_metadata?.full_name || '').toLowerCase().trim();
-
-  // Try live fetch from Supabase
-  await fetchBookingsFromSupabase(50);
 
   // Read all records from local cache
   let all = [];
@@ -350,6 +472,8 @@ export async function updateBookingStatusInSupabase(invoiceNumber, newStatus, ex
 
 // Fetch active mission for a driver
 export async function fetchActiveMissionForDriver(plateNumber = 'VPQ 7606') {
+  // RLS limits a driver to bookings whose plate_number is their assigned
+  // ambulance, so no client-side plate filter is needed (or trusted).
   const supabase = getSupabaseClient();
   if (supabase) {
     try {
@@ -364,12 +488,14 @@ export async function fetchActiveMissionForDriver(plateNumber = 'VPQ 7606') {
       if (!error && data && data.length > 0) {
         return data[0];
       }
+      if (!error) return null; // authoritative: no mission assigned to this driver
     } catch (e) {
       console.warn('Notice fetching driver mission from Supabase:', e);
     }
+    if (!DEMO_MODE) return null;
   }
 
-  // Fallback: check localStorage
+  // Fallback (offline / demo only): check localStorage
   try {
     const raw = localStorage.getItem('amc_all_bookings');
     if (raw) {
@@ -515,12 +641,16 @@ export async function signUpUser(email, password, metadata = {}) {
     return { success: true, user: mockUser, isLocal: true };
   }
 
+  // Roles are granted by HQ (staff_roles / driver invitations), never chosen
+  // at sign-up. Strip any role hints so nothing downstream is tempted to trust them.
+  const { role, role_label, account_status, ...safeMetadata } = metadata || {};
+
   try {
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
-        data: metadata
+        data: safeMetadata
       }
     });
 
@@ -627,8 +757,8 @@ export const DEMO_GMAIL_ACCOUNTS = {
 export async function signInUser(email, password) {
   const cleanEmail = (email || '').trim().toLowerCase();
 
-  // 1. Direct Demo Account Match (Works instantly for demonstration)
-  if (DEMO_GMAIL_ACCOUNTS[cleanEmail]) {
+  // 1. Direct Demo Account Match (demo/dev builds ONLY - no password check)
+  if (DEMO_MODE && DEMO_GMAIL_ACCOUNTS[cleanEmail]) {
     const demo = DEMO_GMAIL_ACCOUNTS[cleanEmail];
     const mockUser = {
       id: 'demo_' + cleanEmail.replace(/[^a-zA-Z0-9]/g, '_'),
@@ -646,12 +776,25 @@ export async function signInUser(email, password) {
         correction_notes: demo.correction_notes || ''
       }
     };
+    mockUser.app_access = {
+      role: demo.role,
+      app_role: demo.role === 'hq_admin' || demo.role === 'branch_manager' ? 'hq'
+        : (demo.role === 'partner_admin' ? 'partner' : (demo.role.includes('driver') ? 'driver' : 'patient')),
+      full_name: demo.full_name,
+      branch_id: demo.branch,
+      ambulance_plate: demo.ambulance_plate || '',
+      company_id: demo.company_id || null,
+      account_status: demo.account_status
+    };
     saveStoredUserProfile(mockUser);
     return { success: true, user: mockUser, isDemo: true };
   }
 
   const supabase = getSupabaseClient();
   if (!supabase) {
+    if (!DEMO_MODE) {
+      return { success: false, error: 'Perkhidmatan log masuk tidak tersedia. Sila cuba sebentar lagi.' };
+    }
     const mockUser = {
       id: 'local_user',
       email: cleanEmail,
@@ -674,10 +817,11 @@ export async function signInUser(email, password) {
       return { success: false, error: error.message };
     }
 
-    if (data?.user) {
-      saveStoredUserProfile(data.user);
+    const user = data?.user ? await attachAccess(data.user) : null;
+    if (user) {
+      saveStoredUserProfile(user);
     }
-    return { success: true, user: data.user, session: data.session };
+    return { success: true, user, session: data.session };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -732,7 +876,39 @@ export async function signOutUser() {
     console.warn('Sign out error:', err);
   }
   localStorage.removeItem('amc_auth_user');
+  // Patient data cached on this device belongs to the signed-out user.
+  localStorage.removeItem('amc_all_bookings');
+  localStorage.removeItem('amc_local_bookings');
+  localStorage.removeItem('amc_notifications');
+  localStorage.removeItem('amc_active_invoice');
+  localStorage.removeItem('amc_last_sync_event');
   return { success: true };
+}
+
+/**
+ * Server-resolved role for the signed-in user (RPC get_my_access).
+ * Shape: { role, app_role, full_name, branch_id, ambulance_plate, company_id, account_status }
+ */
+export async function fetchMyAccess() {
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.rpc('get_my_access');
+    if (error) {
+      console.warn('get_my_access failed:', error.message);
+      return null;
+    }
+    return data || null;
+  } catch (err) {
+    console.warn('get_my_access exception:', err.message);
+    return null;
+  }
+}
+
+async function attachAccess(user) {
+  if (!user) return user;
+  const access = await fetchMyAccess();
+  return { ...user, app_access: access || { role: 'patient', app_role: 'patient' } };
 }
 
 export async function getCurrentAuthUser() {
@@ -741,11 +917,17 @@ export async function getCurrentAuthUser() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        saveStoredUserProfile(user);
-        return user;
+        const withAccess = await attachAccess(user);
+        saveStoredUserProfile(withAccess);
+        return withAccess;
       }
     } catch (err) {
       console.warn('Get current user error:', err);
+    }
+    // A real backend is configured: a cached profile is NOT a session.
+    if (!DEMO_MODE) {
+      localStorage.removeItem('amc_auth_user');
+      return null;
     }
   }
   return getStoredUserProfile();
@@ -769,13 +951,31 @@ export function saveStoredUserProfile(user) {
 }
 
 /**
- * Automatically determine role from user email and metadata
- * - "-driver@gmail.com" or ".driver@" -> 'driver'
- * - "admin@" or "hq@" -> 'hq'
- * - default -> 'patient'
+ * Determine the UI role ('hq' | 'driver' | 'partner_admin' | 'partner_driver' | 'patient').
+ *
+ * Production: ONLY the server-resolved `access` (from get_my_access) counts.
+ * user_metadata is editable by the user themself, so it is never trusted.
+ * Demo/offline builds fall back to the old metadata/email heuristics.
+ *
+ * This only drives routing/UI. Data access is enforced by RLS and the APIs.
  */
-export function resolveUserRole(email = '', userMetadata = {}) {
-  if (userMetadata?.role) return userMetadata.role;
+export function resolveUserRole(email = '', userMetadata = {}, access = null) {
+  if (access && access.role) {
+    if (['hq_admin', 'branch_manager', 'dispatcher', 'hq_finance'].includes(access.role)) return 'hq';
+    if (access.role === 'partner_admin' || access.role === 'partner_driver') return access.role;
+    if (access.role === 'driver') return 'driver';
+    return 'patient';
+  }
+
+  if (!DEMO_MODE && isSupabaseConfigured()) {
+    return 'patient';
+  }
+
+  // ---- Demo / offline heuristics ----
+  if (userMetadata?.role) {
+    if (['hq_admin', 'branch_manager', 'dispatcher', 'hq_finance'].includes(userMetadata.role)) return 'hq';
+    return userMetadata.role;
+  }
   const clean = (email || '').toLowerCase().trim();
   if (clean.includes('-driver@') || clean.includes('.driver@') || clean.includes('_driver@') || clean.includes('driver')) {
     return 'driver';
@@ -794,7 +994,7 @@ export function getRoleDestination(role) {
 
 export function redirectBasedOnRole(user, options = {}) {
   if (!user) return;
-  const role = resolveUserRole(user.email, user.user_metadata);
+  const role = resolveUserRole(user.email, user.user_metadata, user.app_access);
   const currentPath = window.location.pathname;
 
   if (role === 'driver' && !currentPath.includes('driver.html')) {
@@ -806,4 +1006,15 @@ export function redirectBasedOnRole(user, options = {}) {
       window.location.href = '/index.html';
     }
   }
+}
+
+/**
+ * Removes 1-click demo login buttons from the page in production builds.
+ * Safe to call on any page; no-op in demo/dev builds.
+ */
+export function hideDemoLoginUi(root = (typeof document !== 'undefined' ? document : null)) {
+  if (DEMO_MODE || !root) return;
+  root.querySelectorAll(
+    '.auth-demo-picker-card, .btn-demo-quick-mobile, .btn-demo-quick-auth-mobile, .btn-demo-quick-auth, [data-demo-only]'
+  ).forEach((el) => el.remove());
 }

@@ -4,6 +4,8 @@
 // Supports FPX, DuitNow QR, Cards & Android TWA / Bubblewrap WebViews.
 // =========================================================================
 
+import { getAuthHeaders, getGuestBookingToken } from './supabaseClient.js';
+
 /**
  * Initiates an online payment session with CHIP Payment Gateway.
  * 
@@ -36,11 +38,16 @@ export async function initiateChipPayment(bookingData, paymentType = 'full') {
     distance_km: bookingData.distance_km !== undefined ? bookingData.distance_km : (bookingData.distanceKm || 25.0)
   };
 
+  // Proves ownership of the booking to the server: signed-in session and/or
+  // the guest token created in this browser when the booking was made.
+  normalizedBooking.guestAccessToken = getGuestBookingToken(invoiceNo) || bookingData.guest_access_token || undefined;
+
   try {
     const response = await fetch('/api/payment/create-checkout', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...(await getAuthHeaders())
       },
       body: JSON.stringify({
         bookingData: normalizedBooking,

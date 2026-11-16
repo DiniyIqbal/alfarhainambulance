@@ -120,26 +120,18 @@ ALTER TABLE public.ambulance_fleet ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ambulance_drivers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.equipment_catalogue ENABLE ROW LEVEL SECURITY;
 
--- Safely drop existing policies before re-creating to avoid 42710 already exists error
+-- SECURITY: ambulance_bookings and ambulance_drivers contain personal data.
+-- Their access policies are defined in supabase_security_hardening.sql
+-- (run it last). Never add USING (true) policies to these tables.
 DROP POLICY IF EXISTS "Allow public read ambulance_bookings" ON public.ambulance_bookings;
-CREATE POLICY "Allow public read ambulance_bookings" 
-ON public.ambulance_bookings FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "Allow public insert ambulance_bookings" ON public.ambulance_bookings;
-CREATE POLICY "Allow public insert ambulance_bookings" 
-ON public.ambulance_bookings FOR INSERT WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Allow public update ambulance_bookings" ON public.ambulance_bookings;
-CREATE POLICY "Allow public update ambulance_bookings" 
-ON public.ambulance_bookings FOR UPDATE USING (true);
 
 DROP POLICY IF EXISTS "Allow public read fleet" ON public.ambulance_fleet;
 CREATE POLICY "Allow public read fleet" 
 ON public.ambulance_fleet FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Allow public read drivers" ON public.ambulance_drivers;
-CREATE POLICY "Allow public read drivers" 
-ON public.ambulance_drivers FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Allow public read equipment" ON public.equipment_catalogue;
 CREATE POLICY "Allow public read equipment" 

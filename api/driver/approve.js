@@ -4,25 +4,10 @@
 // Privileged administrative review endpoint: Luluskan, Minta Pembetulan, Tolak, Gantung.
 // =========================================================================
 
-import { createClient } from '@supabase/supabase-js';
-
-function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) return null;
-  return createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
+import { applyCors, requireAuth, getSupabaseAdmin, isDevServer, canAccessBranch, HQ_ADMIN_ROLES } from '../_lib/security.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (applyCors(req, res, 'POST, OPTIONS')) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({
@@ -32,6 +17,10 @@ export default async function handler(req, res) {
     });
   }
 
+  const ctx = await requireAuth(req, res, { roles: HQ_ADMIN_ROLES });
+  if (!ctx) return;
+  const actor = ctx.actor; // from verified JWT + staff_roles, never from the body
+
   try {
     const {
       driverId,
@@ -39,8 +28,7 @@ export default async function handler(req, res) {
       action, // 'LULUSKAN' | 'MINTA_PEMBETULAN' | 'TOLAK' | 'GANTUNG' | 'AKTIFKAN_SEMULA'
       reason = '',
       assignedPlate = null,
-      branchId = null,
-      actor = { name: 'Abe Di (HQ Kok Lanas)', role: 'hq_admin', email: 'abedi@alfarhain.my', branchId: 'all' }
+      branchId = null
     } = req.body || {};
 
     if (!driverEmail && !driverId) {
@@ -90,15 +78,22 @@ export default async function handler(req, res) {
         });
       }
 
-      // Branch Manager permission check
-      if (actor.role === 'branch_manager' && actor.branchId !== 'all') {
-        if (driver.hub_id !== actor.branchId) {
-          return res.status(403).json({
-            success: false,
-            error: `Akses ditolak: Pengurus cawangan hanya boleh menguruskan pemandu bagi cawangan ${actor.branchId}.`,
-            code: 'CROSS_BRANCH_FORBIDDEN'
-          });
-        }
+      // Self-approval check against the stored driver record as well
+      if (driver.user_id && driver.user_id === actor.id) {
+        return res.status(403).json({
+          success: false,
+          error: 'Tindakan disekat: Pentadbir tidak boleh meluluskan akaun pemandu sendiri.',
+          code: 'SELF_APPROVAL_BLOCKED'
+        });
+      }
+
+      // Branch scope: current branch AND (if moving) the destination branch
+      if (!canAccessBranch(actor, driver.hub_id) || (branchId && !canAccessBranch(actor, branchId))) {
+        return res.status(403).json({
+          success: false,
+          error: `Akses ditolak: Anda hanya boleh menguruskan pemandu bagi cawangan ${actor.branchId}.`,
+          code: 'CROSS_BRANCH_FORBIDDEN'
+        });
       }
 
       const updates = {
@@ -112,6 +107,7 @@ export default async function handler(req, res) {
       if (cleanAction === 'LULUSKAN') {
         newStatus = 'Aktif';
         updates.account_status = 'Aktif';
+        updates.approved_by = actor.id;
         updates.approved_by_name = actor.name;
         updates.approved_at = new Date().toISOString();
         updates.correction_notes = null;
@@ -154,6 +150,7 @@ export default async function handler(req, res) {
 
       // Audit Log
       await supabase.from('driver_audit_logs').insert({
+        actor_id: actor.id,
         actor_name: actor.name,
         actor_role: actor.role,
         target_driver_id: driver.id,
@@ -176,7 +173,10 @@ export default async function handler(req, res) {
       });
     }
 
-    // Mock Offline Fallback
+    // Mock Offline Fallback (local dev server only)
+    if (!isDevServer()) {
+      return res.status(503).json({ success: false, error: 'Pelayan belum dikonfigurasi.', code: 'SERVER_NOT_CONFIGURED' });
+    }
     return res.status(200).json({
       success: true,
       message: `Status pemandu dikemas kini kepada '${cleanAction}' (Mod Tempatan).`,
@@ -191,7 +191,7 @@ export default async function handler(req, res) {
     console.error('Error in /api/driver/approve:', err);
     return res.status(500).json({
       success: false,
-      error: 'Ralat pelayan: ' + err.message,
+      error: 'Ralat pelayan semasa mengemas kini status pemandu.',
       code: 'SERVER_ERROR'
     });
   }

@@ -21,6 +21,7 @@ import {
   completeSettlementBatch,
   getPartnerPortalScopedData
 } from '../../src/services/partnerAmbulanceService.js';
+import { applyCors, requireAuth, getClientIp, STAFF_ROLES, PARTNER_ROLES } from '../_lib/security.js';
 
 const rateLimitWindow = new Map();
 
@@ -38,13 +39,7 @@ function checkRateLimit(ip = 'local', limit = 30) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (applyCors(req, res, 'POST, OPTIONS')) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({
@@ -53,7 +48,7 @@ export default async function handler(req, res) {
     });
   }
 
-  const clientIp = req.headers?.['x-forwarded-for'] || '127.0.0.1';
+  const clientIp = getClientIp(req);
   if (!checkRateLimit(clientIp, 40)) {
     return res.status(429).json({
       success: false,
@@ -62,13 +57,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { operation, actor, payload = {} } = req.body || {};
+    // NOTE: any `actor` field in the request body is ignored on purpose.
+    const { operation, payload = {} } = req.body || {};
 
     if (!operation) {
       return res.status(400).json({
         success: false,
         error: 'Operasi API Rakan Ambulans tidak dinyatakan.'
       });
+    }
+
+    // Invitation redemption is performed by not-yet-registered partners and is
+    // protected by the one-time invitation code itself.
+    let actor = null;
+    if (operation !== 'REDEEM_INVITATION') {
+      const ctx = await requireAuth(req, res, { roles: [...STAFF_ROLES, ...PARTNER_ROLES] });
+      if (!ctx) return;
+      actor = ctx.actor;
     }
 
     let result;
@@ -113,7 +118,11 @@ export default async function handler(req, res) {
         result = completeSettlementBatch(actor, payload);
         break;
       case 'GET_SCOPED_DATA':
-        result = getPartnerPortalScopedData(actor, payload.companyId);
+        // Partners are always scoped to their own company, whatever they request.
+        result = getPartnerPortalScopedData(
+          actor,
+          PARTNER_ROLES.includes(actor.role) ? actor.companyId : payload.companyId
+        );
         break;
       default:
         return res.status(400).json({

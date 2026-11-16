@@ -27,8 +27,18 @@ import {
   signUpUser,
   signInUser,
   signOutUser,
-  getCurrentAuthUser
+  getCurrentAuthUser,
+  getAuthHeaders,
+  hideDemoLoginUi,
+  DEMO_MODE
 } from '../services/supabaseClient.js';
+
+const STAFF_ROLE_LABELS = {
+  hq_admin: 'Pentadbir HQ',
+  branch_manager: 'Pengurus Cawangan',
+  dispatcher: 'Pegawai Dispatch',
+  hq_finance: 'Pegawai Kewangan HQ'
+};
 
 import { fetchRoadRoute, haversineKm, estimateDurationMin } from '../services/routingService.js';
 import { playCalculateChime, playEmergencyAlertSiren, playSuccessChime } from '../utils/soundFx.js';
@@ -382,9 +392,45 @@ function initAuthentication() {
     });
   }
 
-  // Quick 1-Click Demo Login
+  const unlockPortal = () => {
+    if (authGate) authGate.classList.add('hidden');
+    if (appShell) appShell.classList.remove('gate-locked');
+    invalidateAllMaps();
+  };
+
+  const lockPortal = () => {
+    if (authGate) authGate.classList.remove('hidden');
+    if (appShell) appShell.classList.add('gate-locked');
+  };
+
+  /** Accepts the user only if the SERVER says they are active staff. */
+  const applyStaffSession = (user) => {
+    const access = user?.app_access;
+    if (!access || !STAFF_ROLE_LABELS[access.role]) return false;
+    portalState.currentUser = {
+      name: access.full_name || user.email,
+      role: STAFF_ROLE_LABELS[access.role],
+      roleKey: access.role,
+      branch: access.branch_id || 'all',
+      email: user.email
+    };
+    updateOperatorCard();
+    return true;
+  };
+
+  // Production: remove demo buttons; restore an existing staff session.
+  hideDemoLoginUi();
+  if (!DEMO_MODE) {
+    lockPortal();
+    getCurrentAuthUser().then((user) => {
+      if (user && applyStaffSession(user)) unlockPortal();
+    });
+  }
+
+  // Quick 1-Click Demo Login (demo/dev builds only; buttons are removed otherwise)
   quickDemoBtns.forEach(btn => {
     btn.addEventListener('click', () => {
+      if (!DEMO_MODE) return;
       quickDemoBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
@@ -403,37 +449,60 @@ function initAuthentication() {
 
   // Login Form Submit
   if (gateForm) {
-    gateForm.addEventListener('submit', (e) => {
+    gateForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('gateAuthEmail')?.value.trim();
+      const password = document.getElementById('gateAuthPassword')?.value || '';
       const statusMsg = document.getElementById('gateAuthStatusMsg');
 
-      if (statusMsg) {
+      const setStatus = (text, ok) => {
+        if (!statusMsg) return;
         statusMsg.style.display = 'block';
-        statusMsg.textContent = 'Mengesahkan kelayakan akses...';
-        statusMsg.style.background = '#E0F2FE';
-        statusMsg.style.color = '#0284C7';
+        statusMsg.textContent = text;
+        statusMsg.style.background = ok === null ? '#E0F2FE' : (ok ? '#DCFCE7' : '#FEE2E2');
+        statusMsg.style.color = ok === null ? '#0284C7' : (ok ? '#15803D' : '#B91C1C');
+      };
+
+      // Demo builds keep the old instant unlock for presentations.
+      if (DEMO_MODE && !password) {
+        playSuccessChime();
+        unlockPortal();
+        showToast(`Selamat kembali, ${portalState.currentUser.name}!`);
+        return;
       }
 
-      setTimeout(() => {
-        playSuccessChime();
-        if (authGate) authGate.classList.add('hidden');
-        if (appShell) appShell.classList.remove('gate-locked');
+      if (!email || !password) {
+        setStatus('Sila masukkan emel dan kata laluan.', false);
+        return;
+      }
 
-        // Invalidate Leaflet maps
-        invalidateAllMaps();
-        showToast(`Selamat kembali, ${portalState.currentUser.name}!`);
-      }, 500);
+      setStatus('Mengesahkan kelayakan akses...', null);
+      const res = await signInUser(email, password);
+      if (!res.success) {
+        setStatus(res.error || 'Log masuk gagal.', false);
+        return;
+      }
+
+      if (!applyStaffSession(res.user)) {
+        await signOutUser();
+        setStatus('Akaun ini tidak mempunyai akses ke Portal HQ.', false);
+        return;
+      }
+
+      setStatus('Log masuk berjaya.', true);
+      playSuccessChime();
+      unlockPortal();
+      showToast(`Selamat kembali, ${portalState.currentUser.name}!`);
     });
   }
 
   // Topbar Avatar Profile Click
   if (topAvatarBtn) {
-    topAvatarBtn.addEventListener('click', () => {
+    topAvatarBtn.addEventListener('click', async () => {
       const confirmSignOut = confirm(`Adakah anda ingin log keluar daripada sesi ${portalState.currentUser.name}?`);
       if (confirmSignOut) {
-        if (authGate) authGate.classList.remove('hidden');
-        if (appShell) appShell.classList.add('gate-locked');
+        await signOutUser();
+        lockPortal();
         showToast('Sesi ditamatkan.');
       }
     });
@@ -2637,9 +2706,10 @@ async function handleCreateDriverInvite() {
   let resultLink = '';
 
   try {
+    // Identity is taken from the signed-in session on the server, not from the body.
     const res = await fetch('/api/driver/invite', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
       body: JSON.stringify({
         fullName: name,
         email,
@@ -2647,20 +2717,26 @@ async function handleCreateDriverInvite() {
         branchId,
         validHours,
         assignedPlate,
-        internalNotes: notes,
-        actor: { name: portalState.operatorName || 'Abe Di (HQ Kok Lanas)', role: 'hq_admin', email: 'abedi@alfarhain.my' }
+        internalNotes: notes
       })
     });
+    const data = await res.json().catch(() => ({}));
     if (res.ok) {
-      const data = await res.json();
       resultPlainCode = data.plainCode;
       resultLink = data.activationLink;
+    } else if (!DEMO_MODE) {
+      alert(data.error || 'Gagal mencipta jemputan. Sila log masuk semula dan cuba lagi.');
+      return;
     }
   } catch (e) {
-    console.warn('API invite failed, using local generation:', e);
+    console.warn('API invite failed:', e);
+    if (!DEMO_MODE) {
+      alert('Pelayan jemputan tidak dapat dihubungi. Sila cuba lagi.');
+      return;
+    }
   }
 
-  // Fallback generation if API unavailable
+  // Fallback generation (demo/dev only: these codes are NOT stored and will not activate)
   if (!resultPlainCode) {
     const charset = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
     let rand = '';

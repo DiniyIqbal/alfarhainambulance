@@ -226,75 +226,124 @@ await asyncTest('Backend /api/payment/create-checkout: rejects request without b
   assert.strictEqual(responseData.code, 'INVALID_BOOKING_DATA');
 });
 
-await asyncTest('Backend /api/payment/create-checkout: generates valid checkout session or mock', async () => {
-  let statusCode = 0;
-  let responseData = null;
-
-  const fakeReq = {
-    method: 'POST',
-    headers: { host: 'localhost:5173' },
-    body: {
-      bookingData: {
-        invoiceNumber: 'AMC-TEST-001',
-        totalFare: 253.90,
-        patientName: 'Ahmad Test',
-        patientPhone: '0139147606'
-      },
-      paymentType: 'full'
-    }
-  };
-
-  const fakeRes = {
+// Helper: captures handler responses
+function makeRes() {
+  const out = { statusCode: 0, data: null };
+  out.res = {
     setHeader() {},
-    status(code) {
-      statusCode = code;
-      return this;
-    },
-    json(data) {
-      responseData = data;
-    }
+    status(code) { out.statusCode = code; return this; },
+    json(data) { out.data = data; },
+    end() {}
   };
+  return out;
+}
 
-  await createCheckoutHandler(fakeReq, fakeRes);
-
-  // Status must be 200 or gateway error if invalid secret key
-  assert(statusCode === 200 || statusCode === 401 || statusCode === 400);
-  if (statusCode === 200) {
-    assert.strictEqual(responseData.success, true);
-    assert(responseData.checkoutUrl);
+function withEnv(vars, fn) {
+  const saved = {};
+  for (const k of Object.keys(vars)) {
+    saved[k] = process.env[k];
+    if (vars[k] === undefined) delete process.env[k];
+    else process.env[k] = vars[k];
   }
+  return Promise.resolve(fn()).finally(() => {
+    for (const k of Object.keys(saved)) {
+      if (saved[k] === undefined) delete process.env[k];
+      else process.env[k] = saved[k];
+    }
+  });
+}
+
+const NO_CHIP = { CHIP_SECRET_KEY: undefined, CHIP_BRAND_ID: undefined, SUPABASE_SERVICE_ROLE_KEY: undefined };
+
+await asyncTest('Security: create-checkout fails closed (503) when CHIP is not configured outside dev', async () => {
+  await withEnv({ ...NO_CHIP, AFAMS_DEV_SERVER: undefined }, async () => {
+    const out = makeRes();
+    await createCheckoutHandler({
+      method: 'POST',
+      headers: { host: 'example.vercel.app' },
+      body: { bookingData: { invoiceNumber: 'AMC-TEST-001', totalFare: 253.90 }, paymentType: 'full' }
+    }, out.res);
+    assert.strictEqual(out.statusCode, 503);
+    assert.strictEqual(out.data.code, 'PAYMENT_GATEWAY_UNAVAILABLE');
+  });
 });
 
-await asyncTest('Backend /api/payment/webhook: responds with HTTP 200 on event receipt', async () => {
-  let statusCode = 0;
-  let responseData = null;
+await asyncTest('Security: create-checkout charges the SERVER quote, never the client total (dev mock)', async () => {
+  await withEnv({ ...NO_CHIP, AFAMS_DEV_SERVER: '1' }, async () => {
+    const out = makeRes();
+    await createCheckoutHandler({
+      method: 'POST',
+      headers: { host: 'localhost:5173' },
+      body: { bookingData: { invoiceNumber: 'AMC-TEST-002', totalFare: 1.00, distanceKm: 10 }, paymentType: 'full' }
+    }, out.res);
+    assert.strictEqual(out.statusCode, 200);
+    assert.strictEqual(out.data.isMock, true);
+    assert(out.data.amountToCharge > 1.00, 'client-supplied totalFare must be ignored');
+  });
+});
 
-  const fakeReq = {
-    method: 'POST',
-    headers: {},
-    body: {
-      id: 'pur_test_123',
-      event_type: 'purchase.paid',
-      status: 'paid',
-      reference: 'AMC-TEST-001'
-    }
-  };
+await asyncTest('Security: webhook rejects a forged X-Signature with 401', async () => {
+  const crypto = await import('crypto');
+  const { publicKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const pem = publicKey.export({ type: 'spki', format: 'pem' });
+  const rawBody = JSON.stringify({ id: 'pur_test_123', status: 'paid', reference: 'AMC-TEST-001' });
 
-  const fakeRes = {
-    setHeader() {},
-    status(code) {
-      statusCode = code;
-      return this;
-    },
-    json(data) {
-      responseData = data;
-    }
-  };
+  await withEnv({ ...NO_CHIP, CHIP_PUBLIC_KEY: pem, AFAMS_DEV_SERVER: '1' }, async () => {
+    const out = makeRes();
+    await webhookHandler({
+      method: 'POST',
+      headers: { 'x-signature': Buffer.from('forged').toString('base64') },
+      rawBody,
+      body: JSON.parse(rawBody)
+    }, out.res);
+    assert.strictEqual(out.statusCode, 401);
+  });
+});
 
-  await webhookHandler(fakeReq, fakeRes);
+await asyncTest('Security: webhook accepts a valid signature but still fails closed without a database', async () => {
+  const crypto = await import('crypto');
+  const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const pem = publicKey.export({ type: 'spki', format: 'pem' });
+  const rawBody = JSON.stringify({ id: 'pur_test_456', status: 'paid', reference: 'AMC-TEST-001' });
+  const signature = crypto.createSign('RSA-SHA256').update(rawBody).sign(privateKey, 'base64');
 
-  assert.strictEqual(statusCode, 200);
-  assert.strictEqual(responseData.status, 'success');
+  await withEnv({ ...NO_CHIP, CHIP_PUBLIC_KEY: pem, AFAMS_DEV_SERVER: '1' }, async () => {
+    const out = makeRes();
+    await webhookHandler({ method: 'POST', headers: { 'x-signature': signature }, rawBody, body: JSON.parse(rawBody) }, out.res);
+    assert.strictEqual(out.statusCode, 503, 'signature passed; no service-role key so nothing is written');
+  });
+});
+
+await asyncTest('Security: unsigned "paid" webhook is NOT trusted in production (503 without CHIP verification)', async () => {
+  await withEnv({ ...NO_CHIP, AFAMS_DEV_SERVER: undefined }, async () => {
+    const out = makeRes();
+    await webhookHandler({
+      method: 'POST',
+      headers: {},
+      body: { id: 'pur_forged', status: 'paid', reference: 'AMC-TEST-001' }
+    }, out.res);
+    assert.strictEqual(out.statusCode, 503);
+  });
+});
+
+await asyncTest('Security: admin APIs ignore body-supplied actor and require a JWT (401)', async () => {
+  const { default: bookingManage } = await import('../api/booking/manage.js');
+  const { default: driverApprove } = await import('../api/driver/approve.js');
+  await withEnv({
+    AFAMS_DEV_SERVER: undefined,
+    VITE_SUPABASE_URL: 'https://example-project.supabase.co',
+    SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key'
+  }, async () => {
+    const forgedAdmin = { name: 'Attacker', role: 'hq_admin', email: 'abedi@alfarhain.my', branchId: 'all' };
+
+    const a = makeRes();
+    await bookingManage({ method: 'POST', headers: {}, body: { action: 'APPROVE_BOOKING', payload: { booking: {}, adminUser: forgedAdmin } } }, a.res);
+    assert.strictEqual(a.statusCode, 401);
+
+    const b = makeRes();
+    await driverApprove({ method: 'POST', headers: {}, body: { driverEmail: 'x@y.com', action: 'LULUSKAN', actor: forgedAdmin } }, b.res);
+    assert.strictEqual(b.statusCode, 401);
+  });
 });
 
 // -------------------------------------------------------------

@@ -24,6 +24,14 @@ function apiDevPlugin() {
             } else if (cleanUrl === '/api/payment/webhook') {
               modulePath = '/api/payment/webhook.js';
             } else {
+              // Only plain /api/<segment>/<segment> routes; never private _lib
+              // helpers or path traversal.
+              if (!/^\/api(\/[a-z0-9-]+)+$/i.test(cleanUrl)) {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: false, error: 'Not found' }));
+                return;
+              }
               modulePath = `${cleanUrl}.js`;
             }
 
@@ -45,6 +53,7 @@ function apiDevPlugin() {
               }
             }
             const fakeReq = {
+              socket: req.socket,
               method: req.method,
               headers: req.headers,
               body,
@@ -85,7 +94,7 @@ function apiDevPlugin() {
   };
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   // Populate server-side environment variables for Vite dev server SSR emulation
@@ -97,7 +106,11 @@ export default defineConfig(({ mode }) => {
     'CHIP_API_URL',
     'VITE_SUPABASE_URL',
     'VITE_SUPABASE_ANON_KEY',
-    'SUPABASE_SERVICE_ROLE_KEY'
+    'SUPABASE_URL',
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'CHIP_WEBHOOK_URL',
+    'APP_BASE_URL',
+    'ALLOWED_ORIGINS'
   ];
 
   envKeys.forEach((k) => {
@@ -105,6 +118,12 @@ export default defineConfig(({ mode }) => {
       process.env[k] = env[k];
     }
   });
+
+  // Lets api/_lib/security.js enable local-only fallbacks (mock payments,
+  // dev identity when no service key). Never set in Vercel deployments.
+  if (command === 'serve') {
+    process.env.AFAMS_DEV_SERVER = '1';
+  }
 
   return {
     base: '/',

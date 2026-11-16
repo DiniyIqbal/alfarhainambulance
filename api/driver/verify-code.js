@@ -5,15 +5,17 @@
 // =========================================================================
 
 import crypto from 'crypto';
-import { createClient } from '@supabase/supabase-js';
+import { applyCors, getSupabaseAdmin, isDevServer, getClientIp } from '../_lib/security.js';
 
-function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) return null;
-  return createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
+// Best-effort brute-force brake (per warm instance). Phase 2: move to Redis.
+const attempts = new Map();
+function tooManyAttempts(ip) {
+  const now = Date.now();
+  const entry = attempts.get(ip) || { count: 0, resetAt: now + 15 * 60 * 1000 };
+  if (now > entry.resetAt) { entry.count = 0; entry.resetAt = now + 15 * 60 * 1000; }
+  entry.count += 1;
+  attempts.set(ip, entry);
+  return entry.count > 10;
 }
 
 function hashToken(code) {
@@ -21,13 +23,7 @@ function hashToken(code) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (applyCors(req, res, 'POST, OPTIONS')) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({
@@ -35,6 +31,10 @@ export default async function handler(req, res) {
       error: 'Kaedah HTTP tidak dibenarkan.',
       code: 'METHOD_NOT_ALLOWED'
     });
+  }
+
+  if (tooManyAttempts(getClientIp(req))) {
+    return res.status(429).json({ success: false, error: 'Terlalu banyak cubaan. Sila cuba lagi selepas 15 minit.', code: 'RATE_LIMITED' });
   }
 
   try {
@@ -73,10 +73,11 @@ export default async function handler(req, res) {
 
       // Check email match
       if (inv.email.toLowerCase() !== cleanEmail) {
-        return res.status(403).json({
+        // Same response as an unknown code, so codes cannot be probed.
+        return res.status(404).json({
           success: false,
-          error: 'Emel yang dimasukkan tidak sepadan dengan rekod jemputan ini.',
-          code: 'EMAIL_MISMATCH'
+          error: 'Kod jemputan atau emel tidak sah.',
+          code: 'INVALID_CODE'
         });
       }
 
@@ -126,8 +127,8 @@ export default async function handler(req, res) {
       });
     }
 
-    // Mock verification fallback
-    if (cleanCode.startsWith('AMC-')) {
+    // Mock verification fallback (local dev server only)
+    if (isDevServer() && cleanCode.startsWith('AMC-')) {
       return res.status(200).json({
         success: true,
         message: 'Kod jemputan sah (Simulasi Luar Talian).',
@@ -152,7 +153,7 @@ export default async function handler(req, res) {
     console.error('Error in /api/driver/verify-code:', err);
     return res.status(500).json({
       success: false,
-      error: 'Ralat pelayan: ' + err.message,
+      error: 'Ralat pelayan semasa mengesahkan kod.',
       code: 'SERVER_ERROR'
     });
   }

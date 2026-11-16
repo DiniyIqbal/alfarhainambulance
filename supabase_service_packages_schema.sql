@@ -167,46 +167,16 @@ CREATE POLICY "Public can view package staff role associations"
 ON public.service_package_staff_roles FOR SELECT
 USING (true);
 
--- Admin Full Access Policies (Admins can view and manage all packages, drafts, archives, audit logs)
+-- SECURITY: HQ-only write policies live in supabase_security_hardening.sql (run it last).
+-- The previous "Admins full access" policies used USING (true), which let ANY
+-- visitor rewrite prices. They are dropped here and must not be re-added.
 DROP POLICY IF EXISTS "Admins full access to service packages" ON public.service_packages;
-CREATE POLICY "Admins full access to service packages"
-ON public.service_packages FOR ALL
-USING (true)
-WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Admins full access to service equipment" ON public.service_equipment;
-CREATE POLICY "Admins full access to service equipment"
-ON public.service_equipment FOR ALL
-USING (true)
-WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Admins full access to service staff roles" ON public.service_staff_roles;
-CREATE POLICY "Admins full access to service staff roles"
-ON public.service_staff_roles FOR ALL
-USING (true)
-WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Admins full access to package equipment" ON public.service_package_equipment;
-CREATE POLICY "Admins full access to package equipment"
-ON public.service_package_equipment FOR ALL
-USING (true)
-WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Admins full access to package staff roles" ON public.service_package_staff_roles;
-CREATE POLICY "Admins full access to package staff roles"
-ON public.service_package_staff_roles FOR ALL
-USING (true)
-WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Admins view audit log" ON public.service_audit_log;
-CREATE POLICY "Admins view audit log"
-ON public.service_audit_log FOR SELECT
-USING (true);
-
 DROP POLICY IF EXISTS "Admins insert audit log" ON public.service_audit_log;
-CREATE POLICY "Admins insert audit log"
-ON public.service_audit_log FOR INSERT
-WITH CHECK (true);
 
 -- =========================================================================
 -- 9. SEED INITIAL EQUIPMENT, STAFF ROLES & PACKAGES (IDEMPOTENT)
