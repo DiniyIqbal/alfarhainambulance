@@ -1196,11 +1196,27 @@ export function filterBookingsList(bookings = [], {
 } = {}) {
   let filtered = [...bookings];
 
-  // 1. Tab Filter (Aktif vs Sejarah)
-  if (tab === 'aktif') {
+  // 1. Tab Filter
+  if (tab === 'menunggu_kelulusan') {
+    filtered = filtered.filter(b => deriveCustomerStatus(b).code === 'menunggu_kelulusan');
+  } else if (tab === 'menunggu_agihan') {
+    filtered = filtered.filter(b => deriveCustomerStatus(b).code === 'menunggu_agihan');
+  } else if (tab === 'sedang_misi') {
+    filtered = filtered.filter(b => {
+      const s = deriveCustomerStatus(b).code;
+      return ['menuju_pengambilan', 'tiba_pengambilan', 'menuju_destinasi'].includes(s);
+    });
+  } else if (tab === 'aktif') {
     filtered = filtered.filter(b => {
       const s = deriveCustomerStatus(b).code;
       return ['menunggu_kelulusan', 'menunggu_agihan', 'dijadualkan', 'menuju_pengambilan', 'tiba_pengambilan', 'menuju_destinasi'].includes(s);
+    });
+  } else if (tab === 'selesai') {
+    filtered = filtered.filter(b => deriveCustomerStatus(b).code === 'selesai');
+  } else if (tab === 'batal_tolak') {
+    filtered = filtered.filter(b => {
+      const s = deriveCustomerStatus(b).code;
+      return ['ditolak', 'dibatalkan'].includes(s);
     });
   } else if (tab === 'sejarah') {
     filtered = filtered.filter(b => {

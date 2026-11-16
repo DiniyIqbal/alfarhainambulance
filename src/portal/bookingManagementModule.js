@@ -36,6 +36,7 @@ import {
 let currentBookings = [];
 let activeAdminUser = { name: 'Pegawai Operasi HQ', email: 'pengurus@alfarhain.my', branch: 'kok_lanas' };
 let currentSelectedBookingId = null;
+let currentDrawerTab = 'tindakan'; // 'tindakan' | 'laluan' | 'invois' | 'audit'
 let currentFilters = {
   tab: 'all',
   search: '',
@@ -151,6 +152,20 @@ function setupBookingDeskListeners(showToast, playSuccessChime) {
     });
   }
 
+  // Status Tabs Bar Navigation
+  const tabsNav = document.getElementById('bookingStatusTabsNav');
+  if (tabsNav) {
+    tabsNav.querySelectorAll('.booking-status-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab || 'all';
+        currentFilters.tab = tab;
+        tabsNav.querySelectorAll('.booking-status-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderBookingsTable();
+      });
+    });
+  }
+
   // Branch filter
   const branchFilter = document.getElementById('bookingBranchFilter');
   if (branchFilter) {
@@ -160,7 +175,7 @@ function setupBookingDeskListeners(showToast, playSuccessChime) {
     });
   }
 
-  // Status filter
+  // Status filter dropdown
   const statusFilter = document.getElementById('bookingStatusFilter');
   if (statusFilter) {
     statusFilter.addEventListener('change', (e) => {
@@ -187,41 +202,75 @@ function setupBookingDeskListeners(showToast, playSuccessChime) {
     });
   }
 
+  // Reset Filters Button
+  const btnReset = document.getElementById('btnResetBookingFilters');
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      currentFilters = {
+        tab: 'all',
+        search: '',
+        branch: 'all',
+        bookingStatus: 'all',
+        paymentStatus: 'all',
+        provider: 'all',
+        sortBy: 'date_desc'
+      };
+      if (searchInput) searchInput.value = '';
+      if (branchFilter) branchFilter.value = 'all';
+      if (statusFilter) statusFilter.value = 'all';
+      if (paymentFilter) paymentFilter.value = 'all';
+      if (providerFilter) providerFilter.value = 'all';
+
+      const nav = document.getElementById('bookingStatusTabsNav');
+      if (nav) {
+        nav.querySelectorAll('.booking-status-tab-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.tab === 'all');
+        });
+      }
+      renderBookingDashboard();
+    });
+  }
+
   // KPI card clicks (Quick filter)
   const kpiPending = document.getElementById('kpiCardPending');
   if (kpiPending) {
     kpiPending.addEventListener('click', () => {
-      setQuickFilter('menunggu_kelulusan');
+      setQuickFilterTab('menunggu_kelulusan');
     });
   }
   const kpiApproved = document.getElementById('kpiCardApproved');
   if (kpiApproved) {
     kpiApproved.addEventListener('click', () => {
-      setQuickFilter('menunggu_agihan');
+      setQuickFilterTab('menunggu_agihan');
     });
   }
   const kpiOngoing = document.getElementById('kpiCardOngoing');
   if (kpiOngoing) {
     kpiOngoing.addEventListener('click', () => {
-      setQuickFilter('menuju_pengambilan');
+      setQuickFilterTab('sedang_misi');
     });
   }
   const kpiCompleted = document.getElementById('kpiCardCompletedToday');
   if (kpiCompleted) {
     kpiCompleted.addEventListener('click', () => {
-      setQuickFilter('selesai');
+      setQuickFilterTab('selesai');
     });
   }
 
-  // Close Drawer
+  // Close Drawer actions
   const closeDrawerBtn = document.getElementById('closeBookingDrawerBtn');
   if (closeDrawerBtn) {
-    closeDrawerBtn.addEventListener('click', () => {
-      const drawer = document.getElementById('bookingDetailDrawer');
-      if (drawer) drawer.style.display = 'none';
-      currentSelectedBookingId = null;
-    });
+    closeDrawerBtn.addEventListener('click', closeBookingDetailDrawer);
   }
+
+  const drawerBackdrop = document.getElementById('bookingDrawerBackdrop');
+  if (drawerBackdrop) {
+    drawerBackdrop.addEventListener('click', closeBookingDetailDrawer);
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeBookingDetailDrawer();
+  });
 
   // New Manual Booking Button
   const btnNewManualBooking = document.getElementById('btnOpenManualBookingModal');
@@ -232,13 +281,65 @@ function setupBookingDeskListeners(showToast, playSuccessChime) {
   }
 }
 
-function setQuickFilter(statusKey) {
-  const statusFilter = document.getElementById('bookingStatusFilter');
-  if (statusFilter) {
-    statusFilter.value = statusKey;
+function setQuickFilterTab(tabKey) {
+  currentFilters.tab = tabKey;
+  const nav = document.getElementById('bookingStatusTabsNav');
+  if (nav) {
+    nav.querySelectorAll('.booking-status-tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tabKey);
+    });
   }
-  currentFilters.bookingStatus = statusKey;
   renderBookingsTable();
+}
+
+/**
+ * Opens slide-over drawer smoothly with backdrop
+ */
+export function openBookingDetailDrawer(booking) {
+  currentSelectedBookingId = booking.invoice_number || booking.invoiceNumber;
+  renderBookingDetailDrawer(booking);
+
+  const drawer = document.getElementById('bookingDetailDrawer');
+  const backdrop = document.getElementById('bookingDrawerBackdrop');
+
+  if (drawer) {
+    drawer.style.display = 'flex';
+    void drawer.offsetWidth; // Force reflow
+    drawer.classList.add('open');
+  }
+  if (backdrop) {
+    backdrop.style.display = 'block';
+    void backdrop.offsetWidth;
+    backdrop.classList.add('open');
+  }
+}
+
+/**
+ * Closes slide-over drawer smoothly
+ */
+export function closeBookingDetailDrawer() {
+  const drawer = document.getElementById('bookingDetailDrawer');
+  const backdrop = document.getElementById('bookingDrawerBackdrop');
+
+  if (drawer) {
+    drawer.classList.remove('open');
+    setTimeout(() => {
+      if (!drawer.classList.contains('open')) {
+        drawer.style.display = 'none';
+      }
+    }, 260);
+  }
+  if (backdrop) {
+    backdrop.classList.remove('open');
+    setTimeout(() => {
+      if (!backdrop.classList.contains('open')) {
+        backdrop.style.display = 'none';
+      }
+    }, 260);
+  }
+
+  currentSelectedBookingId = null;
+  document.querySelectorAll('#bookingsTableBody tr').forEach(r => r.classList.remove('selected-row'));
 }
 
 /**
@@ -269,11 +370,51 @@ function renderKpiCards() {
 }
 
 /**
+ * Updates count badges on the Status Quick Tabs Navigation bar
+ */
+function updateStatusTabsCountBadges() {
+  let pendingCount = 0;
+  let approvedCount = 0;
+  let activeCount = 0;
+  let completedCount = 0;
+  let cancelledCount = 0;
+
+  currentBookings.forEach(b => {
+    const s = deriveCustomerStatus(b).code;
+    if (s === 'menunggu_kelulusan') pendingCount++;
+    else if (s === 'menunggu_agihan') approvedCount++;
+    else if (['menuju_pengambilan', 'tiba_pengambilan', 'menuju_destinasi'].includes(s)) activeCount++;
+    else if (s === 'selesai') completedCount++;
+    else if (['ditolak', 'dibatalkan'].includes(s)) cancelledCount++;
+  });
+
+  const elAll = document.getElementById('tabCountAll');
+  if (elAll) elAll.textContent = currentBookings.length;
+
+  const elPending = document.getElementById('tabCountPending');
+  if (elPending) elPending.textContent = pendingCount;
+
+  const elApproved = document.getElementById('tabCountApproved');
+  if (elApproved) elApproved.textContent = approvedCount;
+
+  const elActive = document.getElementById('tabCountActive');
+  if (elActive) elActive.textContent = activeCount;
+
+  const elCompleted = document.getElementById('tabCountCompleted');
+  if (elCompleted) elCompleted.textContent = completedCount;
+
+  const elCancelled = document.getElementById('tabCountCancelled');
+  if (elCancelled) elCancelled.textContent = cancelledCount;
+}
+
+/**
  * Renders the bookings table with all 8 specified columns.
  */
 function renderBookingsTable() {
   const tbody = document.getElementById('bookingsTableBody');
   if (!tbody) return;
+
+  updateStatusTabsCountBadges();
 
   const filtered = filterBookingsList(currentBookings, {
     tab: currentFilters.tab,
@@ -293,10 +434,10 @@ function renderBookingsTable() {
   if (filtered.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align: center; padding: 36px 16px; color: #64748B;">
-          <div style="font-size: 2rem; margin-bottom: 8px;">📋</div>
-          <strong style="color: #0F172A; display: block; font-size: 0.95rem;">Tiada rekod tempahan ditemui</strong>
-          <span style="font-size: 0.8rem;">Cuba ubah kriteria carian atau penapis status di atas.</span>
+        <td colspan="8" style="text-align: center; padding: 48px 16px; color: #64748B;">
+          <div style="font-size: 2.5rem; margin-bottom: 10px;">📋</div>
+          <strong style="color: #0F172A; display: block; font-size: 1.05rem; margin-bottom: 4px;">Tiada Rekod Tempahan Ditemui</strong>
+          <span style="font-size: 0.82rem; color: #64748B;">Cuba ubah kriteria carian atau klik tab status lain di atas.</span>
         </td>
       </tr>
     `;
@@ -311,13 +452,13 @@ function renderBookingsTable() {
     // Schedule formatting (Asia/Kuala_Lumpur)
     const isSched = Boolean(b.is_scheduled || b.isScheduled);
     const schedTime = b.scheduled_time || b.scheduledTime;
-    let schedDisplay = '⚡ Secepat mungkin';
+    let schedDisplay = `<span style="display:inline-flex;align-items:center;gap:4px;color:#D97706;font-weight:700;">⚡ Secepat mungkin</span>`;
     if (isSched && schedTime) {
       try {
         const d = new Date(schedTime);
-        schedDisplay = `📅 ${d.toLocaleDateString('ms-MY', { day: '2-digit', month: 'short' })}, ${d.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}`;
+        schedDisplay = `<span style="color:#0F172A;font-weight:700;">📅 ${d.toLocaleDateString('ms-MY', { day: '2-digit', month: 'short' })}, ${d.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}</span>`;
       } catch (e) {
-        schedDisplay = '📅 Dijadualkan';
+        schedDisplay = `<span style="color:#0F172A;font-weight:700;">📅 Dijadualkan</span>`;
       }
     }
 
@@ -338,18 +479,20 @@ function renderBookingsTable() {
       ? `<span class="badge-status-pill green">✓ Telah Bayar</span>`
       : (payStatus === 'deposit'
         ? `<span class="badge-status-pill amber">Deposit RM100</span>`
-        : `<span class="badge-status-pill slate">Belum Bayar</span>`);
+        : `<span class="badge-status-pill grey">Belum Bayar</span>`);
 
     // Assigned resources
     const plate = b.plate_number || b.plateNumber;
     const driver = b.driver_name || b.driverName;
     const provider = b.assigned_provider_name || b.assignedProviderName || 'Al-Farhain AMC';
-    let resourceDisplay = `<span style="color: #94A3B8; font-size: 0.75rem; font-style: italic;">Belum diagih</span>`;
+    let resourceDisplay = `<span style="display:inline-block;padding:2px 8px;border-radius:4px;background:#FEF3C7;color:#92400E;font-size:0.72rem;font-weight:700;">⚠️ Perlu Agihan</span>`;
     if (plate && driver) {
       resourceDisplay = `
-        <div style="font-size: 0.78rem; font-weight: 700; color: #0F172A;">🚑 ${escapeHtml(plate)}</div>
-        <div style="font-size: 0.72rem; color: #475569;">👨‍✈️ ${escapeHtml(driver)}</div>
-        <div style="font-size: 0.65rem; color: #059669; font-weight: 600;">${escapeHtml(provider)}</div>
+        <div style="font-size: 0.8rem; font-weight: 800; color: #0F172A; display:flex; align-items:center; gap:4px;">
+          <span>🚑</span> <span>${escapeHtml(plate)}</span>
+        </div>
+        <div style="font-size: 0.74rem; color: #334155; font-weight: 600;">👨‍✈️ ${escapeHtml(driver)}</div>
+        <div style="font-size: 0.68rem; color: #059669; font-weight: 700;">${escapeHtml(provider)}</div>
       `;
     }
 
@@ -357,35 +500,39 @@ function renderBookingsTable() {
     const amount = Number(b.total_fare || b.totalFare || 250.00);
 
     return `
-      <tr class="${isSelected ? 'selected-row' : ''}" data-inv="${escapeHtml(inv)}" style="cursor: pointer;">
+      <tr class="${isSelected ? 'selected-row' : ''}" data-inv="${escapeHtml(inv)}" style="cursor: pointer; transition: background-color 0.15s;">
         <td>
-          <strong style="color: var(--amc-red); font-size: 0.85rem; display: block;">${escapeHtml(inv)}</strong>
-          <span style="font-size: 0.75rem; font-weight: 700; color: #1E293B;">${escapeHtml(patientName)}</span>
-          <span style="font-size: 0.68rem; color: #64748B; display: block;">📞 ${escapeHtml(patientPhone)}</span>
-        </td>
-        <td>
-          <div style="font-size: 0.78rem; font-weight: 600; color: #0F172A;">${schedDisplay}</div>
-          <span style="font-size: 0.68rem; color: #64748B;">Dihantar: ${formatTimestamp(b.created_at)}</span>
-        </td>
-        <td>
-          <div style="font-size: 0.78rem; color: #0F172A; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(origin)}">
-            <span style="color: #10B981; font-weight: 800;">A:</span> ${escapeHtml(origin)}
+          <div style="display:flex;align-items:center;gap:6px;">
+            <strong style="color: var(--amc-red); font-size: 0.88rem; font-weight: 900;">${escapeHtml(inv)}</strong>
           </div>
-          <div style="font-size: 0.78rem; color: #0F172A; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(dest)}">
-            <span style="color: #EF4444; font-weight: 800;">D:</span> ${escapeHtml(dest)}
+          <div style="font-size: 0.8rem; font-weight: 800; color: #0F172A; margin-top: 2px;">${escapeHtml(patientName)}</div>
+          <div style="font-size: 0.72rem; color: #64748B;">📞 ${escapeHtml(patientPhone)}</div>
+        </td>
+        <td>
+          <div style="font-size: 0.8rem;">${schedDisplay}</div>
+          <div style="font-size: 0.7rem; color: #64748B; margin-top: 2px;">Dihantar: ${formatTimestamp(b.created_at)}</div>
+        </td>
+        <td>
+          <div style="font-size: 0.8rem; color: #0F172A; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(origin)}">
+            <span style="color: #10B981; font-weight: 900;">●</span> <b>A:</b> ${escapeHtml(origin)}
           </div>
-          <span style="font-size: 0.68rem; color: #64748B;">${Number(b.distance_km || b.distanceKm || 25).toFixed(1)} km</span>
+          <div style="font-size: 0.8rem; color: #0F172A; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px;" title="${escapeHtml(dest)}">
+            <span style="color: #EF4444; font-weight: 900;">●</span> <b>D:</b> ${escapeHtml(dest)}
+          </div>
+          <div style="font-size: 0.7rem; color: #64748B; margin-top: 2px; font-weight: 600;">
+            📍 Jarak: ${Number(b.distance_km || b.distanceKm || 25).toFixed(1)} km
+          </div>
         </td>
         <td>
-          <div style="font-size: 0.8rem; font-weight: 700; color: #0F172A;">${escapeHtml(pkgName)}</div>
-          <span style="font-size: 0.72rem; color: #059669; font-weight: 700;">RM${amount.toFixed(2)}</span>
+          <div style="font-size: 0.82rem; font-weight: 800; color: #0F172A;">${escapeHtml(pkgName)}</div>
+          <div style="font-size: 0.82rem; color: #059669; font-weight: 900; margin-top: 2px;">RM ${amount.toFixed(2)}</div>
         </td>
         <td>
-          <span class="badge-status-pill" style="background: ${custStatus.badgeBg}; color: ${custStatus.badgeColor}; border: 1px solid rgba(0,0,0,0.08); font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
+          <span class="badge-status-pill" style="background: ${custStatus.badgeBg}; color: ${custStatus.badgeColor}; border: 1px solid rgba(0,0,0,0.08); font-size: 0.74rem; font-weight: 800; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px;">
             <span>${custStatus.icon}</span> <span>${custStatus.label}</span>
           </span>
-          ${b.cancellation_requested ? `<span style="display:block; margin-top:3px; background:#FEE2E2; color:#991B1B; font-size:0.65rem; font-weight:800; padding:1px 5px; border-radius:4px;">⚠️ Mohon Batal</span>` : ''}
-          ${b.reschedule_requested ? `<span style="display:block; margin-top:3px; background:#FEF3C7; color:#92400E; font-size:0.65rem; font-weight:800; padding:1px 5px; border-radius:4px;">⏳ Mohon Jadual</span>` : ''}
+          ${b.cancellation_requested ? `<div style="margin-top:4px; display:inline-block; background:#FEF2F2; color:#991B1B; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px; border:1px solid #FECACA;">⚠️ Mohon Batal</div>` : ''}
+          ${b.reschedule_requested ? `<div style="margin-top:4px; display:inline-block; background:#FEF3C7; color:#92400E; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px; border:1px solid #FDE68A;">⏳ Mohon Jadual</div>` : ''}
         </td>
         <td>
           ${payBadge}
@@ -393,45 +540,41 @@ function renderBookingsTable() {
         <td>
           ${resourceDisplay}
         </td>
-        <td>
-          <div style="display: flex; gap: 4px; align-items: center;">
-            <button type="button" class="btn-table-action btn-open-drawer" data-inv="${escapeHtml(inv)}" style="background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; font-weight: 700; color: #0F172A; cursor: pointer;">
-              Urus
-            </button>
-          </div>
+        <td style="text-align: center;">
+          <button type="button" class="btn-table-action-primary btn-open-drawer" data-inv="${escapeHtml(inv)}" title="Buka panel kawalan operasi tempahan ini">
+            <span>⚙️</span> <span>Urus</span>
+          </button>
         </td>
       </tr>
     `;
   }).join('');
 
-  // Row click listeners
+  // Row & Urus Button click listeners
   tbody.querySelectorAll('tr').forEach(tr => {
-    tr.addEventListener('click', () => {
+    tr.addEventListener('click', (e) => {
       const inv = tr.dataset.inv;
       if (!inv) return;
-      currentSelectedBookingId = inv;
       tbody.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
       tr.classList.add('selected-row');
       const b = currentBookings.find(x => (x.invoice_number || x.invoiceNumber) === inv);
-      if (b) renderBookingDetailDrawer(b);
+      if (b) openBookingDetailDrawer(b);
     });
   });
 }
 
 /**
- * Renders the Right-hand Detail Drawer with interactive management tools
+ * Renders the Right-hand Detail Slide-Over Drawer with comprehensive tabs & operational tools
  */
 export function renderBookingDetailDrawer(booking) {
   const drawer = document.getElementById('bookingDetailDrawer');
   if (!drawer) return;
-
-  drawer.style.display = 'block';
 
   const inv = booking.invoice_number || booking.invoiceNumber;
   const custStatus = deriveCustomerStatus(booking);
   const isPending = custStatus.code === 'menunggu_kelulusan';
   const isApproved = custStatus.code === 'menunggu_agihan' || custStatus.code === 'dijadualkan';
   const isEnRoute = ['menuju_pengambilan', 'tiba_pengambilan', 'menuju_destinasi'].includes(custStatus.code);
+  const isCompleted = custStatus.code === 'selesai';
 
   const container = document.getElementById('bookingDrawerContent');
   if (!container) return;
@@ -444,169 +587,541 @@ export function renderBookingDetailDrawer(booking) {
   };
 
   const amount = Number(booking.total_fare || booking.totalFare || 250.00);
+  const patientPhone = (booking.patient_phone || booking.patientPhone || '').replace(/\s+/g, '');
+  const cleanPhoneForWa = patientPhone.replace(/[^0-9]/g, '');
+  const waUrl = cleanPhoneForWa ? `https://wa.me/${cleanPhoneForWa.startsWith('6') ? cleanPhoneForWa : '60' + cleanPhoneForWa.replace(/^0/, '')}?text=Salam%20dari%20Al-Farhain%20AMC%20Ambulans%20berkenaan%20tempahan%20${encodeURIComponent(inv)}` : '#';
+
+  const originName = booking.origin_name || booking.pickup_address || booking.pickupAddress || 'Lokasi Pesakit';
+  const destName = booking.destination_name || booking.destinationName || 'Hospital Pilihan';
+  const mapsDirUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originName)}&destination=${encodeURIComponent(destName)}`;
+
+  // Determine current mission step index (0: Dihantar, 1: Diluluskan, 2: Diagihkan, 3: Menuju Pengambilan, 4: Tiba Lokasi, 5: Menuju Hospital, 6: Selesai)
+  let missionStep = 1;
+  const currentTripStatus = (booking.trip_status || 'not_started').toLowerCase();
+  if (booking.booking_status === 'pending_approval') missionStep = 0;
+  else if (booking.booking_status === 'approved' && !booking.plate_number) missionStep = 1;
+  else if (booking.plate_number && currentTripStatus === 'not_started') missionStep = 2;
+  else if (currentTripStatus === 'en_route_pickup') missionStep = 3;
+  else if (currentTripStatus === 'arrived_pickup') missionStep = 4;
+  else if (currentTripStatus === 'en_route_destination') missionStep = 5;
+  else if (currentTripStatus === 'completed') missionStep = 6;
 
   container.innerHTML = `
-    <!-- Header Ref & Status -->
-    <div style="padding-bottom: 12px; border-bottom: 1px solid #E2E8F0; margin-bottom: 14px;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <!-- 1. Drawer Header -->
+    <div class="booking-drawer-header">
+      <div class="booking-drawer-header-left">
+        <div class="booking-drawer-icon-box">🚑</div>
         <div>
-          <span style="font-size: 0.7rem; font-weight: 800; color: #64748B; text-transform: uppercase;">Rujukan Tempahan</span>
-          <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--amc-red); margin: 2px 0 0;">${escapeHtml(inv)}</h3>
+          <span class="booking-drawer-title-sub">Urus Tempahan &amp; Kawalan Operasi</span>
+          <h3 class="booking-drawer-ref-title">${escapeHtml(inv)}</h3>
         </div>
-        <span class="badge-status-pill" style="background: ${custStatus.badgeBg}; color: ${custStatus.badgeColor}; font-weight: 800; font-size: 0.75rem; padding: 4px 10px; border-radius: 999px;">
+      </div>
+      <div class="booking-drawer-header-actions">
+        <button type="button" class="btn-drawer-header-copy" id="btnDrawerCopyRef" title="Salin No Rujukan">
+          <span>📋</span> <span id="copyRefLabel">Salin</span>
+        </button>
+        <button type="button" class="booking-drawer-close-btn" id="closeBookingDrawerBtn" aria-label="Tutup">&times;</button>
+      </div>
+    </div>
+
+    <!-- 2. Quick Action & Status Banner -->
+    <div class="booking-drawer-quick-bar">
+      <div class="quick-bar-left">
+        <span class="badge-status-pill" style="background: ${custStatus.badgeBg}; color: ${custStatus.badgeColor}; font-weight: 800; font-size: 0.76rem; padding: 4px 10px; border-radius: 999px;">
           ${custStatus.icon} ${custStatus.label}
         </span>
-      </div>
-      <div style="font-size: 0.72rem; color: #64748B; margin-top: 4px;">
-        Versi rekod: v${booking.version || 1} · Dicipta: ${formatTimestamp(booking.created_at)}
-      </div>
-    </div>
-
-    <!-- Customer Requests Alert (if cancellation or reschedule requested) -->
-    ${booking.cancellation_requested ? `
-      <div style="background: #FEF2F2; border: 1.5px solid #F87171; border-radius: 8px; padding: 10px; margin-bottom: 12px;">
-        <strong style="color: #991B1B; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
-          <span>⚠️</span> Pelanggan Memohon Pembatalan
-        </strong>
-        <p style="font-size: 0.72rem; color: #7F1D1D; margin: 4px 0 8px;">"${escapeHtml(booking.cancellation_request_reason || 'Tiada sebab')}"</p>
-        <button type="button" class="btn-danger-sm" id="btnAdminAcceptCancel" style="background: #DC2626; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
-          Sahkan &amp; Batalkan Tempahan
-        </button>
-      </div>
-    ` : ''}
-
-    ${booking.reschedule_requested ? `
-      <div style="background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 8px; padding: 10px; margin-bottom: 12px;">
-        <strong style="color: #92400E; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
-          <span>⏳</span> Pelanggan Memohon Jadual Semula
-        </strong>
-        <p style="font-size: 0.72rem; color: #78350F; margin: 4px 0 8px;">Masa baharu dipohon: <b>${formatTimestamp(booking.reschedule_request_time)}</b></p>
-        <button type="button" class="btn-success-sm" id="btnAdminAcceptReschedule" style="background: #059669; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
-          Luluskan Jadual Baharu
-        </button>
-      </div>
-    ` : ''}
-
-    <!-- Quick Approval / Rejection Actions (For Pending Bookings) -->
-    ${isPending ? `
-      <div style="background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 10px; padding: 12px; margin-bottom: 14px;">
-        <div style="font-size: 0.75rem; font-weight: 800; color: #0F172A; margin-bottom: 6px;">KEPUTUSAN SEMAKAN HQ</div>
-        <p style="font-size: 0.7rem; color: #64748B; margin-bottom: 10px;">
-          Kelulusan menerima permohonan tempahan ke dalam jadual AFAMS. Agihan ambulans &amp; krew boleh dilakukan selepas ini.
-        </p>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <button type="button" id="btnDrawerApprove" style="background: #059669; color: #FFFFFF; border: none; border-radius: 8px; padding: 8px; font-weight: 700; font-size: 0.78rem; cursor: pointer;">
-            ✓ Luluskan
-          </button>
-          <button type="button" id="btnDrawerReject" style="background: #DC2626; color: #FFFFFF; border: none; border-radius: 8px; padding: 8px; font-weight: 700; font-size: 0.78rem; cursor: pointer;">
-            ✕ Tolak
-          </button>
-        </div>
-      </div>
-    ` : ''}
-
-    <!-- Resource Assignment Section (Ambulance, Driver, Crew) -->
-    <div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 12px; margin-bottom: 14px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 0.75rem; font-weight: 800; color: #0F172A;">AGIHAN SUMBER OPERASI</span>
-        ${booking.plate_number ? `<span style="font-size: 0.65rem; background: #ECFDF5; color: #047857; font-weight: 700; padding: 2px 6px; border-radius: 4px;">✓ Telah Diagih</span>` : `<span style="font-size: 0.65rem; background: #FEF3C7; color: #92400E; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Perlu Agihan</span>`}
+        <span style="font-size: 0.7rem; color: #64748B; font-weight: 600;">v${booking.version || 1}</span>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.78rem;">
-        <div>
-          <label style="font-size: 0.68rem; font-weight: 700; color: #64748B;">Penyedia Perkhidmatan</label>
-          <select id="drawerAssignProviderSelect" style="width: 100%; padding: 6px; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.75rem; font-weight: 600; margin-top: 2px;">
-            <option value="internal" ${booking.assigned_provider_id ? '' : 'selected'}>Al-Farhain AMC (Armada Dalaman)</option>
-            <option value="partner_medicorp">MediCorp Ambulance Services (Rakan B2B)</option>
-            <option value="partner_pantai">ResQ Response Network (Rakan B2B)</option>
-          </select>
-        </div>
-
-        <div>
-          <label style="font-size: 0.68rem; font-weight: 700; color: #64748B;">Ambulans Bertugas</label>
-          <select id="drawerAssignVehicleSelect" style="width: 100%; padding: 6px; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.75rem; font-weight: 600; margin-top: 2px;">
-            <option value="VPQ 7606" ${booking.plate_number === 'VPQ 7606' ? 'selected' : ''}>VPQ 7606 (Toyota Hiace AMC Kok Lanas - Aktif)</option>
-            <option value="DFG 7606" ${booking.plate_number === 'DFG 7606' ? 'selected' : ''}>DFG 7606 (Toyota Hiace AMC Raub - Aktif)</option>
-            <option value="VPP 9901" ${booking.plate_number === 'VPP 9901' ? 'selected' : ''}>VPP 9901 (Ambulans Simpanan Jeli)</option>
-          </select>
-        </div>
-
-        <div>
-          <label style="font-size: 0.68rem; font-weight: 700; color: #64748B;">Pemandu EMT Bertugas</label>
-          <select id="drawerAssignDriverSelect" style="width: 100%; padding: 6px; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.75rem; font-weight: 600; margin-top: 2px;">
-            <option value="Abe Di / Syalihan" ${booking.driver_name === 'Abe Di / Syalihan' ? 'selected' : ''}>Abe Di / Syalihan (Kok Lanas - GDL/EMT Bertauliah)</option>
-            <option value="Abe Din Estimos Sukrosa" ${booking.driver_name === 'Abe Din Estimos Sukrosa' ? 'selected' : ''}>Abe Din Estimos Sukrosa (Raub - EMT Bertauliah)</option>
-            <option value="Kamarudin Ismail" ${booking.driver_name === 'Kamarudin Ismail' ? 'selected' : ''}>Kamarudin Ismail (EMT Pasir Mas)</option>
-          </select>
-        </div>
-
-        <!-- Conflict Message Container -->
-        <div id="drawerAssignConflictMsg" style="display: none; background: #FEF2F2; color: #991B1B; font-size: 0.72rem; padding: 6px 8px; border-radius: 6px;"></div>
-
-        <button type="button" id="btnDrawerSaveAssignment" style="background: var(--amc-red); color: #fff; border: none; border-radius: 8px; padding: 7px; font-weight: 700; font-size: 0.78rem; cursor: pointer; margin-top: 4px;">
-          ${booking.plate_number ? '🔄 Kemas Kini Agihan Sumber' : '🚑 Sahkan Agihan Sumber'}
-        </button>
+      <div style="display: flex; gap: 6px;">
+        ${patientPhone ? `
+          <a href="tel:${escapeHtml(patientPhone)}" class="quick-action-pill-btn call" title="Panggil Pesakit/Waris">
+            <span>📞</span> <span>Panggil</span>
+          </a>
+          <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="quick-action-pill-btn whatsapp" title="Hubungi melalui WhatsApp">
+            <span>💬</span> <span>WhatsApp</span>
+          </a>
+        ` : ''}
+        <a href="${mapsDirUrl}" target="_blank" rel="noopener noreferrer" class="quick-action-pill-btn map" title="Buka di Google Maps">
+          <span>🗺️</span> <span>Peta</span>
+        </a>
       </div>
     </div>
 
-    <!-- Booking Details Summary -->
-    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px; margin-bottom: 14px; font-size: 0.78rem;">
-      <div style="font-weight: 800; color: #0F172A; margin-bottom: 8px;">MAKLUMAT LALUAN &amp; PESAKIT</div>
+    <!-- 3. Drawer Segmented Navigation Tabs -->
+    <nav class="booking-drawer-tabs-nav" aria-label="Pilihan Butiran">
+      <button type="button" class="drawer-tab-btn ${currentDrawerTab === 'tindakan' ? 'active' : ''}" data-target-tab="tindakan">
+        <span>⚡</span> <span>Operasi &amp; Agihan</span>
+      </button>
+      <button type="button" class="drawer-tab-btn ${currentDrawerTab === 'laluan' ? 'active' : ''}" data-target-tab="laluan">
+        <span>📍</span> <span>Laluan &amp; Pesakit</span>
+      </button>
+      <button type="button" class="drawer-tab-btn ${currentDrawerTab === 'invois' ? 'active' : ''}" data-target-tab="invois">
+        <span>💳</span> <span>Pakej &amp; Invois</span>
+      </button>
+      <button type="button" class="drawer-tab-btn ${currentDrawerTab === 'audit' ? 'active' : ''}" data-target-tab="audit">
+        <span>📜</span> <span>Log Audit</span>
+      </button>
+    </nav>
 
-      <div style="display: flex; flex-direction: column; gap: 6px;">
-        <div>
-          <span style="font-size: 0.68rem; color: #64748B; font-weight: 700;">PESAKIT</span>
-          <div style="font-weight: 700; color: #0F172A;">${escapeHtml(booking.patient_name || 'Pesakit AMC')}</div>
-          <div style="font-size: 0.72rem; color: #475569;">📞 ${escapeHtml(booking.patient_phone || '—')} · ✉️ ${escapeHtml(booking.patient_email || '—')}</div>
-        </div>
-
-        <div style="margin-top: 4px;">
-          <span style="font-size: 0.68rem; color: #64748B; font-weight: 700;">LOKASI PENGAMBILAN</span>
-          <div style="font-weight: 600; color: #0F172A;">${escapeHtml(booking.origin_name || 'Pengambilan')}</div>
-          ${booking.pickup_instructions ? `<div style="font-size: 0.7rem; color: #047857;">Nota masuk/wad: ${escapeHtml(booking.pickup_instructions)}</div>` : ''}
-        </div>
-
-        <div style="margin-top: 4px;">
-          <span style="font-size: 0.68rem; color: #64748B; font-weight: 700;">PUSAT PERUBATAN TUJUAN</span>
-          <div style="font-weight: 600; color: #0F172A;">${escapeHtml(booking.destination_name || 'Hospital')}</div>
-        </div>
-
-        <div style="margin-top: 4px; display: flex; justify-content: space-between; border-top: 1px dashed #CBD5E1; padding-top: 6px;">
-          <span>Jumlah Jarak:</span>
-          <b>${Number(booking.distance_km || 25).toFixed(1)} km</b>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>Jumlah Keseluruhan:</span>
-          <b style="color: var(--amc-red); font-size: 0.9rem;">RM${amount.toFixed(2)}</b>
-        </div>
-      </div>
-    </div>
-
-    <!-- Audit Trail -->
-    <div style="font-size: 0.75rem;">
-      <div style="font-weight: 800; color: #0F172A; margin-bottom: 6px;">LOG PERUBAHAN &amp; AUDIT</div>
-      <div style="max-height: 140px; overflow-y: auto; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 6px;">
-        ${(booking.audit_trail || []).map(a => `
-          <div style="font-size: 0.68rem; border-bottom: 1px solid #F1F5F9; padding-bottom: 4px;">
-            <div style="display: flex; justify-content: space-between; font-weight: 700; color: #334155;">
-              <span>${escapeHtml(a.action || 'UPDATE')}</span>
-              <span style="color: #94A3B8;">${formatTimestamp(a.timestamp)}</span>
-            </div>
-            <div style="color: #475569;">Oleh: ${escapeHtml(a.actor || 'Sistem')}</div>
-            ${a.reason ? `<div style="color: #B91C1C;">Sebab: ${escapeHtml(a.reason)}</div>` : ''}
-            ${a.notes ? `<div style="color: #64748B;">${escapeHtml(a.notes)}</div>` : ''}
+    <!-- 4. Scrollable Drawer Body Content -->
+    <div class="booking-drawer-body">
+      
+      <!-- ================= TAB 1: OPERASI & AGIHAN ================= -->
+      <div id="drawerTabPanelTindakan" style="display: ${currentDrawerTab === 'tindakan' ? 'block' : 'none'};">
+        
+        <!-- Alerts: Cancellation / Reschedule Requests -->
+        ${booking.cancellation_requested ? `
+          <div style="background: #FEF2F2; border: 1.5px solid #F87171; border-radius: 10px; padding: 12px; margin-bottom: 14px;">
+            <strong style="color: #991B1B; font-size: 0.82rem; display: flex; align-items: center; gap: 6px;">
+              <span>⚠️</span> Permohonan Pembatalan daripada Pelanggan
+            </strong>
+            <p style="font-size: 0.76rem; color: #7F1D1D; margin: 6px 0 10px; background: #fff; padding: 8px; border-radius: 6px; border: 1px dashed #FCA5A5;">
+              "${escapeHtml(booking.cancellation_request_reason || 'Tiada sebab dinyatakan')}"
+            </p>
+            <button type="button" id="btnAdminAcceptCancel" style="background: #DC2626; color: #fff; border: none; border-radius: 7px; padding: 7px 14px; font-size: 0.76rem; font-weight: 800; cursor: pointer;">
+              ✓ Sahkan &amp; Batalkan Tempahan Ini
+            </button>
           </div>
-        `).join('')}
+        ` : ''}
+
+        ${booking.reschedule_requested ? `
+          <div style="background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 10px; padding: 12px; margin-bottom: 14px;">
+            <strong style="color: #92400E; font-size: 0.82rem; display: flex; align-items: center; gap: 6px;">
+              <span>⏳</span> Permohonan Anjakan Masa oleh Pelanggan
+            </strong>
+            <p style="font-size: 0.76rem; color: #78350F; margin: 6px 0 10px;">
+              Masa Baharu Dipohon: <b>${formatTimestamp(booking.reschedule_request_time)}</b>
+            </p>
+            <button type="button" id="btnAdminAcceptReschedule" style="background: #059669; color: #fff; border: none; border-radius: 7px; padding: 7px 14px; font-size: 0.76rem; font-weight: 800; cursor: pointer;">
+              ✓ Luluskan Anjakan Masa Ini
+            </button>
+          </div>
+        ` : ''}
+
+        <!-- Pending Approval Decision Card -->
+        ${isPending ? `
+          <div class="drawer-section-card" style="border-left: 4px solid #D97706; background: #FFFDF7;">
+            <div class="drawer-card-header">
+              <h4 class="drawer-card-title" style="color: #92400E;">
+                <span>⏳</span> <span>Keputusan Semakan Permohonan HQ</span>
+              </h4>
+              <span class="badge-status-pill amber" style="font-size:0.68rem;">Perlu Tindakan</span>
+            </div>
+            <p style="font-size: 0.74rem; color: #475569; margin: 0 0 12px; line-height: 1.4;">
+              Permohonan ini baru dihantar oleh pelanggan dan memerlukan kelulusan rasmi HQ sebelum ambulans dan krew diagihkan.
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <button type="button" id="btnDrawerApprove" style="background: #059669; color: #FFFFFF; border: none; border-radius: 8px; padding: 9px; font-weight: 800; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(5,150,105,0.25);">
+                <span>✓</span> <span>Luluskan Tempahan</span>
+              </button>
+              <button type="button" id="btnDrawerReject" style="background: #DC2626; color: #FFFFFF; border: none; border-radius: 8px; padding: 9px; font-weight: 800; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <span>✕</span> <span>Tolak Tempahan</span>
+              </button>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Resource Assignment Card -->
+        <div class="drawer-section-card">
+          <div class="drawer-card-header">
+            <h4 class="drawer-card-title">
+              <span>🚑</span> <span>Agihan Sumber Operasi (Armada &amp; Krew)</span>
+            </h4>
+            ${booking.plate_number ? `
+              <span class="badge-status-pill green" style="font-size:0.68rem;">✓ Telah Diagih</span>
+            ` : `
+              <span class="badge-status-pill amber" style="font-size:0.68rem;">Belum Diagih</span>
+            `}
+          </div>
+
+          <div class="drawer-form-group">
+            <label class="drawer-form-label">Penyedia Perkhidmatan Ambulans</label>
+            <select id="drawerAssignProviderSelect" class="drawer-form-select">
+              <option value="internal" ${(!booking.assigned_provider_id || booking.assigned_provider_id === 'internal') ? 'selected' : ''}>Al-Farhain AMC (Armada Dalaman)</option>
+              <option value="partner_medicorp" ${booking.assigned_provider_id === 'prov_med' ? 'selected' : ''}>MediCorp Ambulance Services (Rakan B2B)</option>
+              <option value="partner_pantai" ${booking.assigned_provider_id === 'prov_resq' ? 'selected' : ''}>ResQ Response Network (Rakan B2B)</option>
+            </select>
+          </div>
+
+          <div class="drawer-form-group">
+            <label class="drawer-form-label">Ambulans Bertugas</label>
+            <select id="drawerAssignVehicleSelect" class="drawer-form-select">
+              <option value="VPQ 7606" ${booking.plate_number === 'VPQ 7606' ? 'selected' : ''}>VPQ 7606 — Toyota Hiace Medical (Kok Lanas HQ)</option>
+              <option value="DFG 7606" ${booking.plate_number === 'DFG 7606' ? 'selected' : ''}>DFG 7606 — Toyota Hiace Emergency (Cawangan Raub)</option>
+              <option value="VPP 9901" ${booking.plate_number === 'VPP 9901' ? 'selected' : ''}>VPP 9901 — Toyota Hiace Standby (Cawangan Jeli)</option>
+              <option value="MD-AMB-01" ${booking.plate_number === 'MD-AMB-01' ? 'selected' : ''}>MD-AMB-01 — MediCorp Ambulance Unit 1 (Rakan B2B)</option>
+            </select>
+          </div>
+
+          <div class="drawer-form-group">
+            <label class="drawer-form-label">Pemandu EMT Bertugas</label>
+            <select id="drawerAssignDriverSelect" class="drawer-form-select">
+              <option value="Abe Di / Syalihan" ${booking.driver_name === 'Abe Di / Syalihan' ? 'selected' : ''}>Abe Di / Syalihan (GDL &amp; EMT Bertauliah · Kok Lanas)</option>
+              <option value="Abe Din Estimos Sukrosa" ${booking.driver_name === 'Abe Din Estimos Sukrosa' ? 'selected' : ''}>Abe Din Estimos Sukrosa (EMT Bertauliah · Raub)</option>
+              <option value="Kamarudin Ismail" ${booking.driver_name === 'Kamarudin Ismail' ? 'selected' : ''}>Kamarudin Ismail (EMT Pasir Mas)</option>
+              <option value="Kapten Sani Roslan" ${booking.driver_name === 'Kapten Sani Roslan' ? 'selected' : ''}>Kapten Sani Roslan (Pemandu Kanan B2B)</option>
+            </select>
+          </div>
+
+          <!-- Package included staff requirement -->
+          <div style="background: #F1F5F9; border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 0.72rem; color: #475569;">
+            <b style="color: #1E293B;">Keperluan Krew Pakej:</b> ${pkg.includedStaff && pkg.includedStaff.length > 0 ? pkg.includedStaff.join(', ') : 'Pemandu Sahaja'}
+          </div>
+
+          <div id="drawerAssignConflictMsg" style="display: none; background: #FEF2F2; color: #991B1B; font-size: 0.74rem; padding: 8px 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #FECACA;"></div>
+
+          <button type="button" id="btnDrawerSaveAssignment" style="width: 100%; background: var(--amc-red); color: #fff; border: none; border-radius: 8px; padding: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 8px rgba(198,30,47,0.25);">
+            <span>🚑</span> <span>${booking.plate_number ? 'Kemas Kini Agihan Armada' : 'Sahkan &amp; Agih Misi Sekarang'}</span>
+          </button>
+        </div>
+
+        <!-- Mission Progression Tracker & Controls -->
+        <div class="drawer-section-card">
+          <div class="drawer-card-header">
+            <h4 class="drawer-card-title">
+              <span>🧭</span> <span>Fasa Kemajuan Misi Ambulans</span>
+            </h4>
+            <span style="font-size:0.7rem; color:#64748B; font-weight:700;">Status Operasi</span>
+          </div>
+
+          <div class="mission-progress-stepper">
+            <div class="mission-step-item ${missionStep >= 1 ? 'completed' : (missionStep === 0 ? 'active' : '')}">
+              <div class="mission-step-dot"></div>
+              <div>
+                <div class="mission-step-text-title">1. Dihantar &amp; Disemak HQ</div>
+                <div class="mission-step-text-sub">${formatTimestamp(booking.created_at)}</div>
+              </div>
+            </div>
+
+            <div class="mission-step-item ${missionStep >= 2 ? 'completed' : (missionStep === 1 ? 'active' : '')}">
+              <div class="mission-step-dot"></div>
+              <div>
+                <div class="mission-step-text-title">2. Kelulusan &amp; Agihan Armada</div>
+                <div class="mission-step-text-sub">${booking.plate_number ? `${booking.plate_number} · ${booking.driver_name}` : 'Menunggu agihan'}</div>
+              </div>
+            </div>
+
+            <div class="mission-step-item ${missionStep >= 3 ? 'completed' : (missionStep === 2 ? 'active' : '')}">
+              <div class="mission-step-dot"></div>
+              <div>
+                <div class="mission-step-text-title">3. Menuju Pengambilan Pesakit</div>
+                <div class="mission-step-text-sub">Ambulans bertolak dari pangkalan</div>
+              </div>
+            </div>
+
+            <div class="mission-step-item ${missionStep >= 4 ? 'completed' : (missionStep === 3 ? 'active' : '')}">
+              <div class="mission-step-dot"></div>
+              <div>
+                <div class="mission-step-text-title">4. Tiba di Lokasi Pesakit</div>
+                <div class="mission-step-text-sub">Penstabilan &amp; pemindahan pesakit</div>
+              </div>
+            </div>
+
+            <div class="mission-step-item ${missionStep >= 5 ? 'completed' : (missionStep === 4 ? 'active' : '')}">
+              <div class="mission-step-dot"></div>
+              <div>
+                <div class="mission-step-text-title">5. Menuju Pusat Perubatan Tujuan</div>
+                <div class="mission-step-text-sub">Perjalanan kecemasan / pengiring</div>
+              </div>
+            </div>
+
+            <div class="mission-step-item ${missionStep >= 6 ? 'completed' : (missionStep === 5 ? 'active' : '')}">
+              <div class="mission-step-dot"></div>
+              <div>
+                <div class="mission-step-text-title">6. Misi Selesai &amp; Diserah Selamat</div>
+                <div class="mission-step-text-sub">${booking.completed_at ? formatTimestamp(booking.completed_at) : 'Penyerahan di wad/kecemasan'}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Operational Transition Button for Active Trips -->
+          ${booking.plate_number && !isCompleted ? `
+            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #E2E8F0;">
+              ${currentTripStatus === 'not_started' ? `
+                <button type="button" id="btnAdminStepProgress" data-next-status="en_route_pickup" style="width:100%; background:#0284C7; color:#fff; border:none; border-radius:8px; padding:10px; font-weight:800; font-size:0.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <span>▶</span> <span>Mula Misi (Menuju Pengambilan)</span>
+                </button>
+              ` : (currentTripStatus === 'en_route_pickup' ? `
+                <button type="button" id="btnAdminStepProgress" data-next-status="arrived_pickup" style="width:100%; background:#D97706; color:#fff; border:none; border-radius:8px; padding:10px; font-weight:800; font-size:0.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <span>📍</span> <span>Sahkan Tiba di Lokasi Pesakit</span>
+                </button>
+              ` : (currentTripStatus === 'arrived_pickup' ? `
+                <button type="button" id="btnAdminStepProgress" data-next-status="en_route_destination" style="width:100%; background:#0D9488; color:#fff; border:none; border-radius:8px; padding:10px; font-weight:800; font-size:0.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <span>🚑</span> <span>Bertolak ke Hospital Tujuan</span>
+                </button>
+              ` : (currentTripStatus === 'en_route_destination' ? `
+                <button type="button" id="btnAdminStepProgress" data-next-status="completed" style="width:100%; background:#10B981; color:#fff; border:none; border-radius:8px; padding:10px; font-weight:800; font-size:0.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <span>🏁</span> <span>Sahkan Misi Selesai</span>
+                </button>
+              ` : '')))}
+            </div>
+          ` : ''}
+
+        </div>
+
       </div>
+
+      <!-- ================= TAB 2: LALUAN & PESAKIT ================= -->
+      <div id="drawerTabPanelLaluan" style="display: ${currentDrawerTab === 'laluan' ? 'block' : 'none'};">
+        
+        <!-- Patient Information Card -->
+        <div class="drawer-section-card">
+          <div class="drawer-card-header">
+            <h4 class="drawer-card-title">
+              <span>👤</span> <span>Maklumat Pesakit &amp; Waris</span>
+            </h4>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.78rem;">
+            <div>
+              <span style="font-size: 0.7rem; font-weight: 700; color: #64748B;">NAMA PESAKIT</span>
+              <div style="font-weight: 800; font-size: 0.95rem; color: #0F172A;">${escapeHtml(booking.patient_name || 'Pesakit AMC')}</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
+              <div>
+                <span style="font-size: 0.7rem; font-weight: 700; color: #64748B;">NO. TELEFON</span>
+                <div style="font-weight: 700; color: #0F172A;">${escapeHtml(booking.patient_phone || '—')}</div>
+              </div>
+              <div>
+                <span style="font-size: 0.7rem; font-weight: 700; color: #64748B;">EMEL</span>
+                <div style="font-weight: 600; color: #475569;">${escapeHtml(booking.patient_email || '—')}</div>
+              </div>
+            </div>
+
+            ${booking.patient_notes ? `
+              <div style="margin-top: 6px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 10px;">
+                <b style="color: #92400E; display: block; font-size: 0.72rem; margin-bottom: 2px;">NOTA KESIHATAN / PESAKIT:</b>
+                <span style="color: #78350F; font-size: 0.76rem;">${escapeHtml(booking.patient_notes)}</span>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- Full Route Card -->
+        <div class="drawer-section-card">
+          <div class="drawer-card-header">
+            <h4 class="drawer-card-title">
+              <span>🗺️</span> <span>Laluan Pengambilan &amp; Destinasi</span>
+            </h4>
+            <span style="font-weight: 800; color: #059669; font-size: 0.78rem;">${Number(booking.distance_km || 25).toFixed(1)} km</span>
+          </div>
+
+          <div class="route-timeline-box">
+            <!-- Origin -->
+            <div class="route-stop-point">
+              <div class="route-stop-badge origin">A</div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 0.68rem; font-weight: 800; color: #059669; text-transform: uppercase;">Pengambilan</span>
+                  ${booking.pickup_category ? `<span style="font-size: 0.65rem; background: #E2E8F0; color: #334155; font-weight: 700; padding: 1px 6px; border-radius: 4px;">${escapeHtml(booking.pickup_category)}</span>` : ''}
+                </div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: #0F172A; margin-top: 2px;">
+                  ${escapeHtml(originName)}
+                </div>
+                ${booking.pickup_instructions ? `
+                  <div style="font-size: 0.72rem; color: #047857; margin-top: 3px; background: #ECFDF5; padding: 4px 8px; border-radius: 6px;">
+                    📝 Panduan Masuk: ${escapeHtml(booking.pickup_instructions)}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+
+            <!-- Destination -->
+            <div class="route-stop-point">
+              <div class="route-stop-badge dest">D</div>
+              <div>
+                <span style="font-size: 0.68rem; font-weight: 800; color: #DC2626; text-transform: uppercase;">Pusat Perubatan Tujuan</span>
+                <div style="font-size: 0.82rem; font-weight: 700; color: #0F172A; margin-top: 2px;">
+                  ${escapeHtml(destName)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 12px;">
+            <a href="${mapsDirUrl}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: #EFF6FF; color: #1D4ED8; border: 1.5px solid #BFDBFE; border-radius: 8px; padding: 8px; text-decoration: none; font-size: 0.78rem; font-weight: 800;">
+              <span>🗺️</span> <span>Navigasi Laluan Penuh di Google Maps</span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= TAB 3: PAKEJ & INVOIS ================= -->
+      <div id="drawerTabPanelInvois" style="display: ${currentDrawerTab === 'invois' ? 'block' : 'none'};">
+        
+        <!-- Service Package Summary -->
+        <div class="drawer-section-card">
+          <div class="drawer-card-header">
+            <h4 class="drawer-card-title">
+              <span>📦</span> <span>Pakej &amp; Spesifikasi Klinikal</span>
+            </h4>
+            <span style="font-weight: 800; color: var(--amc-red); font-size: 0.85rem;">RM ${Number(pkg.baseFare || 250).toFixed(2)}</span>
+          </div>
+
+          <div style="font-size: 0.78rem;">
+            <strong style="color: #0F172A; font-size: 0.9rem;">${escapeHtml(pkg.name)}</strong>
+            <p style="font-size: 0.72rem; color: #64748B; margin: 4px 0 10px;">
+              ${escapeHtml(pkg.exampleCases || 'Perkhidmatan ambulan profesional AMC.')}
+            </p>
+
+            <div style="margin-bottom: 10px;">
+              <span style="font-size: 0.7rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">ALATAN TERMASUK:</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                ${(pkg.includedEquipment && pkg.includedEquipment.length > 0)
+                  ? pkg.includedEquipment.map(e => `<span style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 4px;">✓ ${escapeHtml(e)}</span>`).join('')
+                  : '<span style="color: #94A3B8; font-size: 0.72rem;">Tiada alatan tambahan</span>'}
+              </div>
+            </div>
+
+            <div>
+              <span style="font-size: 0.7rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">PERANAN STAF TERMASUK:</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                ${(pkg.includedStaff && pkg.includedStaff.length > 0)
+                  ? pkg.includedStaff.map(s => `<span style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; font-size: 0.68rem; font-weight: 700; padding: 2px 7px; border-radius: 4px;">👤 ${escapeHtml(s)}</span>`).join('')
+                  : '<span style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 4px;">👤 Pemandu Bertugas Sahaja</span>'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invoicing & Pricing Breakdown Card -->
+        <div class="drawer-section-card">
+          <div class="drawer-card-header">
+            <h4 class="drawer-card-title">
+              <span>🧾</span> <span>Pecahan Caj Invois</span>
+            </h4>
+            <span style="font-size: 0.72rem; color: #64748B;">No: <b>${escapeHtml(inv)}</b></span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.78rem;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #475569;">Kadar Asas Pakej:</span>
+              <span style="font-weight: 700;">RM ${Number(booking.base_fare || pkg.baseFare || 250).toFixed(2)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #475569;">Caj Lebihan Jarak (${Number(booking.distance_km || 25).toFixed(1)} km):</span>
+              <span style="font-weight: 700;">RM ${Number(booking.extra_km_cost || 0).toFixed(2)}</span>
+            </div>
+            ${booking.equipment_cost ? `
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: #475569;">Caj Alatan Khas:</span>
+                <span style="font-weight: 700;">RM ${Number(booking.equipment_cost).toFixed(2)}</span>
+              </div>
+            ` : ''}
+
+            <div style="display: flex; justify-content: space-between; border-top: 1.5px solid #E2E8F0; padding-top: 8px; margin-top: 4px; font-size: 0.95rem;">
+              <span style="font-weight: 800; color: #0F172A;">Jumlah Perlu Dibayar:</span>
+              <span style="font-weight: 900; color: var(--amc-red); font-size: 1.15rem;">RM ${amount.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Status & Action Card -->
+        <div class="drawer-section-card" style="background: ${(booking.payment_status || 'unpaid').toLowerCase() === 'paid' ? '#F0FDF4' : '#FFFDF7'};">
+          <div class="drawer-card-header">
+            <h4 class="drawer-card-title">
+              <span>💵</span> <span>Status Pembayaran</span>
+            </h4>
+            ${(booking.payment_status || 'unpaid').toLowerCase() === 'paid' ? `
+              <span class="badge-status-pill green">✓ Telah Dibayar</span>
+            ` : `
+              <span class="badge-status-pill grey">Belum Dibayar</span>
+            `}
+          </div>
+
+          <div style="font-size: 0.76rem; color: #475569; margin-bottom: 10px;">
+            Kaedah Dipilih: <b style="color: #0F172A;">${booking.payment_method === 'chip' ? 'Gerbang Pembayaran CHIP (Online)' : 'Bayaran Tunai Semasa Ketibaan'}</b>
+          </div>
+
+          ${(booking.payment_status || 'unpaid').toLowerCase() !== 'paid' ? `
+            <button type="button" id="btnDrawerMarkPaidCash" style="width: 100%; background: #059669; color: #FFFFFF; border: none; border-radius: 8px; padding: 9px; font-weight: 800; font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(5,150,105,0.2);">
+              <span>💵</span> <span>Tanda Telah Bayar (Terima Tunai)</span>
+            </button>
+          ` : `
+            <div style="font-size: 0.72rem; color: #047857; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+              <span>✓</span> Bayaran telah diterima dan direkodkan dengan selamat.
+            </div>
+          `}
+        </div>
+
+      </div>
+
+      <!-- ================= TAB 4: LOG AUDIT ================= -->
+      <div id="drawerTabPanelAudit" style="display: ${currentDrawerTab === 'audit' ? 'block' : 'none'};">
+        <div class="drawer-section-card">
+          <div class="drawer-card-header">
+            <h4 class="drawer-card-title">
+              <span>📜</span> <span>Garis Masa &amp; Log Perubahan</span>
+            </h4>
+            <span style="font-size: 0.7rem; color: #64748B;">Versi: <b>v${booking.version || 1}</b></span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; max-height: 480px; overflow-y: auto;">
+            ${(booking.audit_trail && booking.audit_trail.length > 0) ? booking.audit_trail.map(a => `
+              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px; font-size: 0.74rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                  <strong style="color: #0F172A;">${escapeHtml(a.action || 'UPDATE')}</strong>
+                  <span style="color: #94A3B8; font-size: 0.68rem;">${formatTimestamp(a.timestamp)}</span>
+                </div>
+                <div style="color: #475569;">Pegawai: <b>${escapeHtml(a.actor || 'Sistem')}</b></div>
+                ${a.reason ? `<div style="color: #DC2626; margin-top: 3px;">Sebab: "${escapeHtml(a.reason)}"</div>` : ''}
+                ${a.notes ? `<div style="color: #64748B; margin-top: 3px;">Catatan: ${escapeHtml(a.notes)}</div>` : ''}
+              </div>
+            `).join('') : `
+              <div style="text-align: center; padding: 24px; color: #94A3B8; font-size: 0.78rem;">
+                Tiada rekod perubahan tambahan.
+              </div>
+            `}
+          </div>
+        </div>
+      </div>
+
     </div>
   `;
+
+  // Attach tab switching listeners inside drawer
+  container.querySelectorAll('.drawer-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.targetTab;
+      currentDrawerTab = target;
+      container.querySelectorAll('.drawer-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      document.getElementById('drawerTabPanelTindakan').style.display = target === 'tindakan' ? 'block' : 'none';
+      document.getElementById('drawerTabPanelLaluan').style.display = target === 'laluan' ? 'block' : 'none';
+      document.getElementById('drawerTabPanelInvois').style.display = target === 'invois' ? 'block' : 'none';
+      document.getElementById('drawerTabPanelAudit').style.display = target === 'audit' ? 'block' : 'none';
+    });
+  });
+
+  // Attach Copy Ref listener
+  const btnCopy = document.getElementById('btnDrawerCopyRef');
+  if (btnCopy) {
+    btnCopy.addEventListener('click', () => {
+      navigator.clipboard?.writeText(inv);
+      const label = document.getElementById('copyRefLabel');
+      if (label) {
+        label.textContent = 'Disalin!';
+        setTimeout(() => { label.textContent = 'Salin'; }, 1500);
+      }
+    });
+  }
+
+  // Attach Close Button listener
+  const closeBtn = document.getElementById('closeBookingDrawerBtn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeBookingDetailDrawer);
+  }
 
   // Attach drawer action listeners
   const btnApprove = document.getElementById('btnDrawerApprove');
   if (btnApprove) {
     btnApprove.addEventListener('click', async () => {
       btnApprove.disabled = true;
-      btnApprove.textContent = '⏳ Mengesahkan...';
+      btnApprove.innerHTML = '<span>⏳ Mengesahkan...</span>';
       const res = await approveBookingRequest({
         booking,
         adminUser: activeAdminUser,
@@ -617,7 +1132,7 @@ export function renderBookingDetailDrawer(booking) {
       } else {
         alert(res.error || 'Gagal meluluskan tempahan.');
         btnApprove.disabled = false;
-        btnApprove.textContent = '✓ Luluskan';
+        btnApprove.innerHTML = '<span>✓</span> <span>Luluskan Tempahan</span>';
       }
     });
   }
@@ -632,7 +1147,7 @@ export function renderBookingDetailDrawer(booking) {
         return;
       }
       btnReject.disabled = true;
-      btnReject.textContent = '⏳ Menolak...';
+      btnReject.innerHTML = '<span>⏳ Menolak...</span>';
       const res = await rejectBookingRequest({
         booking,
         reason: reason.trim(),
@@ -644,7 +1159,7 @@ export function renderBookingDetailDrawer(booking) {
       } else {
         alert(res.error || 'Gagal menolak tempahan.');
         btnReject.disabled = false;
-        btnReject.textContent = '✕ Tolak';
+        btnReject.innerHTML = '<span>✕</span> <span>Tolak Tempahan</span>';
       }
     });
   }
@@ -666,7 +1181,7 @@ export function renderBookingDetailDrawer(booking) {
         : { id: 'prov_med', name: 'MediCorp Ambulance' };
 
       btnSaveAssignment.disabled = true;
-      btnSaveAssignment.textContent = '⏳ Memeriksa konflik sumber...';
+      btnSaveAssignment.innerHTML = '<span>⏳ Memeriksa konflik sumber...</span>';
 
       const res = await assignBookingResources({
         booking,
@@ -690,8 +1205,65 @@ export function renderBookingDetailDrawer(booking) {
           alert(res.error);
         }
         btnSaveAssignment.disabled = false;
-        btnSaveAssignment.textContent = 'Ambulans & Pemandu Diagih';
+        btnSaveAssignment.innerHTML = '<span>🚑</span> <span>Sahkan &amp; Agih Misi Sekarang</span>';
       }
+    });
+  }
+
+  // Mission step progression button
+  const btnStepProgress = document.getElementById('btnAdminStepProgress');
+  if (btnStepProgress) {
+    btnStepProgress.addEventListener('click', async () => {
+      const nextStatus = btnStepProgress.dataset.nextStatus;
+      if (!nextStatus) return;
+
+      btnStepProgress.disabled = true;
+      btnStepProgress.innerHTML = '<span>⏳ Mengemas kini fasa...</span>';
+
+      const res = await updateTripProgress({
+        booking,
+        nextTripStatus: nextStatus,
+        actor: { name: activeAdminUser.name, role: 'admin' },
+        notes: `Fasa perjalanan dikemas kini oleh ${activeAdminUser.name}`
+      });
+
+      if (res.success) {
+        handleUpdatedBooking(res.data);
+      } else {
+        alert(res.error || 'Gagal mengemas kini status perjalanan.');
+        btnStepProgress.disabled = false;
+      }
+    });
+  }
+
+  // Mark Cash Paid listener
+  const btnMarkPaidCash = document.getElementById('btnDrawerMarkPaidCash');
+  if (btnMarkPaidCash) {
+    btnMarkPaidCash.addEventListener('click', async () => {
+      const conf = confirm(`Adakah anda pasti ingin menandakan tempahan ${inv} sebagai TELAH BAYAR (Tunai)?`);
+      if (!conf) return;
+
+      const updated = {
+        ...booking,
+        payment_status: 'paid',
+        payment_method: 'cash',
+        paid_amount: Number(booking.total_fare || booking.totalFare || 250.00),
+        version: Number(booking.version || 1) + 1,
+        updated_at: new Date().toISOString(),
+        audit_trail: [
+          ...(booking.audit_trail || []),
+          {
+            action: 'PAYMENT_RECEIVED_CASH',
+            actor: activeAdminUser.name,
+            timestamp: new Date().toISOString(),
+            amount: Number(booking.total_fare || booking.totalFare || 250.00),
+            notes: 'Bayaran tunai disahkan diterima oleh HQ.'
+          }
+        ]
+      };
+      saveLocalBookingCache(updated);
+      broadcastSyncEvent('UPDATE_BOOKING', updated);
+      handleUpdatedBooking(updated);
     });
   }
 

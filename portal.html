@@ -1255,19 +1255,19 @@
           </div>
 
           <!-- Comprehensive Filter Bar -->
-          <div class="portal-card" style="margin-bottom:14px;padding:12px 14px;">
-            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
+          <div class="booking-filter-card-bar">
+            <div class="booking-filter-inner">
               
               <!-- Search box -->
-              <div style="flex:1;min-width:240px;position:relative;">
-                <input type="text" id="bookingSearchInput" class="form-input-element" style="width:100%;padding-left:32px;font-size:0.8rem;" placeholder="Cari rujukan, nama pesakit, no. telefon, atau plat...">
-                <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:0.85rem;color:#64748B;">🔍</span>
+              <div class="booking-search-wrap">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="bookingSearchInput" placeholder="Cari rujukan (cth: AMC-...), nama pesakit, no. telefon, hospital, plat...">
               </div>
 
               <!-- Filter Dropdowns Row -->
-              <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+              <div class="booking-select-group">
                 <!-- Branch Filter -->
-                <select id="bookingBranchFilter" class="form-select-element mini" style="font-weight:600;">
+                <select id="bookingBranchFilter" aria-label="Tapis Cawangan">
                   <option value="all" selected>Semua cawangan</option>
                   <option value="kok_lanas">Kok Lanas HQ</option>
                   <option value="raub">Cawangan Raub</option>
@@ -1276,10 +1276,10 @@
                 </select>
 
                 <!-- Status Filter -->
-                <select id="bookingStatusFilter" class="form-select-element mini" style="font-weight:600;">
+                <select id="bookingStatusFilter" aria-label="Tapis Status Tempahan">
                   <option value="all" selected>Semua status</option>
                   <option value="menunggu_kelulusan">Menunggu kelulusan</option>
-                  <option value="menunggu_agihan">Diluluskan / Menunggu agihan</option>
+                  <option value="menunggu_agihan">Diluluskan / Perlu agihan</option>
                   <option value="dijadualkan">Dijadualkan</option>
                   <option value="menuju_pengambilan">Menuju pengambilan</option>
                   <option value="selesai">Selesai</option>
@@ -1288,7 +1288,7 @@
                 </select>
 
                 <!-- Payment Filter -->
-                <select id="bookingPaymentFilter" class="form-select-element mini" style="font-weight:600;">
+                <select id="bookingPaymentFilter" aria-label="Tapis Status Bayaran">
                   <option value="all" selected>Semua bayaran</option>
                   <option value="paid">Telah dibayar</option>
                   <option value="unpaid">Belum bayar</option>
@@ -1296,39 +1296,73 @@
                 </select>
 
                 <!-- Provider Filter -->
-                <select id="bookingProviderFilter" class="form-select-element mini" style="font-weight:600;">
+                <select id="bookingProviderFilter" aria-label="Tapis Penyedia Armada">
                   <option value="all" selected>Semua penyedia</option>
                   <option value="al-farhain">Al-Farhain AMC (Dalaman)</option>
                   <option value="medicorp">MediCorp Ambulance</option>
                   <option value="resq">ResQ Response Network</option>
                 </select>
+
+                <!-- Reset Filter Button -->
+                <button type="button" class="btn-reset-filters" id="btnResetBookingFilters" title="Set Semula Semua Penapis">
+                  <span>↺ Set Semula</span>
+                </button>
               </div>
 
             </div>
           </div>
 
-          <!-- Main Content Split Grid: Table + Right Detail Drawer -->
-          <div class="records-content-split-grid">
+          <!-- Main Content Full Layout: Table with Status Tabs Bar -->
+          <div class="booking-desk-full-layout">
             
-            <!-- Left Main Table Card -->
-            <div class="records-table-card portal-card">
-              <div class="table-card-top-bar">
-                <h3 class="card-heading">Senarai Tempahan &amp; Tugasan Ambulans</h3>
+            <!-- Full-Width Main Table Card -->
+            <div class="records-table-card portal-card" style="width:100%;box-shadow:0 2px 10px rgba(15,23,42,0.05);border-radius:14px;padding:18px 20px;">
+              
+              <!-- Status Quick Filter Tabs Bar -->
+              <div class="booking-status-tabs-container" id="bookingStatusTabsNav">
+                <button type="button" class="booking-status-tab-btn active" data-tab="all">
+                  <span>Semua</span>
+                  <span class="tab-count-badge" id="tabCountAll">0</span>
+                </button>
+                <button type="button" class="booking-status-tab-btn" data-tab="menunggu_kelulusan">
+                  <span>⏳ Menunggu Kelulusan</span>
+                  <span class="tab-count-badge amber" id="tabCountPending">0</span>
+                </button>
+                <button type="button" class="booking-status-tab-btn" data-tab="menunggu_agihan">
+                  <span>📋 Perlu Agihan</span>
+                  <span class="tab-count-badge blue" id="tabCountApproved">0</span>
+                </button>
+                <button type="button" class="booking-status-tab-btn" data-tab="sedang_misi">
+                  <span>🚑 Dalam Misi / Aktif</span>
+                  <span class="tab-count-badge teal" id="tabCountActive">0</span>
+                </button>
+                <button type="button" class="booking-status-tab-btn" data-tab="selesai">
+                  <span>✅ Selesai</span>
+                  <span class="tab-count-badge green" id="tabCountCompleted">0</span>
+                </button>
+                <button type="button" class="booking-status-tab-btn" data-tab="batal_tolak">
+                  <span>✕ Dibatalkan / Ditolak</span>
+                  <span class="tab-count-badge" id="tabCountCancelled">0</span>
+                </button>
+              </div>
+
+              <div class="table-card-top-bar" style="margin-bottom:12px;">
+                <h3 class="card-heading" style="font-size:1.05rem;font-weight:800;color:#0F172A;margin:0;">Senarai Tempahan &amp; Tugasan Ambulans</h3>
                 <span id="bookingsCountLabel" style="font-size:0.75rem;color:#64748B;font-weight:700;">Memuatkan...</span>
               </div>
 
               <div class="records-table-scroll-container">
-                <table class="amc-data-table">
+                <table class="amc-data-table" style="width:100%;">
                   <thead>
                     <tr>
-                      <th>Rujukan / Pelanggan</th>
-                      <th>Jadual</th>
-                      <th>Laluan</th>
-                      <th>Pakej &amp; Harga</th>
-                      <th>Status Tempahan</th>
-                      <th>Bayaran</th>
-                      <th>Sumber Diagih</th>
-                      <th>Tindakan</th>
+                      <th style="min-width:180px;">Rujukan / Pemohon</th>
+                      <th style="min-width:150px;">Jadual &amp; Masa</th>
+                      <th style="min-width:220px;">Laluan Perjalanan</th>
+                      <th style="min-width:160px;">Pakej &amp; Tambang</th>
+                      <th style="min-width:150px;">Status Tempahan</th>
+                      <th style="min-width:110px;">Bayaran</th>
+                      <th style="min-width:160px;">Sumber Diagih</th>
+                      <th style="min-width:100px;text-align:center;">Tindakan</th>
                     </tr>
                   </thead>
                   <tbody id="bookingsTableBody">
@@ -1338,19 +1372,16 @@
               </div>
             </div>
 
-            <!-- Right Detail Drawer: Interactive Review & Assignment -->
-            <div class="records-drawer-card portal-card" id="bookingDetailDrawer" style="display:none;width:340px;background:#FFFFFF;border-left:1px solid #CBD5E1;padding:16px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid #E2E8F0;padding-bottom:8px;">
-                <h3 class="card-heading" style="font-size:0.95rem;margin:0;">Butiran &amp; Kawalan Operasi</h3>
-                <button type="button" class="drawer-close-btn" id="closeBookingDrawerBtn" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#64748B;">&times;</button>
-              </div>
-
-              <div id="bookingDrawerContent">
-                <!-- Populated dynamically -->
-              </div>
-            </div>
-
           </div>
+
+          <!-- Fixed Slide-Over Drawer: Review & Operational Control (Doesn't Squeeze Table) -->
+          <div class="booking-desk-drawer-backdrop" id="bookingDrawerBackdrop"></div>
+          <aside class="booking-desk-drawer-panel" id="bookingDetailDrawer" aria-label="Kawalan Operasi Tempahan">
+            <!-- Content injected dynamically via renderBookingDetailDrawer() -->
+            <div id="bookingDrawerContent" style="display:flex;flex-direction:column;height:100%;">
+              <!-- Dynamic Content -->
+            </div>
+          </aside>
 
         </section>
 
