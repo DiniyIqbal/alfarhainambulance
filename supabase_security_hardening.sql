@@ -23,9 +23,14 @@
 --   6. supabase_security_hardening.sql   <-- this file
 --
 -- Safe to re-run (idempotent).
--- Prerequisite in Supabase Dashboard: Authentication -> Providers -> Email ->
--- "Confirm email" MUST be ON. Staff/partner matching by email only trusts
--- confirmed addresses.
+--
+-- STAFF / PARTNER ACCESS IS GRANTED MANUALLY, BY USER ID ONLY.
+-- Nothing here links an account to a role by email address, so this file does
+-- NOT depend on "Confirm email". After creating an account in
+-- Authentication -> Users, link it yourself:
+--   UPDATE public.staff_roles        SET user_id = '<auth user id>' WHERE email = '<email>';
+--   UPDATE public.partner_memberships SET user_id = '<auth user id>' WHERE email = '<email>';
+-- A row with user_id NULL grants nobody any access.
 -- =========================================================================
 
 
@@ -49,23 +54,19 @@ CREATE INDEX IF NOT EXISTS idx_bookings_plate_number ON public.ambulance_booking
 CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_chip_purchase_id
     ON public.ambulance_bookings(chip_purchase_id) WHERE chip_purchase_id IS NOT NULL;
 
--- Backfill ownership for existing rows whose email matches a CONFIRMED account.
--- Placeholder emails the app used as defaults are excluded on purpose.
-UPDATE public.ambulance_bookings b
-SET patient_user_id = u.id
-FROM auth.users u
-WHERE b.patient_user_id IS NULL
-  AND COALESCE(b.patient_email, '') <> ''
-  AND LOWER(b.patient_email) NOT IN ('pesakit.demo@gmail.com', 'pesakit@alfarhain.my')
-  AND LOWER(b.patient_email) = LOWER(u.email)
-  AND u.email_confirmed_at IS NOT NULL;
+-- NOTE: existing bookings are NOT auto-assigned to accounts by matching email
+-- (without email confirmation that would let anyone claim another person's
+-- history). Old rows stay visible to staff only. To attach one manually:
+--   UPDATE public.ambulance_bookings SET patient_user_id = '<auth user id>'
+--   WHERE invoice_number = '<invoice>';
 
 
 -- -------------------------------------------------------------------------
 -- 2. Role helper functions (SECURITY DEFINER, used inside RLS policies)
 -- -------------------------------------------------------------------------
 
--- Email of the caller, only if the address has been confirmed.
+-- Email of the caller. Used ONLY for the notifications inbox; never to grant
+-- staff/partner/driver access.
 CREATE OR REPLACE FUNCTION public.app_current_email()
 RETURNS TEXT
 LANGUAGE sql STABLE SECURITY DEFINER
@@ -74,7 +75,6 @@ AS $$
     SELECT LOWER(u.email)
     FROM auth.users u
     WHERE u.id = auth.uid()
-      AND u.email_confirmed_at IS NOT NULL
 $$;
 
 -- TRUE if the caller is active HQ/branch staff.
@@ -90,10 +90,7 @@ AS $$
         FROM public.staff_roles s
         WHERE s.is_active = TRUE
           AND auth.uid() IS NOT NULL
-          AND (
-                s.user_id = auth.uid()
-             OR (s.user_id IS NULL AND LOWER(s.email) = public.app_current_email())
-          )
+          AND s.user_id = auth.uid()   -- manual link only; never matched by email
           AND (p_roles IS NULL OR s.role = ANY (p_roles))
           AND (p_branch IS NULL OR s.branch_id = 'all' OR s.branch_id = p_branch)
     )
@@ -118,12 +115,11 @@ $$;
 -- routing/UI; real enforcement is RLS + the API auth helper.
 CREATE OR REPLACE FUNCTION public.get_my_access()
 RETURNS JSONB
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
     v_uid     UUID := auth.uid();
-    v_email   TEXT := public.app_current_email();
     v_staff   public.staff_roles%ROWTYPE;
     v_driver  public.ambulance_drivers%ROWTYPE;
     v_partner public.partner_memberships%ROWTYPE;
@@ -133,17 +129,7 @@ BEGIN
         RETURN jsonb_build_object('role', 'anonymous', 'app_role', 'anonymous');
     END IF;
 
-    -- Link rows pre-provisioned by email to this verified account (one-time).
-    IF v_email IS NOT NULL THEN
-        UPDATE public.staff_roles
-           SET user_id = v_uid, updated_at = NOW()
-         WHERE user_id IS NULL AND LOWER(email) = v_email;
-
-        UPDATE public.partner_memberships
-           SET user_id = v_uid, updated_at = NOW()
-         WHERE user_id IS NULL AND LOWER(email) = v_email;
-    END IF;
-
+    -- Roles are linked manually by an administrator (user_id), never here.
     SELECT * INTO v_staff FROM public.staff_roles
      WHERE user_id = v_uid AND is_active = TRUE
      LIMIT 1;

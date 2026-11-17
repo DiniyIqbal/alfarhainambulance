@@ -346,6 +346,20 @@ await asyncTest('Security: admin APIs ignore body-supplied actor and require a J
   });
 });
 
+await asyncTest('Security: /api/admin/staff fails closed and rejects anonymous callers', async () => {
+  const { default: adminStaff } = await import('../api/admin/staff.js');
+  // Not dev server, no token -> denied (401, or 503 if the server is unconfigured)
+  await withEnv({ AFAMS_DEV_SERVER: undefined }, async () => {
+    const a = makeRes();
+    await adminStaff({ method: 'POST', headers: {}, body: { operation: 'LIST' } }, a.res);
+    assert.ok([401, 503].includes(a.statusCode), `got ${a.statusCode}`);
+  });
+  // Wrong method -> 405 (no auth needed to learn that)
+  const g = makeRes();
+  await adminStaff({ method: 'GET', headers: {}, body: {} }, g.res);
+  assert.strictEqual(g.statusCode, 405);
+});
+
 // -------------------------------------------------------------
 // 7. REAL-TIME DATA SYNCHRONIZATION & MULTI-PORTAL TESTS
 // -------------------------------------------------------------

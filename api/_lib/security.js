@@ -85,26 +85,18 @@ function getBearerToken(req) {
 
 async function resolveAccess(admin, user) {
   const email = (user.email || '').trim().toLowerCase();
-  const emailVerified = Boolean(user.email_confirmed_at);
+
+  // Roles are linked manually by an administrator (user_id column).
+  // They are NEVER matched by email address, so this does not depend on
+  // Supabase "Confirm email" being enabled.
 
   // 1. HQ / branch staff
-  let { data: staff } = await admin
+  const { data: staff } = await admin
     .from('staff_roles')
     .select('id, role, branch_id, full_name, email, is_active, user_id')
     .eq('user_id', user.id)
     .eq('is_active', true)
     .maybeSingle();
-
-  if (!staff && emailVerified && email) {
-    const { data: byEmail } = await admin
-      .from('staff_roles')
-      .select('id, role, branch_id, full_name, email, is_active, user_id')
-      .eq('email', email)
-      .is('user_id', null)
-      .eq('is_active', true)
-      .maybeSingle();
-    staff = byEmail || null;
-  }
 
   if (staff) {
     return {
@@ -137,21 +129,11 @@ async function resolveAccess(admin, user) {
   }
 
   // 3. Partner ambulance companies
-  let { data: member } = await admin
+  const { data: member } = await admin
     .from('partner_memberships')
     .select('id, company_id, role, full_name, email, account_status, user_id')
     .eq('user_id', user.id)
     .maybeSingle();
-
-  if (!member && emailVerified && email) {
-    const { data: byEmail } = await admin
-      .from('partner_memberships')
-      .select('id, company_id, role, full_name, email, account_status, user_id')
-      .eq('email', email)
-      .is('user_id', null)
-      .maybeSingle();
-    member = byEmail || null;
-  }
 
   if (member && member.account_status === 'Aktif') {
     return {
