@@ -4138,8 +4138,9 @@ async function initMobileAuth() {
         updateMobileAuthUI(user);
         setTimeout(() => setMobileGateLocked(false), 500);
       } else {
+        const arrowSvg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg>';
         showAuthAlert('userLoginAlert', res.error || 'Emel atau kata laluan tidak sah.');
-        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Log masuk</span> <span>➔</span>'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = `<span>Log masuk</span> ${arrowSvg}`; }
       }
     });
   }
@@ -4170,8 +4171,9 @@ async function initMobileAuth() {
         updateMobileAuthUI(user);
         setTimeout(() => setMobileGateLocked(false), 500);
       } else {
+        const arrowSvg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg>';
         showAuthAlert('userRegAlert', res.error || 'Ralat semasa pendaftaran akaun.');
-        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Daftar akaun</span> <span>➔</span>'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = `<span>Daftar akaun</span> ${arrowSvg}`; }
       }
     });
   }
@@ -4184,6 +4186,7 @@ async function initMobileAuth() {
       const email = document.getElementById('driverLoginEmail')?.value.trim();
       const password = document.getElementById('driverLoginPassword')?.value;
       const btn = document.getElementById('btnDriverLogin');
+      const arrowSvg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg>';
       if (btn) { btn.disabled = true; btn.innerHTML = '<span>⏳ Mengesahkan pemandu...</span>'; }
 
       // 1. Check Driver Account Status in Local/Portal Registry
@@ -4206,22 +4209,22 @@ async function initMobileAuth() {
       // Block unapproved drivers
       if (driverStatus === 'Menunggu Kelulusan') {
         showAuthAlert('driverLoginAlert', 'Akaun pemandu anda masih dalam status Menunggu Kelulusan HQ. Sila tunggu pengesahan sebelum bertugas.');
-        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Log masuk pemandu</span>'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = `<span>Log masuk</span> ${arrowSvg}`; }
         return;
       }
       if (driverStatus === 'Perlu Pembetulan') {
         showAuthAlert('driverLoginAlert', `HQ meminta pembetulan: "${statusReason || 'Maklumat lesen/profil tidak lengkap'}". Sila aktifkan semula atau hubungi HQ.`);
-        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Log masuk pemandu</span>'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = `<span>Log masuk</span> ${arrowSvg}`; }
         return;
       }
       if (driverStatus === 'Digantung') {
         showAuthAlert('driverLoginAlert', `Akaun pemandu ini telah digantung oleh HQ: "${statusReason || 'Tindakan disiplin/operasi'}". Akses dispatch disekat.`);
-        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Log masuk pemandu</span>'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = `<span>Log masuk</span> ${arrowSvg}`; }
         return;
       }
       if (driverStatus === 'Ditolak') {
         showAuthAlert('driverLoginAlert', `Permohonan akaun pemandu ini telah ditolak oleh HQ: "${statusReason || 'Kelayakan tidak mencukupi'}".`);
-        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Log masuk pemandu</span>'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = `<span>Log masuk</span> ${arrowSvg}`; }
         return;
       }
 
@@ -4236,7 +4239,7 @@ async function initMobileAuth() {
         }, 600);
       } else {
         showAuthAlert('driverLoginAlert', res.error || 'Akses ditolak. Emel atau kata laluan salah.');
-        if (btn) { btn.disabled = false; btn.innerHTML = '<span>Log masuk pemandu</span>'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = `<span>Log masuk</span> ${arrowSvg}`; }
       }
     });
   }
