@@ -1,0 +1,334 @@
+/* =====================================================================
+   AL-FARHAIN AMBULANCE - PURE NEUMORPHISM (SOFT SURFACE) LAYER
+   Loaded ONLY by index.html (patient app) and driver.html (driver app),
+   after style.css / driver.css. The HQ portal (portal.html) does not load
+   this file and is unaffected.
+
+   Rules of this layer
+     * Surfaces share one background colour; depth comes from paired
+       light / dark shadows (raised = element, inset = field or selected).
+     * Borders are removed; dividers stay as faint lines.
+     * Text colours are darkened so they stay readable on the soft surface.
+     * Semantic status colours (green / amber / red badges) are kept.
+   To remove the whole look: delete the <link> to this file in index.html
+   and driver.html.
+   ===================================================================== */
+
+:root {
+  --nm-bg: #E8ECF1;
+  --nm-hi: #FFFFFF;
+  --nm-lo: #BCC6D2;
+  --nm-line: rgba(30, 41, 59, 0.08);
+  --nm-raised: 7px 7px 16px var(--nm-lo), -7px -7px 16px var(--nm-hi);
+  --nm-raised-sm: 4px 4px 9px var(--nm-lo), -4px -4px 9px var(--nm-hi);
+  --nm-inset: inset 4px 4px 9px var(--nm-lo), inset -4px -4px 9px var(--nm-hi);
+  --nm-inset-sm: inset 2px 2px 5px var(--nm-lo), inset -2px -2px 5px var(--nm-hi);
+  --nm-dock: 0 -6px 16px var(--nm-lo), 0 -2px 6px var(--nm-hi);
+
+  /* patient app tokens (style.css) */
+  --bg-page: var(--nm-bg);
+  --bg-surface: var(--nm-bg);
+  --bg-card: var(--nm-bg);
+  --bg-card-subtle: var(--nm-bg);
+  --bg-input: var(--nm-bg);
+  --border-light: transparent;
+  --border-subtle: var(--nm-line);
+  --text-sub: #3F4E5F;
+  --text-muted: #526070;
+  --text-dim: #66778A;
+  --shadow-sm: var(--nm-raised-sm);
+  --shadow-card: var(--nm-raised);
+  --shadow-elevated: var(--nm-raised);
+  --shadow-btn: var(--nm-raised-sm);
+  --shadow-bottom-dock: var(--nm-dock);
+
+  /* driver app tokens (driver.css) */
+  --driver-bg-page: var(--nm-bg);
+  --driver-bg-card: var(--nm-bg);
+  --driver-border: transparent;
+  --driver-border-subtle: var(--nm-line);
+  --driver-text-muted: #526070;
+  --driver-text-dim: #66778A;
+  --driver-shadow-card: var(--nm-raised);
+  --driver-shadow-lg: var(--nm-raised);
+  --driver-shadow-dock: var(--nm-dock);
+}
+
+[data-theme="dark"] {
+  --nm-bg: #1C2128;
+  --nm-hi: #272E37;
+  --nm-lo: #0E1115;
+  --nm-line: rgba(226, 232, 240, 0.09);
+
+  --bg-page: var(--nm-bg);
+  --bg-surface: var(--nm-bg);
+  --bg-card: var(--nm-bg);
+  --bg-card-subtle: var(--nm-bg);
+  --bg-input: var(--nm-bg);
+  --text-sub: #A9B7C6;
+  --text-muted: #94A3B8;
+  --text-dim: #7C8CA0;
+
+  --driver-bg-page: var(--nm-bg);
+  --driver-bg-card: var(--nm-bg);
+  --driver-text-muted: #94A3B8;
+  --driver-text-dim: #7C8CA0;
+}
+
+html, body, body.driver-body { background-color: var(--nm-bg); }
+.mobile-app-shell, .driver-app-shell { background-color: var(--nm-bg); box-shadow: none; }
+.mobile-auth-gate-page { background: var(--nm-bg); }
+.mobile-auth-wrapper, .auth-hero-container, .auth-card-sheet { background: var(--nm-bg); box-shadow: none; }
+
+/* ---------------------------------------------------------------------
+   RAISED SURFACES: cards, panels, sheets, menus
+   --------------------------------------------------------------------- */
+.app-header,
+.stepper-container,
+.ui-card,
+.service-pkg-card,
+.service-card,
+.staff-card,
+.equipment-row-card,
+.fleet-stat-card,
+.report-metric-card,
+.recent-trip-item-card,
+.catalog-item-row,
+.tugasan-stat-card,
+.tugasan-dest-card,
+.tugasan-stepper-bar,
+.profile-section-card,
+.purchased-trip-card,
+.cust-booking-card,
+.patient-summary-overview-card,
+.pickup-result-card,
+.pickup-confirm-box,
+.auth-driver-top-card,
+.auth-emergency-card,
+.auth-info-card,
+.auth-notice-card,
+.auth-contact-hq-card,
+.auth-demo-picker-card,
+.modal-card,
+.branch-dropdown-menu,
+.header-font-menu,
+.header-profile-dropdown,
+.printable-invoice-box,
+.invoice-capability-note,
+.custom-dest-box,
+.full-screen-tracking-modal,
+.maplibregl-popup-content,
+.driver-top-nav,
+.driver-card,
+.driver-status-card,
+.driver-qa-card,
+.driver-row-action-card,
+.driver-stat-box,
+.driver-modal-sheet,
+.driver-subcard,
+.driver-vehicle-card {
+  background: var(--nm-bg);
+  border-color: transparent;
+  box-shadow: var(--nm-raised);
+}
+.app-header, .driver-top-nav, .tugasan-stepper-bar, .stepper-container { box-shadow: 0 6px 14px var(--nm-lo); }
+.full-screen-tracking-modal { box-shadow: none; }
+.service-pkg-card:hover, .catalog-item-row:hover, .pickup-result-card:hover, .driver-qa-card:hover, .driver-row-action-card:hover {
+  background: var(--nm-bg);
+  box-shadow: var(--nm-raised-sm);
+}
+
+/* ---------------------------------------------------------------------
+   SMALL RAISED CONTROLS: round buttons, pills, secondary buttons
+   --------------------------------------------------------------------- */
+.branch-select-pill.white-pill,
+.header-circle-btn,
+.header-font-pill,
+.stepper-btn,
+.secondary-pill-btn,
+.btn-nav-prev,
+.catalog-filter-pill,
+.btn-demo-quick-mobile,
+.auth-btn-outline,
+.auth-btn-back-user,
+.btn-trip-receipt,
+.pickup-chip-btn,
+.pickup-action-pill-btn,
+.pickup-text-search-btn,
+.tugasan-btn-outline,
+.tugasan-support-btn,
+.modal-close-btn,
+.btn-remove-stop,
+.btn-add-stop-pill,
+.dest-cat-pill,
+.mobility-pill-btn,
+.month-selector-pill,
+.btn-confirm-cancel,
+.btn-geocode-search,
+.pick-map-action-btn,
+.confirm-cat-pill,
+.summary-mobility-badge,
+.maplibregl-ctrl-group,
+.maplibregl-ctrl-group button,
+.driver-bell-btn,
+.driver-nav-back-btn,
+.driver-btn-outline,
+.driver-contact-btn,
+.driver-hero-link-btn,
+.driver-hero-pill-ready {
+  background: var(--nm-bg) !important;
+  border-color: transparent !important;
+  box-shadow: var(--nm-raised-sm) !important;
+  color: var(--text-main);
+}
+.branch-select-pill.white-pill:active,
+.header-circle-btn:active,
+.header-font-pill:active,
+.stepper-btn:active,
+.secondary-pill-btn:active,
+.btn-nav-prev:active,
+.catalog-filter-pill:active,
+.btn-demo-quick-mobile:active,
+.auth-btn-outline:active,
+.btn-trip-receipt:active,
+.pickup-chip-btn:active,
+.pickup-action-pill-btn:active,
+.tugasan-btn-outline:active,
+.modal-close-btn:active,
+.mobility-pill-btn:active,
+.btn-confirm-cancel:active,
+.driver-bell-btn:active,
+.driver-nav-back-btn:active,
+.driver-btn-outline:active,
+.driver-contact-btn:active {
+  box-shadow: var(--nm-inset-sm) !important;
+}
+
+/* ---------------------------------------------------------------------
+   PRIMARY ACTIONS: same surface, bold red label (pure neumorphism)
+   --------------------------------------------------------------------- */
+.auth-btn-primary,
+.btn-nav-next,
+.btn-confirm-submit,
+.btn-confirm-custom-dest,
+.btn-profile-action,
+.driver-btn-primary,
+.driver-btn-view-task {
+  background: var(--nm-bg) !important;
+  color: var(--amc-red) !important;
+  border: none !important;
+  box-shadow: var(--nm-raised) !important;
+  font-weight: 800;
+}
+.auth-btn-primary svg, .btn-nav-next svg, .btn-confirm-submit svg, .driver-btn-primary svg, .driver-btn-view-task svg { stroke: currentColor; }
+.auth-btn-primary:hover, .btn-nav-next:hover, .btn-confirm-submit:hover, .driver-btn-primary:hover, .driver-btn-view-task:hover { background: var(--nm-bg) !important; }
+.auth-btn-primary:active, .btn-nav-next:active, .btn-confirm-submit:active, .btn-confirm-custom-dest:active, .btn-profile-action:active, .driver-btn-primary:active, .driver-btn-view-task:active {
+  box-shadow: var(--nm-inset) !important;
+  transform: none;
+}
+.auth-btn-primary:disabled, .btn-nav-next:disabled, .btn-confirm-submit:disabled, .driver-btn-primary:disabled { opacity: .55; box-shadow: var(--nm-raised-sm) !important; }
+.btn-profile-logout { background: var(--nm-bg) !important; border-color: transparent !important; box-shadow: var(--nm-raised-sm) !important; color: var(--amc-red) !important; }
+
+/* ---------------------------------------------------------------------
+   INSET FIELDS: inputs, search, selects, segmented tracks
+   --------------------------------------------------------------------- */
+.search-bar-box,
+.auth-input-wrap input,
+.auth-phone-input-wrap,
+.auth-phone-prefix,
+.custom-input-field,
+.patient-search-input,
+.profile-input-wrap input,
+.profile-input-wrap input:focus,
+.confirm-field input,
+.confirm-field input:focus,
+.pickup-search-box,
+.pickup-search-box:focus-within,
+.pickup-region-select,
+.cust-bookings-tabs-bar,
+.auth-role-toggle,
+.mode-segmented-bar,
+.pickup-region-bar,
+.driver-odometer-input-wrap,
+.driver-odometer-input,
+.driver-modal-textarea {
+  background: var(--nm-bg) !important;
+  border-color: transparent !important;
+  box-shadow: var(--nm-inset) !important;
+  color: var(--text-main);
+}
+.search-bar-box input, .pickup-search-input, .auth-phone-input-wrap input, .driver-odometer-input { background: transparent !important; box-shadow: none !important; }
+.auth-input-wrap input:focus, .auth-phone-input-wrap:focus-within, .custom-input-field:focus, .patient-search-input:focus,
+.profile-input-wrap input:focus, .confirm-field input:focus, .pickup-search-box:focus-within, .driver-odometer-input:focus, .driver-modal-textarea:focus {
+  outline: 2px solid var(--amc-red);
+  outline-offset: 2px;
+}
+input::placeholder, textarea::placeholder { color: var(--text-dim); opacity: 1; }
+
+/* ---------------------------------------------------------------------
+   SELECTED / ACTIVE STATES: pressed in, red label
+   --------------------------------------------------------------------- */
+.cust-tab-btn.active,
+.auth-role-btn.active,
+.mode-segment-btn.active,
+.catalog-filter-pill.active,
+.pickup-chip-btn.active,
+.mobility-pill-btn.active,
+.booking-type-card.active,
+.service-pkg-card.selected,
+.service-card.selected,
+.service-card.alert-card.selected,
+.pickup-result-card.selected,
+.custom-radio-circle.active,
+.driver-dock-item.active .driver-dock-icon-wrap {
+  background: var(--nm-bg) !important;
+  box-shadow: var(--nm-inset) !important;
+  color: var(--amc-red) !important;
+  border-color: transparent !important;
+}
+.booking-type-card, .cust-tab-btn, .auth-role-btn, .mode-segment-btn { background: var(--nm-bg); border-color: transparent; }
+.booking-type-card:not(.active), .service-card:not(.selected) { box-shadow: var(--nm-raised-sm); }
+.cust-tab-btn:not(.active), .auth-role-btn:not(.active), .mode-segment-btn:not(.active) { box-shadow: none; color: var(--text-muted); }
+
+/* round icon holders and radio circles */
+.node-circle, .tugasan-step-circle, .timeline-dot, .driver-step-dot, .driver-node-indicator,
+.pkg-staff-avatar, .equip-icon-box, .catalog-icon-box, .custom-radio-circle, .btype-radio-circle, .pkg-check-circle {
+  background: var(--nm-bg) !important;
+  border-color: transparent !important;
+  box-shadow: var(--nm-inset-sm) !important;
+}
+
+/* ---------------------------------------------------------------------
+   BOTTOM DOCKS
+   --------------------------------------------------------------------- */
+.phone-bottom-dock, .driver-bottom-dock {
+  background: var(--nm-bg);
+  border-top: none;
+  box-shadow: var(--nm-dock);
+}
+.dock-tab-item.active, .driver-dock-item.active { color: var(--amc-red); }
+.dock-tab-item.active .dock-icon-svg { stroke: var(--amc-red); }
+
+/* ---------------------------------------------------------------------
+   SMALL DETAILS
+   --------------------------------------------------------------------- */
+.trip-meta-chip, .profile-role-tag, .auth-step-pill, .inv-tag-opt, .pickup-res-badge-category, .badge-status-pill.slate {
+  background: var(--nm-bg);
+  border-color: transparent;
+  box-shadow: var(--nm-inset-sm);
+}
+.pkg-body-divider, .invoice-meta-grid { background: var(--nm-line); }
+.modal-overlay { background: rgba(28, 33, 40, 0.45); }
+.header-profile-card:hover, .btn-demo-quick-mobile:hover, .geocoding-result-item:hover { background: var(--nm-bg); }
+.geocoding-result-item, .invoice-meta-grid { background: var(--nm-bg); box-shadow: var(--nm-inset-sm); border-color: transparent; }
+
+/* keyboard focus stays clearly visible on every control */
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible, select:focus-visible {
+  outline: 3px solid var(--amc-red);
+  outline-offset: 3px;
+}
+
+/* hairline-free: remove leftover 1px borders on common wrappers */
+.ui-card, .service-pkg-card, .service-card, .profile-section-card, .cust-booking-card, .driver-card { border: none; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
