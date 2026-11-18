@@ -19,6 +19,7 @@
   --nm-hi: #FFFFFF;
   --nm-lo: #BCC6D2;
   --nm-line: rgba(30, 41, 59, 0.08);
+  --nm-red: #A01626; /* red text on the soft surface: 6.7:1 */
   --nm-raised: 7px 7px 16px var(--nm-lo), -7px -7px 16px var(--nm-hi);
   --nm-raised-sm: 4px 4px 9px var(--nm-lo), -4px -4px 9px var(--nm-hi);
   --nm-inset: inset 4px 4px 9px var(--nm-lo), inset -4px -4px 9px var(--nm-hi);
@@ -33,9 +34,10 @@
   --bg-input: var(--nm-bg);
   --border-light: transparent;
   --border-subtle: var(--nm-line);
-  --text-sub: #3F4E5F;
-  --text-muted: #526070;
-  --text-dim: #66778A;
+  --text-main: #111A24;
+  --text-sub: #2B394A;
+  --text-muted: #3F4E60;
+  --text-dim: #566578;
   --shadow-sm: var(--nm-raised-sm);
   --shadow-card: var(--nm-raised);
   --shadow-elevated: var(--nm-raised);
@@ -47,8 +49,8 @@
   --driver-bg-card: var(--nm-bg);
   --driver-border: transparent;
   --driver-border-subtle: var(--nm-line);
-  --driver-text-muted: #526070;
-  --driver-text-dim: #66778A;
+  --driver-text-muted: #3F4E60;
+  --driver-text-dim: #566578;
   --driver-shadow-card: var(--nm-raised);
   --driver-shadow-lg: var(--nm-raised);
   --driver-shadow-dock: var(--nm-dock);
@@ -65,14 +67,16 @@
   --bg-card: var(--nm-bg);
   --bg-card-subtle: var(--nm-bg);
   --bg-input: var(--nm-bg);
-  --text-sub: #A9B7C6;
-  --text-muted: #94A3B8;
-  --text-dim: #7C8CA0;
+  --text-main: #F3F6FA;
+  --text-sub: #CBD5E1;
+  --text-muted: #B4C0CF;
+  --text-dim: #97A5B7;
 
   --driver-bg-page: var(--nm-bg);
   --driver-bg-card: var(--nm-bg);
-  --driver-text-muted: #94A3B8;
-  --driver-text-dim: #7C8CA0;
+  --driver-text-muted: #B4C0CF;
+  --driver-text-dim: #97A5B7;
+  --nm-red: #FF6B7A;
 }
 
 html, body, body.driver-body { background-color: var(--nm-bg); }
@@ -215,7 +219,7 @@ html, body, body.driver-body { background-color: var(--nm-bg); }
 .driver-btn-primary,
 .driver-btn-view-task {
   background: var(--nm-bg) !important;
-  color: var(--amc-red) !important;
+  color: var(--nm-red) !important;
   border: none !important;
   box-shadow: var(--nm-raised) !important;
   font-weight: 800;
@@ -227,7 +231,7 @@ html, body, body.driver-body { background-color: var(--nm-bg); }
   transform: none;
 }
 .auth-btn-primary:disabled, .btn-nav-next:disabled, .btn-confirm-submit:disabled, .driver-btn-primary:disabled { opacity: .55; box-shadow: var(--nm-raised-sm) !important; }
-.btn-profile-logout { background: var(--nm-bg) !important; border-color: transparent !important; box-shadow: var(--nm-raised-sm) !important; color: var(--amc-red) !important; }
+.btn-profile-logout { background: var(--nm-bg) !important; border-color: transparent !important; box-shadow: var(--nm-raised-sm) !important; color: var(--nm-red) !important; }
 
 /* ---------------------------------------------------------------------
    INSET FIELDS: inputs, search, selects, segmented tracks
@@ -283,7 +287,7 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); opacity: 1; 
 .driver-dock-item.active .driver-dock-icon-wrap {
   background: var(--nm-bg) !important;
   box-shadow: var(--nm-inset) !important;
-  color: var(--amc-red) !important;
+  color: var(--nm-red) !important;
   border-color: transparent !important;
 }
 .booking-type-card, .cust-tab-btn, .auth-role-btn, .mode-segment-btn { background: var(--nm-bg); border-color: transparent; }
@@ -306,7 +310,7 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); opacity: 1; 
   border-top: none;
   box-shadow: var(--nm-dock);
 }
-.dock-tab-item.active, .driver-dock-item.active { color: var(--amc-red); }
+.dock-tab-item.active, .driver-dock-item.active { color: var(--nm-red); }
 .dock-tab-item.active .dock-icon-svg { stroke: var(--amc-red); }
 
 /* ---------------------------------------------------------------------
@@ -332,3 +336,11 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, select:foc
 .ui-card, .service-pkg-card, .service-card, .profile-section-card, .cust-booking-card, .driver-card { border: none; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---------------------------------------------------------------------
+   READABILITY: numbers line up, body text is never lighter than 5:1
+   --------------------------------------------------------------------- */
+body, input, button, select, textarea { font-variant-numeric: tabular-nums; }
+label, .auth-field-label { color: var(--text-sub); font-weight: 700; }
+input, select, textarea { font-weight: 600; }
+input::placeholder, textarea::placeholder { color: var(--text-dim); font-weight: 500; }
