@@ -114,7 +114,7 @@
 
         <!-- Ultra-HD 2058x1351 Super-Sampled & Sharpened Ambulance Artwork -->
         <div class="portal-hero-ambulance-stage">
-          <img src="/portal_ambulance_hd.png" alt="Al-Farhain AMC Ambulans Toyota Hiace 24 Jam" class="auth-hero-van-hd">
+          <img src="/portal_ambulance_hd.png" alt="Al-Farhain AMC Ambulans Toyota Hiace 24 Jam" class="auth-hero-van-hd" width="2058" height="1351" decoding="async">
         </div>
       </div>
 
@@ -154,7 +154,7 @@
                       <polyline points="3 7 12 13 21 7"></polyline>
                     </svg>
                   </span>
-                  <input type="email" id="gateAuthEmail" class="auth-input-box" placeholder="nama@alfarhain.com" required>
+                  <input type="email" id="gateAuthEmail" name="email" class="auth-input-box" placeholder="nama@alfarhain.com" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required>
                 </div>
               </div>
 
@@ -169,8 +169,8 @@
                       <circle cx="12" cy="16" r="1" fill="#475569"></circle>
                     </svg>
                   </span>
-                  <input type="password" id="gateAuthPassword" class="auth-input-box" placeholder="••••••••••" required>
-                  <button type="button" class="auth-toggle-pwd-btn" id="toggleGatePasswordBtn" title="Tunjuk/Sembunyi kata laluan">
+                  <input type="password" id="gateAuthPassword" name="password" class="auth-input-box" placeholder="••••••••••" autocomplete="current-password" required>
+                  <button type="button" class="auth-toggle-pwd-btn" id="toggleGatePasswordBtn" title="Tunjuk/Sembunyi kata laluan" aria-label="Tunjukkan kata laluan" aria-pressed="false" aria-controls="gateAuthPassword">
                     <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path>
                       <circle cx="12" cy="12" r="3"></circle>
@@ -189,11 +189,11 @@
               </div>
 
               <!-- Status Message -->
-              <div id="gateAuthStatusMsg" class="auth-status-alert" style="display: none;"></div>
+              <div id="gateAuthStatusMsg" class="auth-status-alert" role="status" aria-live="polite" style="display: none;"></div>
 
               <!-- Primary Submit Button -->
               <button type="submit" class="auth-submit-btn" id="btnGateSubmit">
-                <span>Log masuk</span>
+                <span class="auth-submit-label">Log masuk</span>
                 <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                   <polyline points="13 6 19 12 13 18"></polyline>

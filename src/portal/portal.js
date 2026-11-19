@@ -389,6 +389,8 @@ function initAuthentication() {
     togglePwdBtn.addEventListener('click', () => {
       const isPwd = pwdInput.type === 'password';
       pwdInput.type = isPwd ? 'text' : 'password';
+      togglePwdBtn.setAttribute('aria-pressed', isPwd ? 'true' : 'false');
+      togglePwdBtn.setAttribute('aria-label', isPwd ? 'Sembunyikan kata laluan' : 'Tunjukkan kata laluan');
     });
   }
 
@@ -449,8 +451,7 @@ function initAuthentication() {
 
   // Login Form Submit
   if (gateForm) {
-    gateForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    const runGateLogin = async () => {
       const email = document.getElementById('gateAuthEmail')?.value.trim();
       const password = document.getElementById('gateAuthPassword')?.value || '';
       const statusMsg = document.getElementById('gateAuthStatusMsg');
@@ -493,6 +494,36 @@ function initAuthentication() {
       playSuccessChime();
       unlockPortal();
       showToast(`Selamat kembali, ${portalState.currentUser.name}!`);
+    };
+
+    // Loading state: one request at a time, announced to assistive tech.
+    const submitBtn = document.getElementById('btnGateSubmit');
+    const submitLabel = submitBtn?.querySelector('.auth-submit-label');
+    const setGateLoading = (on) => {
+      gateForm.dataset.busy = on ? '1' : '';
+      gateForm.setAttribute('aria-busy', on ? 'true' : 'false');
+      if (!submitBtn) return;
+      submitBtn.disabled = on;
+      submitBtn.classList.toggle('is-loading', on);
+      if (submitLabel) submitLabel.textContent = on ? 'Mengesahkan...' : 'Log masuk';
+    };
+    gateForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (gateForm.dataset.busy === '1') return;
+      setGateLoading(true);
+      try {
+        await runGateLogin();
+      } catch (err) {
+        const statusMsg = document.getElementById('gateAuthStatusMsg');
+        if (statusMsg) {
+          statusMsg.style.display = 'block';
+          statusMsg.textContent = 'Log masuk gagal. Sila cuba lagi.';
+          statusMsg.style.background = '#FEE2E2';
+          statusMsg.style.color = '#B91C1C';
+        }
+      } finally {
+        setGateLoading(false);
+      }
     });
   }
 

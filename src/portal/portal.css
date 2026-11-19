@@ -118,14 +118,18 @@ body {
 }
 
 .auth-split-wrapper {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 52fr) minmax(0, 48fr);
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
+  flex-shrink: 0;
+  align-self: flex-start; /* height follows content so short screens scroll */
 }
 
 /* LEFT HERO PANE (CRISP VECTOR HEADER + ULTRA-HD 2058px AMBULANCE ARTWORK) */
 .auth-hero-pane {
-  flex: 0.85;
+  min-width: 0;
   background: linear-gradient(155deg, #F0F3F7 0%, #F7F8FB 45%, #FFFFFF 82%);
   position: relative;
   display: flex;
@@ -150,7 +154,7 @@ body {
 .portal-hero-header-overlay {
   position: relative;
   z-index: 3;
-  padding: clamp(28px, 4vw, 48px) clamp(32px, 5vw, 64px) 0 clamp(32px, 5vw, 64px);
+  padding: clamp(28px, 6.5vh, 88px) clamp(32px, 5vw, 72px) 0 clamp(32px, 5vw, 72px);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -164,7 +168,7 @@ body {
 }
 
 .portal-hero-crest-svg {
-  width: clamp(64px, 5.5vw, 82px);
+  width: clamp(64px, 5.2vw, 100px);
   height: auto;
   flex-shrink: 0;
   filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.06));
@@ -178,7 +182,7 @@ body {
 
 .portal-hero-brand-main {
   font-family: var(--font-sans);
-  font-size: clamp(2.1rem, 3.1vw, 2.95rem);
+  font-size: clamp(2.1rem, 2.9vw, 3.4rem);
   font-weight: 900;
   color: #009B8A;
   letter-spacing: 0.01em;
@@ -198,7 +202,7 @@ body {
   display: flex;
   flex-direction: column;
   font-family: var(--font-sans);
-  font-size: clamp(2.25rem, 3.55vw, 3.35rem);
+  font-size: clamp(2.25rem, 3.4vw, 4.2rem);
   font-weight: 900;
   font-style: italic;
   line-height: 1.06;
@@ -228,7 +232,7 @@ body {
 
 .portal-hero-subtitle {
   font-family: var(--font-sans);
-  font-size: clamp(0.92rem, 1.18vw, 1.12rem);
+  font-size: clamp(0.95rem, 1.1vw, 1.3rem);
   font-weight: 500;
   color: #334155;
   margin: 0;
@@ -242,47 +246,43 @@ body {
   margin-top: auto;
   display: flex;
   align-items: flex-end;
-  justify-content: flex-start;
 }
 
-/* Artwork is sized by the space UNDER the header so the whole van (roof light to
-   wheels) is always visible and never touches the headline. The van occupies the
-   image's ~10%-80% band, so only the empty road at the very bottom (12%) is pushed
-   off-canvas. 1.95 = image aspect 1.523 / 0.78 visible band. */
+/* The poster (road + vehicle) keeps its natural aspect ratio and is shown whole.
+   It is bottom-anchored so the road bleeds off the pane; the pale top (~9% of the
+   image) is tucked under the supporting sentence and feathered so no edge shows. */
 .auth-hero-van-hd {
-  width: min(100%, calc((100vh - 430px) * 1.95));
-  min-width: min(100%, 520px);
+  width: 100%;
   height: auto;
+  margin-top: -5%;
+  object-fit: contain;
+  object-position: left bottom;
   display: block;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: high-quality;
-  backface-visibility: hidden;
-  transform: translateY(12%);
-  /* feather the poster's pale background (top and right edges) into the pane */
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%), linear-gradient(to left, transparent 0, #000 9%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12%), linear-gradient(to left, transparent 0, #000 6%);
   -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to bottom, transparent 0, #000 14%), linear-gradient(to left, transparent 0, #000 9%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12%), linear-gradient(to left, transparent 0, #000 6%);
   mask-composite: intersect;
 }
 
 /* RIGHT AUTH FORM PANE */
 .auth-form-pane {
-  flex: 1;
+  min-width: 0;
   background-color: #FFFFFF;
   border-left: 1px solid #E5E7EB;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  padding: 48px 52px 26px 52px;
+  padding: clamp(28px, 5vh, 56px) clamp(24px, 4.5vw, 72px) clamp(18px, 3vh, 28px);
   position: relative;
   z-index: 10;
 }
 
 .auth-card-inner {
   width: 100%;
-  max-width: 440px;
-  margin: auto 0;
+  max-width: 460px;
+  margin: auto;
+  padding-block: 16px;
   display: flex;
   flex-direction: column;
 }
@@ -360,7 +360,8 @@ body {
 
 .auth-input-icon {
   position: absolute;
-  left: 14px;
+  inset-block: 0;
+  left: 16px;
   display: flex;
   align-items: center;
   pointer-events: none;
@@ -368,10 +369,10 @@ body {
 
 .auth-input-box {
   width: 100%;
-  height: 48px;
-  padding: 0 42px 0 44px;
-  border: 1.5px solid #94A3B8;
-  border-radius: 10px;
+  height: 54px;
+  padding: 0 48px 0 46px;
+  border: 1.5px solid #8A98AB;
+  border-radius: 12px;
   font-size: 0.92rem;
   font-family: var(--font-sans);
   color: #0F172A;
@@ -383,22 +384,29 @@ body {
   color: #475569;
 }
 
-.auth-input-box:focus {
+.auth-input-box:focus,
+.auth-input-box:focus-visible {
   outline: none;
   border-color: #B91C2C;
-  box-shadow: 0 0 0 3px rgba(185, 28, 44, 0.12);
+  box-shadow: 0 0 0 4px rgba(185, 28, 44, 0.22);
 }
 
 .auth-toggle-pwd-btn {
   position: absolute;
-  right: 12px;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  justify-content: center;
+  border-radius: 10px;
   background: none;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   color: #475569;
-  padding: 4px;
+  padding: 0;
 }
 
 .auth-toggle-pwd-btn:hover {
@@ -414,6 +422,7 @@ body {
 }
 
 .auth-remember-check {
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 9px;
@@ -431,6 +440,9 @@ body {
 }
 
 .auth-forgot-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   color: #B91C2C;
   text-decoration: none;
   font-weight: 700;
@@ -446,24 +458,25 @@ body {
   justify-content: center;
   gap: 10px;
   width: 100%;
-  height: 50px;
+  height: 54px;
   padding: 0 16px;
   background: #B91C2C;
   color: #FFFFFF;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 1rem;
   font-weight: 800;
   font-family: var(--font-sans);
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(185, 28, 44, 0.24);
-  transition: background 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 3px 10px rgba(185, 28, 44, 0.20);
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
   margin-top: 4px;
 }
 
 .auth-submit-btn:hover {
   background: #9F1523;
   transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(185, 28, 44, 0.28);
 }
 
 .auth-submit-btn:active {
@@ -543,7 +556,7 @@ body {
 /* Bottom Footer Bar (Copyright & BM | EN) */
 .auth-bottom-meta-bar {
   width: 100%;
-  max-width: 390px;
+  max-width: 460px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3422,21 +3435,6 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .auth-split-wrapper {
-    flex-direction: column;
-  }
-
-  .auth-hero-pane {
-    padding: 0;
-    min-height: 320px;
-    max-height: 420px;
-  }
-
-  .auth-form-pane {
-    border-left: none;
-    border-top: 1px solid #E5E7EB;
-    padding: 32px 24px 24px 24px;
-  }
 }
 
 /* =========================================================================
@@ -5189,5 +5187,84 @@ body {
   }
 }
 
+/* =========================================================================
+   LOGIN GATE ENHANCEMENTS (scoped to #portalAuthGate / .portal-auth-gate-page)
+   ========================================================================= */
+/* Visible keyboard focus on every control in the gate */
+.portal-auth-gate-page :is(a, button, summary, input[type="checkbox"]):focus-visible {
+  outline: 3px solid rgba(185, 28, 44, 0.55);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+.portal-auth-gate-page .auth-toggle-pwd-btn:focus-visible { outline-offset: -2px; }
+.portal-auth-gate-page .auth-toggle-pwd-btn:hover { background: #F1F5F9; }
 
+/* Browser autofill blends with the white form instead of turning blue */
+.portal-auth-gate-page .auth-input-box:-webkit-autofill,
+.portal-auth-gate-page .auth-input-box:-webkit-autofill:hover,
+.portal-auth-gate-page .auth-input-box:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0F172A;
+  caret-color: #0F172A;
+  box-shadow: 0 0 0 1000px #FFFFFF inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+.portal-auth-gate-page .auth-input-box:-webkit-autofill:focus {
+  box-shadow: 0 0 0 1000px #FFFFFF inset, 0 0 0 4px rgba(185, 28, 44, 0.22);
+}
+.portal-auth-gate-page .auth-input-box:autofill { background-color: #FFFFFF; color: #0F172A; }
 
+/* Loading state */
+.auth-submit-btn:disabled { cursor: progress; opacity: 0.85; transform: none; box-shadow: none; }
+.auth-submit-btn.is-loading::after {
+  content: "";
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: authSpin 0.7s linear infinite;
+}
+.auth-submit-btn.is-loading svg { display: none; }
+@keyframes authSpin { to { transform: rotate(360deg); } }
+
+/* Status / error messages grow the form without shifting the layout sideways */
+.portal-auth-gate-page .auth-status-alert { font-size: 0.86rem; line-height: 1.4; overflow-wrap: anywhere; }
+
+/* Subtle entrance */
+@keyframes authRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes authFade { from { opacity: 0; } to { opacity: 1; } }
+.portal-hero-header-overlay { animation: authRise 0.5s ease-out both; }
+.portal-hero-ambulance-stage { animation: authFade 0.7s ease-out 0.12s both; }
+.auth-card-inner { animation: authRise 0.5s ease-out 0.08s both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-hero-header-overlay,
+  .portal-hero-ambulance-stage,
+  .auth-card-inner { animation: none; }
+  .auth-submit-btn, .auth-input-box { transition: none; }
+  .auth-submit-btn:hover { transform: none; }
+  .auth-submit-btn.is-loading::after { animation-duration: 1.6s; }
+}
+
+/* ---- Tablet / small laptop: stacked layout, hero scaled down ---- */
+@media (max-width: 900px) {
+  .auth-split-wrapper { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .auth-hero-pane { min-height: 0; }
+  .portal-hero-header-overlay { padding: 28px clamp(24px, 6vw, 48px) 0; }
+  .portal-hero-ambulance-stage { margin-top: 12px; }
+  .auth-hero-van-hd { width: 100%; margin-top: -4%; } /* full width so the road bleeds off both edges */
+  .auth-form-pane { border-left: none; border-top: 1px solid #E5E7EB; padding: 32px clamp(20px, 6vw, 48px) 20px; }
+}
+
+/* ---- Mobile: logo + form first, decorative vehicle hidden ---- */
+@media (max-width: 600px) {
+  .portal-hero-ambulance-stage, .portal-hero-bg-wave { display: none; }
+  .portal-hero-header-overlay { padding: 22px 20px 20px; }
+  .portal-hero-brand-row { margin-bottom: 12px; }
+  .portal-hero-headline { font-size: clamp(1.7rem, 8vw, 2.1rem); margin-bottom: 8px; }
+  .portal-hero-subtitle { font-size: 0.9rem; }
+  .auth-form-pane { padding: 24px 20px 16px; }
+  .auth-main-title { font-size: 1.8rem; }
+  .auth-card-inner { padding-block: 0; }
+  .auth-bottom-meta-bar { padding-top: 14px; }
+}
