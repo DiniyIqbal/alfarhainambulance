@@ -245,22 +245,24 @@ body {
   justify-content: flex-start;
 }
 
-/* Artwork fills the whole pane width and bleeds off the left / bottom / right
-   edges (road sweeps off-canvas). On short screens only the bottom road is cropped. */
+/* Artwork is sized by the space UNDER the header so the whole van (roof light to
+   wheels) is always visible and never touches the headline. The van occupies the
+   image's ~10%-80% band, so only the empty road at the very bottom (12%) is pushed
+   off-canvas. 1.95 = image aspect 1.523 / 0.78 visible band. */
 .auth-hero-van-hd {
-  width: 100%;
-  height: min(calc(100vh - 340px), 38vw);
-  min-height: 300px;
-  object-fit: cover;
-  object-position: left top;
+  width: min(100%, calc((100vh - 430px) * 1.95));
+  min-width: min(100%, 520px);
+  height: auto;
   display: block;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: high-quality;
   backface-visibility: hidden;
-  transform: translateZ(0);
-  /* feather the poster's pale background into the pane so no box edge shows */
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 14%);
+  transform: translateY(12%);
+  /* feather the poster's pale background (top and right edges) into the pane */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%), linear-gradient(to left, transparent 0, #000 9%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14%), linear-gradient(to left, transparent 0, #000 9%);
+  mask-composite: intersect;
 }
 
 /* RIGHT AUTH FORM PANE */
