@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ms"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Preview - Bayaran Tunai</title>
+<link rel="stylesheet" href="/src/portal/portal.css">
+<style>body{background:#F4F7F7;padding:24px;font-family:var(--font-sans,system-ui)} .pv-wrap{width:100%}.pv-banner{background:#FEF3C7;color:#92400E;padding:8px 14px;border-radius:8px;font-size:.8rem;margin-bottom:14px}</style>
+</head>
+<body><div class="pv-wrap">
+<div class="pv-banner">PRATONTON SAHAJA: data contoh, tiada pangkalan data sebenar. Tukar peranan: <a href="#role=hq_admin">hq_admin</a> · <a href="#role=branch_manager">branch_manager</a> · <a href="#role=dispatcher">dispatcher</a> (muat semula selepas tukar).</div>
+<div class="view-header-row"><div><div class="view-title-wrap"><h2 class="view-main-title">Bayaran Tunai &amp; Diskaun</h2><span class="badge-data-contoh">KEWANGAN</span></div>
+<p class="view-subtitle">Rekod bayaran tunai yang diterima, terbitkan resit, dan urus diskaun. Semua rekod dikawal oleh pentadbir.</p></div></div>
+<div id="cashPaymentRoot" class="cp-root"></div>
+<script type="module">
+const params = new URLSearchParams(location.hash.slice(1));
+localStorage.setItem('amc_supabase_url', location.origin + '/fakesb');
+localStorage.setItem('amc_supabase_anon_key', 'preview');
+const now = Date.now(), iso = (h) => new Date(now - h * 3600e3).toISOString();
+const db = {
+  bookings: [
+    { id: 'b1', invoice_number: 'AMC-1051', patient_name: 'Ahmad bin Ismail', hub_id: 'kok_lanas', total_fare: 420, payment_status: 'unpaid', payment_method: 'cash', booking_status: 'approved', created_at: iso(2) },
+    { id: 'b2', invoice_number: 'AMC-1052', patient_name: 'Siti Aminah', hub_id: 'raub', total_fare: 250, payment_status: 'unpaid', payment_method: 'cash', booking_status: 'approved', created_at: iso(5) }
+  ],
+  discounts: [
+    { id: 'd1', code: 'WARGA10', name: 'Warga Emas', discount_type: 'percent', value: 10, max_discount: 40, min_fare: 100, valid_from: null, valid_to: null, usage_limit: null, used_count: 6, is_active: true, notes: 'Pesakit 60 tahun ke atas', created_at: iso(900) },
+    { id: 'd2', code: 'RAYA20', name: 'Promosi Raya', discount_type: 'fixed', value: 20, max_discount: null, min_fare: 150, valid_from: '2026-11-01', valid_to: '2026-12-31', usage_limit: 50, used_count: 12, is_active: true, notes: null, created_at: iso(500) },
+    { id: 'd3', code: 'STAF', name: 'Staf & keluarga', discount_type: 'percent', value: 25, max_discount: null, min_fare: 0, valid_from: null, valid_to: null, usage_limit: 10, used_count: 10, is_active: true, notes: null, created_at: iso(400) },
+    { id: 'd4', code: 'LAMA', name: 'Promosi lama', discount_type: 'fixed', value: 15, max_discount: null, min_fare: 0, valid_from: '2025-01-01', valid_to: '2025-03-31', usage_limit: null, used_count: 31, is_active: false, notes: null, created_at: iso(3000) }
+  ],
+  payments: [
+    { id: 'p1', receipt_number: 'CR-2611-00003', invoice_number: 'AMC-1047', hub_id: 'kok_lanas', patient_name: 'Nurul Huda', fare_amount: 380, discount_code: 'WARGA10', discount_amount: 38, amount_paid: 342, amount_tendered: 350, change_given: 8, status: 'received', received_by_name: 'Abe Di', received_at: iso(1) },
+    { id: 'p2', receipt_number: 'CR-2611-00002', invoice_number: 'AMC-1044', hub_id: 'raub', patient_name: 'Lim Wei Jie', fare_amount: 520, discount_code: null, discount_amount: 0, amount_paid: 520, amount_tendered: 520, change_given: 0, status: 'received', received_by_name: 'Abe Din', received_at: iso(26) },
+    { id: 'p3', receipt_number: 'CR-2611-00001', invoice_number: 'AMC-1040', hub_id: 'kok_lanas', patient_name: 'Rashid Omar', fare_amount: 300, discount_code: 'RAYA20', discount_amount: 20, amount_paid: 280, amount_tendered: 300, change_given: 20, status: 'voided', void_reason: 'Salah invois, dibayar semula', received_by_name: 'Abe Di', received_at: iso(50) }
+  ]
+};
+const json = (b, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });
+const real = window.fetch.bind(window);
+window.fetch = async (input, init = {}) => {
+  const u = new URL(typeof input === 'string' ? input : input.url);
+  if (!u.pathname.startsWith('/fakesb/')) return real(input, init);
+  const p = u.pathname.replace('/fakesb', ''), m = (init.method || 'GET').toUpperCase(), body = init.body ? JSON.parse(init.body) : null;
+  if (m === 'GET' && p.endsWith('cash_payments')) return json(db.payments);
+  if (m === 'GET' && p.endsWith('payment_discounts')) return json(db.discounts);
+  if (m === 'GET' && p.endsWith('ambulance_bookings')) return json(db.bookings);
+  return json({ message: 'Pratonton sahaja: tiada pangkalan data sebenar.' }, 400);
+};
+const { initCashPaymentModule, renderCashPaymentView } = await import('/src/portal/cashPaymentModule.js');
+initCashPaymentModule({ currentUser: { roleKey: params.get('role') || 'hq_admin' } }, (m) => alert(m));
+await renderCashPaymentView();
+if (params.get('tab') === 'discounts') document.querySelector('[data-cptab=discounts]').click();
+if (params.get('modal') === 'record') { document.getElementById('cpNewPayment').click(); }
+if (params.get('modal') === 'discount') { document.querySelector('[data-cptab=discounts]').click(); document.getElementById('cpNewDiscount').click(); }
+</script></div>
+</body></html>

@@ -43,6 +43,7 @@ const STAFF_ROLE_LABELS = {
 import { fetchRoadRoute, haversineKm, estimateDurationMin } from '../services/routingService.js';
 import { playCalculateChime, playEmergencyAlertSiren, playSuccessChime } from '../utils/soundFx.js';
 import { initBookingManagementModule, renderBookingDashboard } from './bookingManagementModule.js';
+import { initCashPaymentModule, renderCashPaymentView } from './cashPaymentModule.js';
 
 import {
   createGoogleAmcMap as createAmcMap,
@@ -266,6 +267,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   safeInit(() => initSettingsView(), 'SettingsView');
   safeInit(() => initRecordsView(), 'RecordsView');
   safeInit(() => initBookingManagementModule(portalState, showToast, playSuccessChime), 'BookingManagementModule');
+  safeInit(() => initCashPaymentModule(portalState, showToast), 'CashPaymentModule');
   safeInit(() => initDispatchView(), 'DispatchView');
   safeInit(() => initBranchView(), 'BranchView');
   if (portalState.activeTab === 'petaFleetView') {
@@ -571,6 +573,7 @@ function initSidebarNavigation() {
     dashboardView: 'Dashboard',
     petaFleetView: 'Peta & Fleet',
     hasilInvoisView: 'Hasil & Invois',
+    bayaranTunaiView: 'Bayaran Tunai & Diskaun',
     adminBookingView: 'Tempahan Baru',
     katalogArmadaView: 'Katalog & Armada',
     pemanduView: 'Pemandu & Jemputan',
@@ -612,6 +615,8 @@ function initSidebarNavigation() {
         safeInit(() => renderPartnerPortalView(), 'RefreshPartnerPortal');
       } else if (targetId === 'perkhidmatanServisView') {
         safeInit(() => renderPerkhidmatanServisView(), 'RefreshPerkhidmatanServis');
+      } else if (targetId === 'bayaranTunaiView') {
+        safeInit(() => renderCashPaymentView(), 'RefreshBayaranTunai');
       }
 
       // Handle Peta & Fleet tab activation for MapLibre GL

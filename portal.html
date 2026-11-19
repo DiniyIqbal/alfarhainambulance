@@ -389,6 +389,17 @@
           <span class="nav-item-label">Hasil &amp; Invois</span>
         </button>
 
+        <button class="nav-item-btn" data-target="bayaranTunaiView" id="navBtnBayaranTunai">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+              <circle cx="12" cy="12" r="2.5"></circle>
+              <path d="M6 12h.01M18 12h.01"></path>
+            </svg>
+          </span>
+          <span class="nav-item-label">Bayaran Tunai</span>
+        </button>
+
         <button class="nav-item-btn" data-target="cawanganView">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
@@ -2508,6 +2519,23 @@
               </table>
             </div>
           </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW: BAYARAN TUNAI & DISKAUN (admin-managed cash receipts)
+             =================================================================== -->
+        <section class="portal-view-section" id="bayaranTunaiView">
+          <div class="view-header-row">
+            <div>
+              <div class="view-title-wrap">
+                <h2 class="view-main-title">Bayaran Tunai &amp; Diskaun</h2>
+                <span class="badge-data-contoh">KEWANGAN</span>
+              </div>
+              <p class="view-subtitle">Rekod bayaran tunai yang diterima, terbitkan resit, dan urus diskaun. Semua rekod dikawal oleh pentadbir.</p>
+            </div>
+            <div class="view-header-code">06 · Bayaran Tunai</div>
+          </div>
+          <div id="cashPaymentRoot" class="cp-root"></div>
         </section>
 
         <!-- ===================================================================
