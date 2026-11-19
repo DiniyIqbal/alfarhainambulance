@@ -123,23 +123,134 @@ body {
   min-height: 100vh;
 }
 
-/* LEFT HERO PANE (AL-FARHAIN AMC AMBULANS - RAPID AMBULANCE SERVICES) */
+/* LEFT HERO PANE (CRISP VECTOR HEADER + ULTRA-HD 2058px AMBULANCE ARTWORK) */
 .auth-hero-pane {
   flex: 1.38;
-  background: #F2F4F7;
+  background: linear-gradient(155deg, #F0F3F7 0%, #F7F8FB 45%, #FFFFFF 82%);
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: space-between;
   overflow: hidden;
   min-height: 100vh;
 }
 
-.auth-hero-full-artwork {
+.portal-hero-bg-wave {
+  position: absolute;
+  top: -80px;
+  left: -60px;
+  width: 520px;
+  height: 360px;
+  background: radial-gradient(ellipse at 35% 35%, rgba(204, 238, 234, 0.72) 0%, rgba(226, 244, 242, 0.35) 55%, rgba(255, 255, 255, 0) 78%);
+  transform: rotate(-18deg);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.portal-hero-header-overlay {
+  position: relative;
+  z-index: 3;
+  padding: clamp(28px, 4vw, 48px) clamp(32px, 5vw, 64px) 0 clamp(32px, 5vw, 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.portal-hero-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: clamp(14px, 2vw, 22px);
+}
+
+.portal-hero-crest-svg {
+  width: clamp(64px, 5.5vw, 82px);
+  height: auto;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.06));
+}
+
+.portal-hero-brand-titles {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.portal-hero-brand-main {
+  font-family: var(--font-sans);
+  font-size: clamp(2.1rem, 3.1vw, 2.95rem);
+  font-weight: 900;
+  color: #009B8A;
+  letter-spacing: 0.01em;
+  line-height: 1.02;
+}
+
+.portal-hero-brand-sub {
+  font-family: var(--font-sans);
+  font-size: clamp(0.88rem, 1.2vw, 1.15rem);
+  font-weight: 800;
+  color: #0A1D33;
+  letter-spacing: 0.03em;
+  margin-top: 3px;
+}
+
+.portal-hero-headline {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans);
+  font-size: clamp(2.25rem, 3.55vw, 3.35rem);
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  margin: 0 0 clamp(10px, 1.4vw, 16px) 0;
+}
+
+.portal-hero-headline .headline-dark {
+  color: #0A1D33;
+}
+
+.portal-hero-headline .headline-red-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.portal-hero-headline .headline-red {
+  color: #C81E2B;
+}
+
+.portal-hero-headline .headline-speed-line {
+  width: clamp(110px, 11vw, 165px);
+  height: auto;
+  margin-top: 6px;
+}
+
+.portal-hero-subtitle {
+  font-family: var(--font-sans);
+  font-size: clamp(0.92rem, 1.18vw, 1.12rem);
+  font-weight: 500;
+  color: #334155;
+  margin: 0;
+  letter-spacing: -0.005em;
+}
+
+.portal-hero-ambulance-stage {
+  position: relative;
+  z-index: 2;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: left bottom;
+  margin-top: auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.auth-hero-van-hd {
+  width: 100%;
+  height: auto;
+  max-height: 62vh;
+  object-fit: contain;
+  object-position: center bottom;
   display: block;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: high-quality;
