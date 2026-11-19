@@ -256,6 +256,11 @@ body {
   image-rendering: high-quality;
   backface-visibility: hidden;
   transform: translateZ(0);
+  /* feather the poster's pale background into the pane so no box edge shows */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16%), linear-gradient(to right, transparent 0, #000 12%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, transparent 0, #000 16%), linear-gradient(to right, transparent 0, #000 12%);
+  mask-composite: intersect;
 }
 
 /* RIGHT AUTH FORM PANE */
