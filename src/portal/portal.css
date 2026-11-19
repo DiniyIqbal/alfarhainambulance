@@ -125,7 +125,7 @@ body {
 
 /* LEFT HERO PANE (CRISP VECTOR HEADER + ULTRA-HD 2058px AMBULANCE ARTWORK) */
 .auth-hero-pane {
-  flex: 1.38;
+  flex: 1.55;
   background: linear-gradient(155deg, #F0F3F7 0%, #F7F8FB 45%, #FFFFFF 82%);
   position: relative;
   display: flex;
@@ -242,25 +242,25 @@ body {
   margin-top: auto;
   display: flex;
   align-items: flex-end;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
+/* Artwork fills the whole pane width and bleeds off the left / bottom / right
+   edges (road sweeps off-canvas). On short screens only the bottom road is cropped. */
 .auth-hero-van-hd {
   width: 100%;
-  height: auto;
-  max-height: 62vh;
-  object-fit: contain;
-  object-position: center bottom;
+  height: min(calc(100vh - 340px), 38vw);
+  min-height: 300px;
+  object-fit: cover;
+  object-position: left top;
   display: block;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: high-quality;
   backface-visibility: hidden;
   transform: translateZ(0);
   /* feather the poster's pale background into the pane so no box edge shows */
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16%), linear-gradient(to right, transparent 0, #000 12%);
-  -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to bottom, transparent 0, #000 16%), linear-gradient(to right, transparent 0, #000 12%);
-  mask-composite: intersect;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14%);
 }
 
 /* RIGHT AUTH FORM PANE */
