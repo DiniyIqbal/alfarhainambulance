@@ -822,8 +822,8 @@ export function openCustomerLiveTracking(booking) {
 
   const inv = booking.invoice_number || booking.invoiceNumber || 'AMC-1043';
   if (refEl) refEl.textContent = inv;
-  if (plateEl) plateEl.textContent = `🚑 ${booking.plate_number || 'VPQ 7606'}`;
-  if (driverEl) driverEl.textContent = `👨‍✈️ ${booking.driver_name || 'Abe Di / Syalihan'}`;
+  if (plateEl) plateEl.textContent = booking.plate_number ? `🚑 ${booking.plate_number}` : '🚑 Belum ditetapkan';
+  if (driverEl) driverEl.textContent = booking.driver_name ? `👨‍✈️ ${booking.driver_name}` : '👨‍✈️ Belum ditetapkan';
 
   // Only display reliable ETA / distance, never placeholder values
   const km = Number(booking.distance_km || 25);

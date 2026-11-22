@@ -344,3 +344,10 @@ body, input, button, select, textarea { font-variant-numeric: tabular-nums; }
 label, .auth-field-label { color: var(--text-sub); font-weight: 700; }
 input, select, textarea { font-weight: 600; }
 input::placeholder, textarea::placeholder { color: var(--text-dim); font-weight: 500; }
+
+/* ---------------------------------------------------------------------
+   RECEIPT (invoice modal): inset panels on the soft surface
+   --------------------------------------------------------------------- */
+.printable-invoice-box.rcpt { background: var(--nm-bg); box-shadow: var(--nm-inset-sm); }
+.rcpt-route, .rcpt-total { background: var(--nm-bg); box-shadow: var(--nm-inset-sm); }
+.rcpt-total b, .rcpt-brand-name { color: var(--nm-red); }

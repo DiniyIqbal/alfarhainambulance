@@ -712,7 +712,7 @@
                     </div>
                     <div>
                       <label class="field-micro-label">NAMA ACARA / PROGRAM</label>
-                      <input type="text" id="standbyEventNameInput" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="Cth: Kejohanan Sukan / Konsert" value="Kejohanan Sukan Sekolah">
+                      <input type="text" id="standbyEventNameInput" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="Cth: Kejohanan Sukan / Konsert">
                     </div>
                   </div>
                 </div>
@@ -725,18 +725,24 @@
                 <div class="patient-fields-grid">
                   <div class="pfield-full">
                     <label class="field-micro-label">* NAMA PESAKIT (PATIENT NAME)</label>
-                    <input type="text" id="patientNameInput" class="search-bar-box" style="width: 100%; margin-top: 4px; font-weight: 700;" placeholder="Nama penuh pesakit" value="Ahmad bin Razali">
+                    <input type="text" id="patientNameInput" class="search-bar-box" style="width: 100%; margin-top: 4px; font-weight: 700;" placeholder="Nama penuh pesakit" autocomplete="off">
+                  </div>
+
+                  <div class="pfield-full">
+                    <label class="field-micro-label" for="patientPhoneInput">* NO. TELEFON YANG BOLEH DIHUBUNGI (PHONE)</label>
+                    <input type="tel" id="patientPhoneInput" class="search-bar-box" style="width: 100%; margin-top: 4px; font-weight: 700;" inputmode="tel" autocomplete="tel" placeholder="Cth: 012-345 6789">
                   </div>
 
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <div>
                       <label class="field-micro-label">* UMUR (AGE)</label>
-                      <input type="number" id="patientAgeInput" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="Cth: 58" value="58" min="0" max="120">
+                      <input type="number" id="patientAgeInput" class="search-bar-box" style="width: 100%; margin-top: 4px;" placeholder="Cth: 58" min="1" max="120" inputmode="numeric">
                     </div>
                     <div>
                       <label class="field-micro-label">* JANTINA (GENDER)</label>
                       <select id="patientGenderSelect" class="search-bar-box" style="width: 100%; margin-top: 4px;">
-                        <option value="Lelaki" selected>Lelaki (Male)</option>
+                        <option value="" selected>Pilih</option>
+                        <option value="Lelaki">Lelaki (Male)</option>
                         <option value="Perempuan">Perempuan (Female)</option>
                       </select>
                     </div>
@@ -762,7 +768,7 @@
                         </div>
                       </button>
 
-                      <button type="button" class="mobility-pill-btn active" data-mobility="Stretcher">
+                      <button type="button" class="mobility-pill-btn" data-mobility="Stretcher">
                         <span class="mob-icon">🛏️</span>
                         <div class="mob-texts">
                           <span class="mob-title">Stretcher</span>
@@ -999,16 +1005,16 @@
             <div class="ui-card patient-summary-overview-card">
               <div class="patient-summary-top-row">
                 <span class="summary-btype-badge" id="invSummaryBookingTypeBadge">🚑 REGULAR TRIP</span>
-                <span class="summary-mobility-badge" id="invSummaryMobilityBadge">🛏️ MOBILITI: STRETCHER</span>
+                <span class="summary-mobility-badge" id="invSummaryMobilityBadge">MOBILITI: BELUM DIPILIH</span>
               </div>
               <div class="patient-summary-details-grid">
                 <div>
                   <span class="sum-micro-lbl">NAMA PESAKIT</span>
-                  <span class="sum-bold-val" id="invSummaryPatientName">Ahmad bin Razali</span>
+                  <span class="sum-bold-val" id="invSummaryPatientName">—</span>
                 </div>
                 <div>
                   <span class="sum-micro-lbl">UMUR &amp; JANTINA</span>
-                  <span class="sum-bold-val" id="invSummaryPatientAgeGender">58 Tahun (Lelaki)</span>
+                  <span class="sum-bold-val" id="invSummaryPatientAgeGender">—</span>
                 </div>
               </div>
             </div>
@@ -1192,8 +1198,8 @@
             <!-- Provider & Vehicle Info -->
             <div id="trackModalProviderBox" style="background:#FFFFFF;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span id="trackModalPlate" style="font-weight:800; color:#0F172A; font-size:0.85rem;">🚑 VPQ 7606</span>
-                <span id="trackModalDriver" style="font-weight:700; color:#475569; font-size:0.75rem;">👨‍✈️ Abe Di / Syalihan</span>
+                <span id="trackModalPlate" style="font-weight:800; color:#0F172A; font-size:0.85rem;">🚑 Belum ditetapkan</span>
+                <span id="trackModalDriver" style="font-weight:700; color:#475569; font-size:0.75rem;">👨‍✈️ Belum ditetapkan</span>
               </div>
               <div id="trackModalStatus" style="font-size:0.72rem; color:#059669; font-weight:700; margin-top:4px;">● Sedang dalam perjalanan ke lokasi pengambilan</div>
             </div>
@@ -1275,7 +1281,7 @@
 
             <div class="profile-user-info">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                <h3 class="profile-user-name" id="profileUserName">Nik Farhan</h3>
+                <h3 class="profile-user-name" id="profileUserName">Pengguna</h3>
                 <span class="profile-verified-badge" title="Disahkan">✓ Aktif</span>
               </div>
               <p class="profile-user-email" id="profileUserEmail">pesakit.demo@gmail.com</p>
@@ -1283,7 +1289,7 @@
                 <span class="profile-live-dot"></span>
                 <span id="profileRoleLabel">Pengguna Awam / Waris Pesakit</span>
               </div>
-              <div class="profile-phone-line" id="profileUserPhone">📞 +60 12-345 6789</div>
+              <div class="profile-phone-line" id="profileUserPhone">📞 —</div>
             </div>
           </div>
 
@@ -1453,73 +1459,36 @@
     <div class="modal-card">
       <button class="modal-close-btn" id="closeInvoiceModalBtn">&times;</button>
       
-      <div class="printable-invoice-box" id="printableInvoice">
-        <div class="invoice-org-header">
+      <div class="printable-invoice-box rcpt" id="printableInvoice">
+        <div class="rcpt-head">
           <div>
-            <h2 style="font-family: var(--font-heading); color: var(--amc-teal-dark); font-size: 1.2rem; font-weight: 800;">PUSAT RAWATAN AL-FARHAIN</h2>
-            <div style="font-size: 0.72rem; color: #475569; margin-top: 2px;">
-              Perkhidmatan Ambulans Kecemasan &amp; Pengangkutan Perubatan 24 Jam<br>
-              Talian Hotline: 013-914 7606 • Kelantan &amp; Pahang
-            </div>
+            <div class="rcpt-brand-name">Al-Farhain AMC</div>
+            <div class="rcpt-brand-sub">Ambulans 24 Jam &bull; 013-914 7606</div>
           </div>
-          <div style="text-align: right;">
-            <span id="invBadgeStatus" style="background: #E6F7F6; color: var(--amc-teal-dark); font-weight: 800; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px;">INVOIS RASMI</span>
-            <div style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; margin-top: 4px;" id="invNumber">INV-AMC-1042</div>
-            <div style="font-size: 0.7rem; color: #64748B;" id="invDate">19/10/2026 09:45</div>
-          </div>
+          <span id="invBadgeStatus" class="rcpt-status is-due">Menunggu bayaran</span>
         </div>
 
-        <div class="invoice-meta-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-          <div>
-            <strong>MAKLUMAT PESAKIT:</strong><br>
-            Nama: <span id="invPatientName" style="font-weight: 700;">Ahmad bin Razali</span><br>
-            Umur / Jantina: <span id="invPatientAgeGender">58 Tahun (Lelaki)</span><br>
-            Mobiliti: <span id="invPatientMobility" style="font-weight: 700; color: var(--amc-red);">Stretcher</span><br>
-            Jenis: <span id="invBookingTypeLabel" style="font-weight: 700;">Regular Trip</span>
-          </div>
-          <div>
-            <strong>MAKLUMAT AMBULAN:</strong><br>
-            Penyedia: <span id="invProviderCompany" style="font-weight: 800; color: var(--amc-teal-dark);">Poliklinik Al-Farhain (Armada Dalaman)</span><br>
-            Plat: <span id="invPlateNumber" style="font-weight: 700;">VPQ 7606</span><br>
-            Pemandu: <span id="invDriverName">Abe Di / Syalihan</span><br>
-            Cawangan: <span id="invBranchName">HQ Kok Lanas</span>
-          </div>
-          <div>
-            <strong>MAKLUMAT TRIP:</strong><br>
-            Pangkalan: <span id="invOrigin">Kok Lanas HQ</span><br>
-            Pengambilan: <span id="invPickup" style="font-weight: 700;">Bandar Kota Bharu</span><br>
-            Tujuan: <span id="invDestination">HRPZ II Kota Bharu</span><br>
-            <span id="invReturnInfoRow" style="display: none;">Pulang / Seterusnya: <span id="invReturnInfo" style="font-weight: 700;">-</span><br></span>
-            Jarak: <span id="invDistanceKm" style="font-weight: 700;">26.3 KM</span>
-          </div>
+        <div class="rcpt-meta">
+          <div><span class="rcpt-k">No. Invois</span><span class="rcpt-v rcpt-mono" id="invNumber">-</span></div>
+          <div><span class="rcpt-k">Tarikh</span><span class="rcpt-v" id="invDate">-</span></div>
+          <div><span class="rcpt-k">Pesakit</span><span class="rcpt-v" id="invPatientName">-</span></div>
         </div>
 
-        <table class="invoice-items-table">
-          <thead>
-            <tr>
-              <th style="width: 44%;">Butiran Perkhidmatan</th>
-              <th style="width: 38%;">Status / Keterangan</th>
-              <th style="width: 18%; text-align: right;">Jumlah (RM)</th>
-            </tr>
-          </thead>
-          <tbody id="invTableBody">
-            <!-- Dynamic rows -->
-          </tbody>
-        </table>
-
-        <div class="invoice-capability-note" id="invCapabilityNote">
-          💡 <strong>Nota Keupayaan Armada:</strong> Pilihan staf &amp; peralatan bertanda <em>"Pilihan Sedia Ada / 0 Unit"</em> disenaraikan sebagai pendedahan skop perkhidmatan lengkap Al-Farhain AMC dan <strong>tidak dikira</strong> dalam jumlah bayaran melainkan dipilih.
+        <div class="rcpt-route">
+          <div class="rcpt-stop"><span class="rcpt-dot from"></span><div><span class="rcpt-k">Dari</span><span class="rcpt-v" id="invPickup">-</span></div></div>
+          <div class="rcpt-stop"><span class="rcpt-dot to"></span><div><span class="rcpt-k">Ke</span><span class="rcpt-v" id="invDestination">-</span></div></div>
+          <div class="rcpt-stop" id="invReturnInfoRow" style="display: none;"><span class="rcpt-dot back"></span><div><span class="rcpt-k">Pulang</span><span class="rcpt-v" id="invReturnInfo">-</span></div></div>
+          <div class="rcpt-dist">Jarak: <b id="invDistanceKm">-</b></div>
         </div>
 
-        <div class="invoice-total-highlight">
-          <span style="font-size: 0.85rem; font-weight: 700;" id="invTotalLabel">JUMLAH PERLU DIBAYAR:</span>
-          <span id="invGrandTotal">RM 503.90</span>
+        <div class="rcpt-lines" id="invTableBody"></div>
+
+        <div class="rcpt-total">
+          <span id="invTotalLabel">Perlu dibayar</span>
+          <b id="invGrandTotal">RM 0.00</b>
         </div>
 
-        <div style="margin-top: 14px; border-top: 1px dashed #CBD5E1; padding-top: 8px; font-size: 0.68rem; color: #64748B; display: flex; justify-content: space-between;">
-          <span>Terima kasih kerana memilih Perkhidmatan Ambulan AMC Al-Farhain.</span>
-          <span>Dicetak secara automatik</span>
-        </div>
+        <div class="rcpt-foot">Terima kasih kerana memilih Al-Farhain AMC.</div>
       </div>
 
       <!-- Payment Options Box in Invoice Modal -->

@@ -6355,3 +6355,90 @@ html, body {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* =====================================================================
+   iOS SAFE AREAS (notch / status bar / home indicator)
+   index.html uses viewport-fit=cover, so without these the header slides
+   under the iPhone status bar and the dock under the home indicator.
+   env() is 0 on desktop and non-notch phones, so nothing changes there.
+   ===================================================================== */
+.app-header {
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+}
+.phone-bottom-dock {
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.phone-content {
+  padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+}
+.modal-overlay {
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+.modal-card {
+  max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+}
+.mobile-auth-gate-page {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.full-screen-tracking-modal {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* =====================================================================
+   RECEIPT / INVOICE MODAL - compact, phone-first (class prefix .rcpt)
+   ===================================================================== */
+#invoiceModal .modal-card { padding: 18px; }
+.rcpt { padding: 16px; font-size: 0.9rem; color: var(--text-main, #0F172A); }
+.rcpt-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 38px 12px 0; /* room for the close button */
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--amc-red, #C61E2F);
+}
+.rcpt-brand-name { font-family: var(--font-heading); font-weight: 800; font-size: 1.2rem; color: var(--amc-red, #C61E2F); }
+.rcpt-brand-sub { margin-top: 2px; font-size: 0.78rem; color: var(--text-muted, #475569); }
+.rcpt-status { align-self: flex-start; font-size: 0.78rem; font-weight: 800; line-height: 1.3; padding: 4px 11px; border-radius: 999px; }
+.rcpt-status.is-paid { background: #D1FAE5; color: #065F46; }
+.rcpt-status.is-pending, .rcpt-status.is-due { background: #FEF3C7; color: #92400E; }
+
+.rcpt-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-bottom: 12px; }
+.rcpt-meta > div:last-child { grid-column: 1 / -1; }
+.rcpt-k { display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--text-muted, #475569); }
+.rcpt-v { display: block; font-weight: 700; overflow-wrap: anywhere; }
+.rcpt-mono { font-family: var(--font-mono); font-size: 0.86rem; white-space: nowrap; }
+
+.rcpt-route { display: flex; flex-direction: column; gap: 10px; padding: 10px 12px; margin-bottom: 12px; border-radius: 12px; background: #F1F5F9; }
+.rcpt-stop { display: flex; align-items: flex-start; gap: 10px; }
+.rcpt-dot { flex: 0 0 10px; width: 10px; height: 10px; margin-top: 5px; border-radius: 50%; }
+.rcpt-dot.from { background: #10B981; }
+.rcpt-dot.to { background: #EF4444; }
+.rcpt-dot.back { background: #64748B; }
+.rcpt-dist { padding-left: 20px; font-size: 0.8rem; color: var(--text-muted, #475569); }
+
+.rcpt-lines { margin-bottom: 10px; }
+.rcpt-line { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--nm-line, #E2E8F0); }
+.rcpt-line-main { min-width: 0; }
+.rcpt-line-label { display: block; font-weight: 700; }
+.rcpt-line-detail { display: block; margin-top: 1px; font-size: 0.78rem; color: var(--text-muted, #475569); }
+.rcpt-line-amt { font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rcpt-incl { margin-top: 8px; font-size: 0.82rem; }
+.rcpt-incl summary { min-height: 34px; padding: 6px 0; font-weight: 700; cursor: pointer; color: var(--text-sub, #334155); }
+.rcpt-incl ul { margin: 2px 0 0; padding-left: 18px; color: var(--text-muted, #475569); }
+.rcpt-paynote { margin-top: 8px; font-size: 0.82rem; font-weight: 700; color: #047857; }
+
+.rcpt-total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 12px; background: #F1F5F9; font-weight: 700; }
+.rcpt-total b { font-size: 1.4rem; font-weight: 800; color: var(--amc-red, #C61E2F); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rcpt-foot { margin-top: 12px; font-size: 0.76rem; text-align: center; color: var(--text-muted, #475569); }
+
+@media (max-width: 360px) {
+  .rcpt { padding: 12px; }
+  .rcpt-meta { grid-template-columns: 1fr; }
+}
+@media print {
+  .rcpt { box-shadow: none !important; }
+}

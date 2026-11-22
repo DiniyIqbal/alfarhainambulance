@@ -170,14 +170,15 @@ const state = {
   // Booking Section: Regular Trip vs Ambulance Standby (Event)
   bookingType: 'regular_trip', // 'regular_trip' | 'event_standby'
   standbyDurationHours: 4,
-  standbyEventName: 'Kejohanan Sukan Sekolah',
+  standbyEventName: '',
 
   // Patient Information (Name, Age, Gender, Mobility)
   patientInfo: {
-    name: 'Ahmad bin Razali',
-    age: 58,
-    gender: 'Lelaki',
-    mobility: 'Stretcher' // 'Walking' | 'Wheelchair' | 'Stretcher'
+    name: '',
+    age: '',
+    gender: '',
+    mobility: '', // 'Walking' | 'Wheelchair' | 'Stretcher' (chosen by the user)
+    phone: ''
   },
 
   driverStage: 2, // 1: Diterima, 2: Menuju lokasi, 3: Tiba di lokasi, 4: Dalam transit, 5: Selesai
@@ -779,21 +780,21 @@ function initPatientAndBookingSection() {
 
   if (standbyEventName) {
     standbyEventName.addEventListener('input', (e) => {
-      state.standbyEventName = e.target.value.trim() || 'Acara Sukan / Program';
+      state.standbyEventName = e.target.value.trim();
     });
   }
 
   // Patient Info Inputs
   if (patientName) {
     patientName.addEventListener('input', (e) => {
-      state.patientInfo.name = e.target.value.trim() || 'Ahmad bin Razali';
+      state.patientInfo.name = e.target.value.trim();
       updatePatientSummaryBadges();
     });
   }
 
   if (patientAge) {
     patientAge.addEventListener('input', (e) => {
-      state.patientInfo.age = parseInt(e.target.value, 10) || 58;
+      state.patientInfo.age = parseInt(e.target.value, 10) || '';
       updatePatientSummaryBadges();
     });
   }
@@ -802,6 +803,19 @@ function initPatientAndBookingSection() {
     patientGender.addEventListener('change', (e) => {
       state.patientInfo.gender = e.target.value;
       updatePatientSummaryBadges();
+    });
+  }
+
+  // Contact phone: pre-filled only from the signed-in account, never from a placeholder
+  const patientPhoneField = document.getElementById('patientPhoneInput');
+  if (patientPhoneField) {
+    const savedPhone = String(getStoredUserProfile()?.user_metadata?.phone || '').trim();
+    if (savedPhone && !patientPhoneField.value) {
+      patientPhoneField.value = savedPhone;
+      state.patientInfo.phone = savedPhone;
+    }
+    patientPhoneField.addEventListener('input', (e) => {
+      state.patientInfo.phone = e.target.value.trim();
     });
   }
 
@@ -819,15 +833,17 @@ function initPatientAndBookingSection() {
 
   function updatePatientSummaryBadges() {
     const invPatientName = document.getElementById('invSummaryPatientName');
-    if (invPatientName) invPatientName.textContent = state.patientInfo.name;
+    if (invPatientName) invPatientName.textContent = state.patientInfo.name || '\u2014';
 
     const invPatientAgeGender = document.getElementById('invSummaryPatientAgeGender');
-    if (invPatientAgeGender) invPatientAgeGender.textContent = `${state.patientInfo.age} Tahun (${state.patientInfo.gender})`;
+    if (invPatientAgeGender) invPatientAgeGender.textContent = state.patientInfo.age ? `${state.patientInfo.age} Tahun (${state.patientInfo.gender || '\u2014'})` : '\u2014';
 
     const invMobilityBadge = document.getElementById('invSummaryMobilityBadge');
     if (invMobilityBadge) {
       const mobIcons = { Walking: '🚶', Wheelchair: '🧑‍🦽', Stretcher: '🛏️' };
-      invMobilityBadge.textContent = `${mobIcons[state.patientInfo.mobility] || '🛏️'} MOBILITI: ${state.patientInfo.mobility.toUpperCase()}`;
+      invMobilityBadge.textContent = state.patientInfo.mobility
+        ? `${mobIcons[state.patientInfo.mobility] || ''} MOBILITI: ${state.patientInfo.mobility.toUpperCase()}`
+        : 'MOBILITI: BELUM DIPILIH';
     }
 
     const invBookingTypeBadge = document.getElementById('invSummaryBookingTypeBadge');
@@ -837,6 +853,9 @@ function initPatientAndBookingSection() {
         : '🚑 REGULAR TRIP';
     }
   }
+
+  // Render the summary from the (empty) state so no stale demo text is shown
+  updatePatientSummaryBadges();
 
   // Emergency direct call sound effect
   const loginEmergencyBtn = document.getElementById('loginEmergencyDirectCall');
@@ -1091,233 +1110,107 @@ function populateCostItems(baseFare, extraKm, extraKmRate, extraDistanceFee, sta
   container.innerHTML = html;
 }
 
+/* ---- Receipt (invoice modal): one compact layout for new bookings and history ---- */
+function receiptMoney(n) {
+  return 'RM ' + (Number(n) || 0).toFixed(2);
+}
+
+function receiptLinesHtml(items, included = [], payNote = '') {
+  const rows = items.map((i) => `
+    <div class="rcpt-line">
+      <div class="rcpt-line-main">
+        <span class="rcpt-line-label">${escapeHtml(i.label)}</span>
+        ${i.detail ? `<span class="rcpt-line-detail">${escapeHtml(i.detail)}</span>` : ''}
+      </div>
+      <span class="rcpt-line-amt">${receiptMoney(i.amount)}</span>
+    </div>`).join('');
+  const incl = included.length
+    ? `<details class="rcpt-incl"><summary>Termasuk dalam pakej (${included.length} item)</summary><ul>${included.map((x) => `<li>${escapeHtml(x)}</li>`).join('')}</ul></details>`
+    : '';
+  const pay = payNote ? `<div class="rcpt-paynote">${escapeHtml(payNote)}</div>` : '';
+  return rows + incl + pay;
+}
+
+function setReceiptStatus(kind, text) {
+  const el = document.getElementById('invBadgeStatus');
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'rcpt-status is-' + kind;
+  el.removeAttribute('style');
+}
+
 function populatePrintableInvoice(baseFare, extraKm, extraKmRate, extraDistanceFee, staffFee, grandTotal) {
-  const invOrigin = document.getElementById('invOrigin');
-  if (invOrigin) invOrigin.textContent = state.currentHub.shortName;
-
-  const invPickup = document.getElementById('invPickup');
-  if (invPickup) invPickup.textContent = state.pickupName;
-
-  const invDest = document.getElementById('invDestination');
-  if (invDest) invDest.textContent = state.destinationName;
-
-  const invReturnRow = document.getElementById('invReturnInfoRow');
-  const invReturnInfo = document.getElementById('invReturnInfo');
-  if (invReturnRow) {
-    invReturnRow.style.display = state.hasStop4 ? 'inline' : 'none';
-  }
-  if (invReturnInfo && state.hasStop4) {
-    invReturnInfo.textContent = `${state.returnName} (${state.leg3Km.toFixed(1)} KM)`;
-  }
-
-  const invDist = document.getElementById('invDistanceKm');
-  if (invDist) invDist.textContent = `${state.distanceKm.toFixed(1)} KM`;
-
-  const invPlate = document.getElementById('invPlateNumber');
-  if (invPlate) invPlate.textContent = state.currentHub.ambulancePlate;
-
-  const invBranch = document.getElementById('invBranchName');
-  if (invBranch) invBranch.textContent = state.currentHub.name;
-
-  // Patient Info & Booking Type
-  const invPatientName = document.getElementById('invPatientName');
-  if (invPatientName) invPatientName.textContent = state.patientInfo.name || 'Ahmad bin Razali';
-
-  const invPatientAgeGender = document.getElementById('invPatientAgeGender');
-  if (invPatientAgeGender) invPatientAgeGender.textContent = `${state.patientInfo.age || 58} Tahun (${state.patientInfo.gender || 'Lelaki'})`;
-
-  const invPatientMobility = document.getElementById('invPatientMobility');
-  if (invPatientMobility) invPatientMobility.textContent = state.patientInfo.mobility || 'Stretcher';
-
-  const invBookingTypeLabel = document.getElementById('invBookingTypeLabel');
-  if (invBookingTypeLabel) {
-    invBookingTypeLabel.textContent = state.bookingType === 'event_standby'
-      ? `Standby Acara (${state.standbyDurationHours} Jam)`
-      : 'Regular Trip';
-  }
-
-  const tbody = document.getElementById('invTableBody');
-  if (tbody) {
-    const pkg = state.selectedPackage || SERVICE_PACKAGES[0];
-    const routeBreakdownText = state.hasStop4
-      ? `Laluan 3-Leg: ${state.leg1Km.toFixed(1)} km (${state.currentHub.shortName} ➔ ${state.pickupName}) + ${state.leg2Km.toFixed(1)} km (${state.pickupName} ➔ ${state.destinationName}) + ${state.leg3Km.toFixed(1)} km (${state.destinationName} ➔ ${state.returnName})`
-      : `Laluan: ${state.leg1Km.toFixed(1)} km (${state.currentHub.shortName} ➔ ${state.pickupName}) + ${state.leg2Km.toFixed(1)} km (${state.pickupName} ➔ ${state.destinationName})`;
-
-    const isPaid = state.paymentStatus === 'paid';
-
-    // 1. TAMBANG ASAS PAKEJ & CAJ JARAK
-    let rows = `
-      <tr class="invoice-section-hdr">
-        <td colspan="3">1. MAKLUMAT PAKEJ PERKHIDMATAN &amp; TAMBANG ASAS</td>
-      </tr>
-    `;
-
-    if (state.bookingType === 'event_standby') {
-      rows += `
-        <tr>
-          <td><strong>Pakej Standby Acara (${state.standbyDurationHours} Jam)</strong></td>
-          <td>
-            Kadar pakej acara perubatan &amp; sukan (${state.standbyEventName || 'Tapak Acara'})<br>
-            <small style="color:#64748B;">Ambulans siap sedia + Krew EMT bertugas di lokasi program</small>
-          </td>
-          <td style="text-align: right; font-weight: 700;">RM ${baseFare.toFixed(2)}</td>
-        </tr>
-      `;
-    } else {
-      rows += `
-        <tr>
-          <td><strong>Kadar Asas (${pkg.name})</strong></td>
-          <td>
-            Kadar tetap sehingga ${BASE_SETTINGS.standardBaseKm.toFixed(0)} KM<br>
-            <small style="color:#64748B;">${routeBreakdownText}</small>
-          </td>
-          <td style="text-align: right; font-weight: 700;">RM ${baseFare.toFixed(2)}</td>
-        </tr>
-      `;
-
-      if (extraKm > 0) {
-        rows += `
-          <tr>
-            <td><strong>Caj Tambahan Jarak</strong></td>
-            <td>${extraKm.toFixed(1)} KM &times; RM ${extraKmRate.toFixed(2)} / KM</td>
-            <td style="text-align: right; font-weight: 700;">RM ${extraDistanceFee.toFixed(2)}</td>
-          </tr>
-        `;
-      }
-    }
-
-    // 2. STAF TERMASUK (Omitted completely for Bukan Kecemasan)
-    if (pkg.includedStaff && pkg.includedStaff.length > 0) {
-      rows += `
-        <tr class="invoice-section-hdr" style="background:#F0FDFA;color:#0F766E;">
-          <td colspan="3">2. PAKEJ STAF PENGIRING KLINIKAL TERMASUK</td>
-        </tr>
-      `;
-
-      pkg.includedStaff.forEach(staffName => {
-        rows += `
-          <tr class="inv-row-chosen">
-            <td>
-              <strong style="color: var(--amc-teal-dark);">${staffName}</strong>
-              <div class="inv-desc-sub">Disertakan dalam ${pkg.name}</div>
-            </td>
-            <td>
-              <span class="inv-tag inv-tag-chosen" style="background:#D1FAE5;color:#065F46;">✓ TERMASUK</span>
-              <span class="inv-desc-sub">Kru perubatan klinikal bertugas</span>
-            </td>
-            <td style="text-align: right; font-weight: 800; color: #10B981;">RM 0.00</td>
-          </tr>
-        `;
-      });
-    }
-
-    // 3. ALATAN PERUBATAN TERMASUK
-    if (pkg.includedEquipment && pkg.includedEquipment.length > 0) {
-      rows += `
-        <tr class="invoice-section-hdr" style="background:#F0FDFA;color:#0F766E;">
-          <td colspan="3">3. SENARAI PERALATAN PERUBATAN &amp; SOKONGAN PESAKIT TERMASUK</td>
-        </tr>
-      `;
-
-      pkg.includedEquipment.forEach(item => {
-        rows += `
-          <tr class="inv-row-chosen">
-            <td>
-              <strong style="color: var(--amc-teal-dark);">${item}</strong>
-              <div class="inv-desc-sub">Disertakan dalam ${pkg.name}</div>
-            </td>
-            <td>
-              <span class="inv-tag inv-tag-chosen" style="background:#D1FAE5;color:#065F46;">✓ TERMASUK</span>
-              <span class="inv-desc-sub">Peralatan ambulans siap sedia</span>
-            </td>
-            <td style="text-align: right; font-weight: 800; color: #10B981;">RM 0.00</td>
-          </tr>
-        `;
-      });
-    }
-
-    // Standalone additional equipment if any
-    const paidEquipments = ADDITIONAL_EQUIPMENTS.filter(eq => (state.equipmentQuantities[eq.id] || 0) > 0);
-    if (paidEquipments.length > 0) {
-      rows += `
-        <tr class="invoice-section-hdr">
-          <td colspan="3">4. CAJ PERALATAN TAMBAHAN KHAS</td>
-        </tr>
-      `;
-      paidEquipments.forEach(eq => {
-        const qty = state.equipmentQuantities[eq.id];
-        const itemTotal = qty * eq.price;
-        rows += `
-          <tr class="inv-row-chosen">
-            <td>
-              <strong style="color: var(--amc-teal-dark);">${eq.name}</strong>
-              <div class="inv-desc-sub">${eq.category}</div>
-            </td>
-            <td>
-              <span class="inv-tag inv-tag-chosen">✓ TAMBAHAN (${qty} ${eq.unit})</span>
-              <span class="inv-desc-sub">Kuantiti: ${qty} &times; RM ${eq.price.toFixed(2)}</span>
-            </td>
-            <td style="text-align: right; font-weight: 800; color: var(--amc-teal-dark);">RM ${itemTotal.toFixed(2)}</td>
-          </tr>
-        `;
-      });
-    }
-
-    // Payment Confirmation Row if paid
-    if (isPaid) {
-      rows += `
-        <tr class="invoice-section-hdr" style="background:#ECFDF5;color:#065F46;">
-          <td colspan="3">PENGESAHAN STATUS PEMBAYARAN</td>
-        </tr>
-        <tr>
-          <td><strong>Status Transaksi</strong></td>
-          <td>Disahkan Lunas (${state.paymentMethod === 'chip' ? 'CHIP Online - FPX / DuitNow / Kad' : 'Tunai / Resit Diakui'})</td>
-          <td style="text-align: right; font-weight: 800; color: #10B981;">LUNAS</td>
-        </tr>
-      `;
-    }
-
-    tbody.innerHTML = rows;
-  }
-
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
   const isPaid = state.paymentStatus === 'paid';
 
-  const grandTotalEl = document.getElementById('invGrandTotal');
-  if (grandTotalEl) grandTotalEl.textContent = `RM ${grandTotal.toFixed(2)}`;
+  setText('invPatientName', state.patientInfo.name || '\u2014');
+  setText('invPickup', state.pickupName);
+  setText('invDestination', state.destinationName);
+  setText('invDistanceKm', `${state.distanceKm.toFixed(1)} KM`);
 
-  // Update capability note visibility (hidden on paid receipt)
-  const capNote = document.getElementById('invCapabilityNote');
-  if (capNote) {
-    capNote.style.display = isPaid ? 'none' : 'block';
-  }
+  const returnRow = document.getElementById('invReturnInfoRow');
+  if (returnRow) returnRow.style.display = state.hasStop4 ? '' : 'none';
+  if (state.hasStop4) setText('invReturnInfo', `${state.returnName} (${state.leg3Km.toFixed(1)} KM)`);
 
-  // Update total highlight label
-  const totalLabel = document.getElementById('invTotalLabel');
-  if (totalLabel) {
-    totalLabel.textContent = isPaid ? 'JUMLAH TELAH DIBAYAR (LUNAS):' : 'JUMLAH PERLU DIBAYAR:';
-  }
-
-  // Update payment action box visibility (hidden when already paid)
-  const paymentBox = document.getElementById('invoicePaymentActionBox');
-  if (paymentBox) {
-    paymentBox.style.display = isPaid ? 'none' : 'block';
-  }
-
-  // Update invoice number and payment status badge
-  getOrGenerateInvoiceNumber();
-
-  const invBadge = document.getElementById('invBadgeStatus');
-  if (invBadge) {
-    if (isPaid) {
-      invBadge.textContent = '✅ LUNAS / DIBAYAR';
-      invBadge.style.background = '#D1FAE5';
-      invBadge.style.color = '#065F46';
-    } else {
-      invBadge.textContent = 'INVOIS RASMI';
-      invBadge.style.background = '#E6F7F6';
-      invBadge.style.color = 'var(--amc-teal-dark)';
+  const pkg = state.selectedPackage || SERVICE_PACKAGES[0];
+  const items = [];
+  if (state.bookingType === 'event_standby') {
+    items.push({
+      label: `Pakej Standby Acara (${state.standbyDurationHours} jam)`,
+      detail: state.standbyEventName || '',
+      amount: baseFare
+    });
+  } else {
+    items.push({
+      label: `Kadar asas \u00B7 ${pkg.name}`,
+      detail: `Kadar tetap sehingga ${BASE_SETTINGS.standardBaseKm.toFixed(0)} km`,
+      amount: baseFare
+    });
+    if (extraKm > 0) {
+      items.push({
+        label: 'Caj jarak tambahan',
+        detail: `${extraKm.toFixed(1)} km \u00D7 RM ${extraKmRate.toFixed(2)}`,
+        amount: extraDistanceFee
+      });
     }
   }
+  if (staffFee > 0) items.push({ label: 'Caj staf pengiring', amount: staffFee });
+
+  ADDITIONAL_EQUIPMENTS
+    .filter((eq) => (state.equipmentQuantities[eq.id] || 0) > 0)
+    .forEach((eq) => {
+      const qty = state.equipmentQuantities[eq.id];
+      items.push({
+        label: eq.name,
+        detail: `${qty} ${eq.unit} \u00D7 RM ${eq.price.toFixed(2)}`,
+        amount: qty * eq.price
+      });
+    });
+
+  const included = state.bookingType === 'event_standby'
+    ? []
+    : [...(pkg.includedStaff || []), ...(pkg.includedEquipment || [])];
+  const payNote = isPaid
+    ? `Dibayar melalui ${state.paymentMethod === 'chip' ? 'CHIP (FPX / DuitNow / Kad)' : 'tunai'}`
+    : '';
+
+  const tbody = document.getElementById('invTableBody');
+  if (tbody) tbody.innerHTML = receiptLinesHtml(items, included, payNote);
+
+  setText('invGrandTotal', receiptMoney(grandTotal));
+  setText('invTotalLabel', isPaid ? 'Jumlah dibayar' : 'Perlu dibayar');
+
+  // The payment buttons belong to a booking that is still unpaid.
+  const paymentBox = document.getElementById('invoicePaymentActionBox');
+  if (paymentBox) paymentBox.style.display = isPaid ? 'none' : 'block';
+
+  getOrGenerateInvoiceNumber();
+
+  if (isPaid) setReceiptStatus('paid', '\u2713 Telah dibayar');
+  else setReceiptStatus('due', 'Menunggu bayaran');
 
   const invDateEl = document.getElementById('invDate');
   if (invDateEl && !invDateEl.dataset.customDate) {
@@ -2208,7 +2101,7 @@ function getCurrentBookingPayload(paymentMethod = 'cash', paymentStatus = 'unpai
   const user = getStoredUserProfile();
   const patientEmail = (user?.email || state.patientInfo?.email || '').trim();
   const patientName = (state.patientInfo?.name || user?.user_metadata?.name || user?.user_metadata?.full_name || 'Pesakit AMC').trim();
-  const patientPhone = (state.patientInfo?.phone || user?.user_metadata?.phone || '+60 12-345 6789').trim();
+  const patientPhone = String(state.patientInfo?.phone || user?.user_metadata?.phone || '').trim();
 
   // Accurate patient pickup & destination locations
   const originName = state.pickupName || state.pickupAddress || state.currentHub?.shortName || 'Lokasi Pesakit';
@@ -2426,6 +2319,35 @@ function initActionModals() {
         return;
       }
 
+      // The crew must be able to reach the patient, and must know who they are collecting.
+      const stopWith = (msg, fieldId) => {
+        alert(msg);
+        switchCalcStep(1);
+        const el = document.getElementById(fieldId);
+        if (el) el.focus();
+      };
+      if (patientPhoneVal.replace(/\D/g, '').length < 9) {
+        stopWith('Sila masukkan nombor telefon yang sah supaya pasukan kami boleh menghubungi anda.', 'patientPhoneInput');
+        return;
+      }
+      const patientAgeVal = Number(state.patientInfo?.age);
+      if (!(patientAgeVal >= 1 && patientAgeVal <= 120)) {
+        stopWith('Sila masukkan umur pesakit (1 hingga 120).', 'patientAgeInput');
+        return;
+      }
+      if (!state.patientInfo?.gender) {
+        stopWith('Sila pilih jantina pesakit.', 'patientGenderSelect');
+        return;
+      }
+      if (!state.patientInfo?.mobility) {
+        stopWith('Sila pilih status mobiliti pesakit (Walking, Wheelchair atau Stretcher).', 'mobilityPillsContainer');
+        return;
+      }
+      if (state.bookingType === 'event_standby' && !(state.standbyEventName || '').trim()) {
+        stopWith('Sila masukkan nama acara untuk tempahan standby.', 'standbyEventNameInput');
+        return;
+      }
+
       if (!state.pickupCoords || !Array.isArray(state.pickupCoords) || state.pickupCoords.length < 2) {
         alert('Sila sahkan lokasi pengambilan pesakit pada peta terlebih dahulu.');
         switchCalcStep(1);
@@ -2546,6 +2468,7 @@ function initActionModals() {
 
   if (btnPrint) {
     btnPrint.addEventListener('click', () => {
+      document.querySelectorAll('#printableInvoice details').forEach((d) => { d.open = true; });
       window.print();
     });
   }
@@ -4996,9 +4919,9 @@ function renderUserProfileDetails(overrideUser = null) {
     }
   };
 
-  const name = user.user_metadata?.name || user.user_metadata?.full_name || (user.email ? user.email.split('@')[0] : 'Nik Farhan');
+  const name = user.user_metadata?.name || user.user_metadata?.full_name || (user.email ? user.email.split('@')[0] : 'Pengguna');
   const email = user.email || 'pesakit.demo@gmail.com';
-  const phone = user.user_metadata?.phone || '+60 12-345 6789';
+  const phone = String(user.user_metadata?.phone || '').trim();
   const roleLabel = user.user_metadata?.role_label || (email.includes('driver') ? 'Pemandu EMT Bertugas' : 'Pengguna Awam / Waris Pesakit');
 
   const nameEl = document.getElementById('profileUserName');
@@ -5010,7 +4933,7 @@ function renderUserProfileDetails(overrideUser = null) {
 
   if (nameEl) nameEl.textContent = name;
   if (emailEl) emailEl.textContent = email;
-  if (phoneEl) phoneEl.textContent = '📞 ' + phone;
+  if (phoneEl) phoneEl.textContent = phone ? '📞 ' + phone : '📞 Nombor telefon belum ditetapkan';
   if (roleEl) roleEl.textContent = roleLabel;
 
   const savedAvatar = localStorage.getItem('amc_user_avatar_' + email) || localStorage.getItem('amc_user_avatar_default');
@@ -5207,10 +5130,15 @@ async function renderUserProfileRecords() {
 
     const isPartnerProvider = rec.provider_type === 'partner_company' || (rec.partner_company_name && !rec.partner_company_name.includes('Al-Farhain')) || inv.startsWith('AMC-RKN-');
     const providerCompany = rec.partner_company_name || (isPartnerProvider ? 'MediCare Ambulance Services Sdn. Bhd.' : 'Poliklinik Al-Farhain (Armada Dalaman)');
-    const plateNum = rec.plate_number || rec.plateNumber || (isPartnerProvider ? 'DDU 8892' : 'VPQ 7606');
-    const driverName = rec.driver_name || rec.driverName || (isPartnerProvider ? 'Mohd Hafizuddin bin Razak' : 'Abe Di (EMT)');
+    const plateNum = rec.plate_number || rec.plateNumber || '';
+    const driverName = rec.driver_name || rec.driverName || '';
+    const unitAssigned = Boolean(plateNum || driverName);
 
-    const providerBannerHtml = isPartnerProvider
+    const providerBannerHtml = !unitAssigned
+      ? `<div style="background:#F1F5F9;border:1px solid #CBD5E1;border-radius:8px;padding:6px 10px;margin:6px 0 8px;font-size:0.71rem;color:#334155;font-weight:700;">
+           🕒 Ambulans &amp; pemandu akan ditetapkan selepas kelulusan HQ
+         </div>`
+      : isPartnerProvider
       ? `<div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:6px 10px;margin:6px 0 8px;font-size:0.71rem;color:#92400E;display:flex;flex-direction:column;gap:2px;">
            <div style="font-weight:800;display:flex;align-items:center;gap:5px;">
              <span>🤝</span>
@@ -5276,7 +5204,14 @@ async function renderUserProfileRecords() {
             data-pay="${payMethod}"
             data-provider="${escapeHtml(providerCompany)}"
             data-plate="${escapeHtml(plateNum)}"
-            data-driver="${escapeHtml(driverName)}">
+            data-driver="${escapeHtml(driverName)}"
+            data-patient="${escapeHtml(rec.patient_name || '')}"
+            data-base="${Number(rec.base_fare) || 0}"
+            data-extra="${Number(rec.extra_km_cost) || 0}"
+            data-assist="${Number(rec.assistance_cost) || 0}"
+            data-equip="${Number(rec.equipment_cost) || 0}"
+            data-misc="${Number(rec.misc_fee) || 0}"
+            data-paid="${(rec.payment_status || '').toLowerCase() === 'paid' ? '1' : '0'}">
             <span>🧾</span>
             <span>Papar Resit</span>
           </button>
@@ -5300,9 +5235,15 @@ async function renderUserProfileRecords() {
         dist: btn.dataset.dist,
         pay: btn.dataset.pay,
         provider: btn.dataset.provider || 'Poliklinik Al-Farhain (Armada Dalaman)',
-        plate: btn.dataset.plate || 'VPQ 7606',
-        driver: btn.dataset.driver || 'Abe Di (EMT)',
-        patientName: user.user_metadata?.name || 'Nik Farhan'
+        plate: btn.dataset.plate || '',
+        driver: btn.dataset.driver || '',
+        patientName: btn.dataset.patient || user.user_metadata?.name || '',
+        base: btn.dataset.base,
+        extra: btn.dataset.extra,
+        assist: btn.dataset.assist,
+        equip: btn.dataset.equip,
+        misc: btn.dataset.misc,
+        paid: btn.dataset.paid
       });
     });
   });
@@ -5310,53 +5251,73 @@ async function renderUserProfileRecords() {
 
 function showOfficialTripReceipt(data) {
   const invModal = document.getElementById('invoiceModal');
-  const invNumberText = document.getElementById('invNumberText') || document.getElementById('invNumber');
-  const invDate = document.getElementById('invDate');
-  const invBadgeStatus = document.getElementById('invBadgeStatus');
-  const invPickup = document.getElementById('invPickup');
-  const invDest = document.getElementById('invDestination');
-  const invPatientName = document.getElementById('invSummaryPatientName') || document.getElementById('invPatientName');
-  const invGrandTotal = document.getElementById('invGrandTotal');
-  const invProviderCompany = document.getElementById('invProviderCompany');
-  const invPlateNumber = document.getElementById('invPlateNumber');
-  const invDriverName = document.getElementById('invDriverName');
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+  const num = (v) => {
+    const x = parseFloat(v);
+    return Number.isFinite(x) ? x : 0;
+  };
+  const total = num(data.fare);
+  const isPaid = data.paid === '1';
+  const isChip = String(data.pay || '').includes('CHIP');
 
-  if (invNumberText) invNumberText.textContent = data.inv;
-  if (invDate) invDate.textContent = data.date;
-  if (invBadgeStatus) {
-    invBadgeStatus.textContent = data.pay.includes('CHIP') ? '✅ LUNAS / DIBAYAR (CHIP)' : '💵 TUNAI KETIBAAN';
-    invBadgeStatus.style.background = '#D1FAE5';
-    invBadgeStatus.style.color = '#065F46';
-  }
-  if (invPickup) invPickup.textContent = data.pickup;
-  if (invDest) invDest.textContent = data.dropoff;
-  if (invPatientName) invPatientName.textContent = data.patientName || 'Nik Farhan';
-  if (invGrandTotal) invGrandTotal.textContent = 'RM ' + data.fare;
-  if (invProviderCompany && data.provider) invProviderCompany.textContent = data.provider;
-  if (invPlateNumber && data.plate) invPlateNumber.textContent = data.plate;
-  if (invDriverName && data.driver) invDriverName.textContent = data.driver;
+  setText('invNumber', data.inv);
+  setText('invDate', data.date);
+  setText('invPatientName', data.patientName || '\u2014');
+  setText('invPickup', data.pickup);
+  setText('invDestination', data.dropoff);
+  setText('invDistanceKm', `${data.dist} KM`);
+
+  const returnRow = document.getElementById('invReturnInfoRow');
+  if (returnRow) returnRow.style.display = 'none';
+
+  // The badge follows the real payment status, not just the chosen method.
+  if (isPaid) setReceiptStatus('paid', '\u2713 Telah dibayar');
+  else if (isChip) setReceiptStatus('pending', 'Menunggu pengesahan bayaran');
+  else setReceiptStatus('due', 'Bayar tunai semasa ketibaan');
+
+  // Show the itemised lines only when they add up to the stored total;
+  // otherwise one honest line is better than a wrong breakdown.
+  const parts = [
+    { label: 'Kadar asas', detail: data.pkg, amount: num(data.base) },
+    { label: 'Caj jarak tambahan', amount: num(data.extra) },
+    { label: 'Pakej bantuan', amount: num(data.assist) },
+    { label: 'Peralatan tambahan', detail: data.eqp, amount: num(data.equip) },
+    { label: 'Caj pentadbiran', amount: num(data.misc) }
+  ].filter((p) => p.amount > 0);
+  const partsSum = parts.reduce((s, p) => s + p.amount, 0);
+  const items = parts.length && Math.abs(partsSum - total) < 0.01
+    ? parts
+    : [{ label: data.pkg || 'Perkhidmatan ambulans', amount: total }];
+  const payNote = isPaid ? `Dibayar melalui ${isChip ? 'CHIP (FPX / DuitNow / Kad)' : 'tunai'}` : '';
+
+  const tbody = document.getElementById('invTableBody');
+  if (tbody) tbody.innerHTML = receiptLinesHtml(items, [], payNote);
+  setText('invGrandTotal', receiptMoney(total));
+  setText('invTotalLabel', isPaid ? 'Jumlah dibayar' : 'Perlu dibayar');
+
+  // History receipts are read-only: the pay buttons act on the booking being built.
+  const paymentBox = document.getElementById('invoicePaymentActionBox');
+  if (paymentBox) paymentBox.style.display = 'none';
 
   if (invModal) {
     invModal.classList.add('show');
   } else {
     alert(
-      '🧾 RESIT RASMI RAWATAN & PENGANGKUTAN AMBULANS\n' +
-      'PUSAT RAWATAN AL-FARHAIN (AMC 24 JAM)\n' +
+      '\uD83E\uDDFE RESIT RASMI AL-FARHAIN AMC\n' +
       '----------------------------------------\n' +
       'No. Invois : ' + data.inv + '\n' +
       'Tarikh     : ' + data.date + '\n' +
-      'Status     : ' + (data.pay.includes('CHIP') ? 'TELAH DIBAYAR (CHIP PAYMENT GATEWAY)' : 'TUNAI SEMASA KETIBAAN') + '\n' +
-      'Penyedia   : ' + (data.provider || 'Poliklinik Al-Farhain') + '\n' +
-      'Ambulans   : ' + (data.plate || 'VPQ 7606') + ' (' + (data.driver || 'Abe Di') + ')\n' +
-      'Pesakit    : ' + data.patientName + '\n' +
+      'Status     : ' + (isPaid ? 'TELAH DIBAYAR' : (isChip ? 'MENUNGGU PENGESAHAN BAYARAN' : 'BAYAR TUNAI SEMASA KETIBAAN')) + '\n' +
+      'Pesakit    : ' + (data.patientName || '-') + '\n' +
       'Dari       : ' + data.pickup + '\n' +
       'Ke         : ' + data.dropoff + '\n' +
       'Jarak      : ' + data.dist + ' km\n' +
-      'Pakej      : ' + data.pkg + '\n' +
-      'Peralatan  : ' + data.eqp + '\n' +
       'Jumlah     : RM ' + data.fare + '\n' +
       '----------------------------------------\n' +
-      'Terima kasih kerana memilih perkhidmatan ambulans Al-Farhain.'
+      'Terima kasih kerana memilih Al-Farhain AMC.'
     );
   }
 }
