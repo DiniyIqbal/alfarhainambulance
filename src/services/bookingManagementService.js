@@ -588,7 +588,7 @@ export async function approveBookingRequest({
     recipientEmail: updatedBooking.patient_email,
     recipientRole: 'customer',
     title: 'Tempahan Diluluskan',
-    message: `Tempahan ${updatedBooking.invoice_number} telah disahkan oleh HQ. Skuad ambulans sedang diagihkan.`,
+    message: `Tempahan ${updatedBooking.invoice_number} telah disahkan oleh HQ. Skuad ambulans sedang diagihkan. Anda boleh membayar dalam talian di Profil > Rekod Perkhidmatan, atau bayar tunai semasa ambulans tiba.`,
     notificationType: 'BOOKING_APPROVED'
   });
 

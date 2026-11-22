@@ -6,6 +6,9 @@
 // Security rules:
 //   * The amount charged is ALWAYS quoted on the server (no client fallback)
 //   * Simulation (mock) mode is only allowed on the local dev server
+//   * Pay-after-approval: checkout is refused unless the booking exists AND HQ has
+//     approved it (booking_status = 'approved'). A rejected or pending booking
+//     therefore never takes money, so no refund flow is needed.
 //   * An existing booking may only be (re)used for payment by its owner:
 //       - signed-in patient  -> patient_user_id must match the JWT user
 //       - guest              -> guest_access_token must match
@@ -100,11 +103,15 @@ export default async function handler(req, res) {
     if (admin) {
       const { data, error } = await admin
         .from('ambulance_bookings')
-        .select('id, payment_status, patient_user_id, guest_access_token')
+        .select('id, payment_status, booking_status, patient_user_id, guest_access_token')
         .eq('invoice_number', invoiceNo)
         .maybeSingle();
       if (error) throw error;
       existing = data;
+
+      if (!existing) {
+        return res.status(404).json({ success: false, error: 'Tempahan tidak dijumpai. Sila hantar tempahan dahulu.', code: 'BOOKING_NOT_FOUND' });
+      }
 
       if (existing) {
         if (existing.payment_status === 'paid') {
@@ -115,6 +122,9 @@ export default async function handler(req, res) {
         const isStaff = ctx.actor && ['hq_admin', 'branch_manager', 'dispatcher', 'hq_finance'].includes(ctx.access?.role);
         if (!ownsAsUser && !ownsAsGuest && !isStaff) {
           return res.status(403).json({ success: false, error: 'Anda tidak dibenarkan membuat bayaran bagi tempahan ini.', code: 'NOT_BOOKING_OWNER' });
+        }
+        if (existing.booking_status !== 'approved') {
+          return res.status(409).json({ success: false, error: 'Bayaran dalam talian dibuka selepas tempahan diluluskan oleh HQ.', code: 'NOT_APPROVED_YET' });
         }
       }
     }
@@ -239,37 +249,14 @@ async function recordPendingPayment({
     updated_at: new Date().toISOString()
   };
 
-  if (existing) {
-    const { error } = await admin
-      .from('ambulance_bookings')
-      .update(paymentFields)
-      .eq('id', existing.id)
-      .neq('payment_status', 'paid');
-    if (error) throw new Error(`Gagal mengemas kini tempahan: ${error.message}`);
-    return;
-  }
+  if (!existing) throw new Error('Tempahan tidak dijumpai.');
 
-  const { error } = await admin.from('ambulance_bookings').insert({
-    ...paymentFields,
-    invoice_number: invoiceNo,
-    patient_user_id: userId,
-    guest_access_token: guestToken,
-    hub_id: bookingData.hubId || bookingData.hub_id || 'kok_lanas',
-    hub_name: bookingData.hubName || bookingData.hub_name || 'HQ Kok Lanas',
-    origin_name: bookingData.originName || bookingData.origin_name || 'Lokasi Pesakit',
-    destination_name: bookingData.destinationName || bookingData.destination_name || 'Hospital',
-    distance_km: Number(bookingData.distanceKm ?? bookingData.distance_km) || 0,
-    trip_type: bookingData.tripType || bookingData.trip_type || quote.package?.name || 'Perjalanan Ambulans',
-    assistance_package: bookingData.assistancePackage || bookingData.assistance_package || 'Pemandu Sahaja',
-    patient_name: bookingData.patientName || bookingData.patient_name || '',
-    patient_phone: bookingData.patientPhone || bookingData.patient_phone || '',
-    patient_email: bookingData.patientEmail || bookingData.patient_email || '',
-    plate_number: '',
-    driver_name: '',
-    booking_status: 'pending_approval',
-    status: 'Menunggu kelulusan'
-  });
-  if (error) throw new Error(`Gagal merekod tempahan: ${error.message}`);
+  const { error } = await admin
+    .from('ambulance_bookings')
+    .update(paymentFields)
+    .eq('id', existing.id)
+    .neq('payment_status', 'paid');
+  if (error) throw new Error(`Gagal mengemas kini tempahan: ${error.message}`);
 }
 
 /**

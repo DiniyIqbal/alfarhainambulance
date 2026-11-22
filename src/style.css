@@ -6442,3 +6442,9 @@ html, body {
 @media print {
   .rcpt { box-shadow: none !important; }
 }
+
+/* Pay-after-approval controls on booking history cards */
+.trip-pay-row { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.btn-trip-pay { width: 100%; min-height: 44px; font-size: 0.86rem; }
+.trip-pay-note { margin-top: 8px; font-size: 0.76rem; color: var(--text-muted); line-height: 1.4; }
+.trip-pay-row .trip-pay-note { margin-top: 0; }

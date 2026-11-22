@@ -2209,11 +2209,9 @@ function initPaymentReturnHandler() {
 
   if (invoiceText && returnInfo.invoice) {
     invoiceText.textContent = returnInfo.invoice;
-    state.currentInvoiceNumber = returnInfo.invoice;
   }
 
   if (returnInfo.status === 'success') {
-    state.paymentStatus = 'paid';
     playSuccessChime();
 
     if (returnInfo.invoice) {
@@ -2235,29 +2233,11 @@ function initPaymentReturnHandler() {
       badgeText.style.color = '#10B981';
     }
 
-    // Update invoice badge to PAID
-    const invBadge = document.getElementById('invBadgeStatus');
-    if (invBadge) {
-      invBadge.textContent = '✅ LUNAS / DIBAYAR';
-      invBadge.style.background = '#D1FAE5';
-      invBadge.style.color = '#065F46';
-    }
-
-    // Re-render invoice in Clean Paid Format (showing ONLY paid package & equipment)
-    populatePrintableInvoice(
-      state.baseFare || 250.00,
-      state.extraKm || 0,
-      state.extraKmRate || 3,
-      state.extraDistanceFee || 0,
-      state.staffFee || 0,
-      state.grandTotal || 250.00
-    );
-
     if (statusModal) statusModal.classList.add('show');
   } else if (returnInfo.status === 'cancelled') {
     if (statusIcon) statusIcon.textContent = '⚠️';
     if (statusTitle) statusTitle.textContent = 'Pembayaran Dibatalkan';
-    if (statusDesc) statusDesc.textContent = 'Sesi pembayaran dalam talian telah dibatalkan. Anda boleh mencuba semula atau memilih bayaran tunai semasa ketibaan ambulans.';
+    if (statusDesc) statusDesc.textContent = 'Sesi pembayaran dalam talian telah dibatalkan. Anda boleh mencuba semula dari Profil > Rekod Perkhidmatan, atau membayar tunai semasa ambulans tiba.';
     if (badgeText) {
       badgeText.textContent = 'DIBATALKAN';
       badgeText.style.color = '#F59E0B';
@@ -2266,7 +2246,7 @@ function initPaymentReturnHandler() {
   } else if (returnInfo.status === 'failed') {
     if (statusIcon) statusIcon.textContent = '❌';
     if (statusTitle) statusTitle.textContent = 'Pembayaran Tidak Berjaya';
-    if (statusDesc) statusDesc.textContent = 'Pihak bank atau gerbang bayaran gagal memproses transaksi ini. Sila cuba lagi atau pilih bayaran tunai.';
+    if (statusDesc) statusDesc.textContent = 'Pihak bank atau gerbang bayaran gagal memproses transaksi ini. Anda boleh mencuba lagi dari Profil > Rekod Perkhidmatan, atau membayar tunai semasa ambulans tiba.';
     if (badgeText) {
       badgeText.textContent = 'GAGAL';
       badgeText.style.color = '#EF4444';
@@ -2276,10 +2256,10 @@ function initPaymentReturnHandler() {
 
   const btnViewInv = document.getElementById('btnPaymentStatusViewInvoice');
   const btnCloseStatus = document.getElementById('btnPaymentStatusClose');
-  if (btnViewInv && statusModal && invoiceModal) {
+  if (btnViewInv && statusModal) {
     btnViewInv.addEventListener('click', () => {
       statusModal.classList.remove('show');
-      invoiceModal.classList.add('show');
+      openReceiptForInvoice(returnInfo.invoice);
     });
   }
   if (btnCloseStatus && statusModal) {
@@ -2302,7 +2282,6 @@ function initActionModals() {
   const closeInvModal = document.getElementById('closeInvoiceModalBtn');
   const btnConfirmClose = document.getElementById('btnConfirmBookingClose');
   const btnPrint = document.getElementById('btnPrintInvoice');
-  const btnPayWithChip = document.getElementById('btnPayWithChip');
   const btnPayCashArrival = document.getElementById('btnPayCashArrival');
 
   if (btnGenModal && invoiceModal) {
@@ -2385,48 +2364,7 @@ function initActionModals() {
     });
   }
 
-  // CHIP Online Payment (FPX / DuitNow / Cards)
-  if (btnPayWithChip) {
-    btnPayWithChip.addEventListener('click', async () => {
-      const originalText = btnPayWithChip.innerHTML;
-      try {
-        btnPayWithChip.disabled = true;
-        btnPayWithChip.innerHTML = '<span>⏳ Membuka Gerbang CHIP...</span>';
-        playClickSound();
-
-        const booking = getCurrentBookingPayload('chip', 'pending');
-        booking.isScheduled = state.scheduleType === 'scheduled';
-        booking.scheduledTime = state.scheduledDateTime;
-
-        const res = await createPatientBooking(booking);
-        if (!res.success) {
-          throw new Error(res.error || 'Gagal mengesahkan maklumat tempahan');
-        }
-        const savedBooking = res.data || booking;
-
-        const result = await initiateChipPayment(savedBooking, 'full');
-
-        if (!result.success || !result.checkoutUrl) {
-          throw new Error(result.error || 'Gagal memulakan transaksi CHIP.');
-        }
-
-        // Save active invoice and booking to Supabase
-        const invNum = savedBooking.invoice_number || savedBooking.invoiceNumber;
-        localStorage.setItem('amc_active_invoice', invNum);
-        await insertBookingToSupabase(savedBooking);
-
-        // Redirect to CHIP payment page
-        window.location.href = result.checkoutUrl;
-      } catch (err) {
-        console.error('[CHIP Payment Button Error]:', err);
-        alert(`Ralat Pembayaran: ${err.message || 'Sila cuba sebentar lagi.'}`);
-        btnPayWithChip.disabled = false;
-        btnPayWithChip.innerHTML = originalText;
-      }
-    });
-  }
-
-  // Cash upon arrival
+  // Submit the booking for HQ approval (payment comes later)
   if (btnPayCashArrival) {
     btnPayCashArrival.addEventListener('click', async () => {
       try {
@@ -2456,12 +2394,12 @@ function initActionModals() {
         if (confModal) confModal.style.display = 'flex';
 
         btnPayCashArrival.disabled = false;
-        btnPayCashArrival.innerHTML = '<span>💵 Tunai Semasa Ketibaan</span>';
+        btnPayCashArrival.innerHTML = '<span>Hantar Tempahan</span>';
       } catch (err) {
         console.error('Error submitting booking:', err);
         alert('Ralat semasa menghantar tempahan: ' + err.message);
         btnPayCashArrival.disabled = false;
-        btnPayCashArrival.innerHTML = '<span>💵 Tunai Semasa Ketibaan</span>';
+        btnPayCashArrival.innerHTML = '<span>Hantar Tempahan</span>';
       }
     });
   }
@@ -5127,6 +5065,11 @@ async function renderUserProfileRecords() {
     const statusLabel = isPaid ? '✓ Selesai & Dibayar' : (rec.status ? ('🚨 ' + rec.status) : 'Dalam Proses');
     const statusClass = isPaid ? 'success' : 'active';
     const payMethod = (rec.payment_method === 'chip' || rec.paymentMethod === 'chip') ? 'CHIP GATEWAY' : 'TUNAI';
+    const payStatusLower = String(rec.payment_status || 'unpaid').toLowerCase();
+    const strictPaid = payStatusLower === 'paid';
+    const bookingStatusLower = String(rec.booking_status || '').toLowerCase();
+    const canPayOnline = bookingStatusLower === 'approved' && !strictPaid;
+    const awaitingApproval = bookingStatusLower === 'pending_approval' && !strictPaid;
 
     const isPartnerProvider = rec.provider_type === 'partner_company' || (rec.partner_company_name && !rec.partner_company_name.includes('Al-Farhain')) || inv.startsWith('AMC-RKN-');
     const providerCompany = rec.partner_company_name || (isPartnerProvider ? 'MediCare Ambulance Services Sdn. Bhd.' : 'Poliklinik Al-Farhain (Armada Dalaman)');
@@ -5189,7 +5132,7 @@ async function renderUserProfileRecords() {
 
         <div class="trip-card-footer">
           <div class="trip-fare-box">
-            <span class="trip-fare-label">Jumlah Dibayar (${payMethod})</span>
+            <span class="trip-fare-label">${strictPaid ? `Jumlah Dibayar (${payMethod})` : 'Jumlah Perlu Dibayar'}</span>
             <span class="trip-fare-val">RM ${fare}</span>
           </div>
           <button type="button" class="btn-trip-receipt"
@@ -5211,14 +5154,28 @@ async function renderUserProfileRecords() {
             data-assist="${Number(rec.assistance_cost) || 0}"
             data-equip="${Number(rec.equipment_cost) || 0}"
             data-misc="${Number(rec.misc_fee) || 0}"
-            data-paid="${(rec.payment_status || '').toLowerCase() === 'paid' ? '1' : '0'}">
+            data-paid="${strictPaid ? '1' : '0'}"
+            data-paystatus="${escapeHtml(payStatusLower)}">
             <span>🧾</span>
             <span>Papar Resit</span>
           </button>
         </div>
+        ${canPayOnline ? `<div class="trip-pay-row">
+          <button type="button" class="btn-trip-pay primary-action-btn" data-inv="${escapeHtml(inv)}"><span>💳 Bayar sekarang (FPX / DuitNow / Kad)</span></button>
+          <div class="trip-pay-note">Atau bayar tunai semasa ambulans tiba.</div>
+        </div>` : (awaitingApproval ? `<div class="trip-pay-note">Bayaran dibuka selepas tempahan diluluskan HQ.</div>` : '')}
       </div>
     `;
   }).join('');
+
+  // Online payment buttons (shown only for approved, unpaid bookings)
+  const recordsByInvoice = new Map(records.map((r) => [String(r.invoice_number || r.invoiceNumber || ''), r]));
+  container.querySelectorAll('.btn-trip-pay').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      playClickSound();
+      payApprovedBooking(recordsByInvoice.get(btn.dataset.inv), btn);
+    });
+  });
 
   // 5. Attach Receipt Modal Handlers
   container.querySelectorAll('.btn-trip-receipt').forEach(btn => {
@@ -5243,10 +5200,82 @@ async function renderUserProfileRecords() {
         assist: btn.dataset.assist,
         equip: btn.dataset.equip,
         misc: btn.dataset.misc,
-        paid: btn.dataset.paid
+        paid: btn.dataset.paid,
+        payStatus: btn.dataset.paystatus
       });
     });
   });
+}
+
+function buildReceiptData(rec) {
+  const payStatus = String(rec.payment_status || 'unpaid').toLowerCase();
+  const method = String(rec.payment_method || rec.paymentMethod || '').toLowerCase();
+  return {
+    inv: rec.invoice_number || rec.invoiceNumber || '',
+    fare: Number(rec.total_fare || rec.totalFare || rec.fare || 0).toFixed(2),
+    pickup: rec.origin_name || rec.originName || rec.pickup_name || rec.pickup_address || rec.pickup || 'Lokasi Pesakit',
+    dropoff: rec.destination_name || rec.destinationName || rec.dest_name || rec.dropoff_address || rec.dropoff || 'Pusat Perubatan',
+    date: rec.created_at ? new Date(rec.created_at).toLocaleString('ms-MY', { dateStyle: 'medium', timeStyle: 'short' }) : 'Hari ini',
+    pkg: rec.assistance_package || rec.assistancePackage || rec.trip_type || 'Pakej Standard',
+    eqp: rec.equipment_items || rec.equipmentItems || 'Tiada Alatan Tambahan',
+    dist: Number(rec.distance_km || rec.distanceKm || rec.distance || 0).toFixed(1),
+    pay: (method.includes('chip') || method.includes('fpx')) ? 'CHIP GATEWAY' : 'TUNAI',
+    patientName: rec.patient_name || '',
+    base: rec.base_fare,
+    extra: rec.extra_km_cost,
+    assist: rec.assistance_cost,
+    equip: rec.equipment_cost,
+    misc: rec.misc_fee,
+    paid: payStatus === 'paid' ? '1' : '0',
+    payStatus
+  };
+}
+
+async function openReceiptForInvoice(invoice) {
+  let rec = null;
+  try {
+    const records = await fetchPatientBookingsFromSupabase(getStoredUserProfile() || {});
+    rec = (records || []).find((r) => (r.invoice_number || r.invoiceNumber) === invoice) || null;
+  } catch (err) {
+    console.warn('Could not load booking for receipt:', err);
+  }
+  if (rec) {
+    showOfficialTripReceipt(buildReceiptData(rec));
+  } else {
+    alert('Resit boleh dilihat di Profil > Rekod Perkhidmatan Ambulans.');
+  }
+}
+
+/** Online payment is offered only once HQ approved the booking (the server enforces it too). */
+async function payApprovedBooking(rec, btn) {
+  if (!rec) return;
+  const original = btn.innerHTML;
+  try {
+    btn.disabled = true;
+    btn.innerHTML = '<span>\u23F3 Membuka gerbang pembayaran...</span>';
+    const inv = rec.invoice_number || rec.invoiceNumber;
+    const result = await initiateChipPayment({
+      invoice_number: inv,
+      invoiceNumber: inv,
+      package_id: rec.package_id,
+      distance_km: rec.distance_km,
+      total_fare: rec.total_fare,
+      patient_name: rec.patient_name,
+      patient_phone: rec.patient_phone,
+      patient_email: rec.patient_email,
+      guest_access_token: rec.guest_access_token
+    }, 'full');
+    if (!result.success || !result.checkoutUrl) {
+      throw new Error(result.error || 'Gagal memulakan transaksi CHIP.');
+    }
+    localStorage.setItem('amc_active_invoice', inv);
+    window.location.href = result.checkoutUrl;
+  } catch (err) {
+    console.error('[Pay approved booking]:', err);
+    alert('Ralat Pembayaran: ' + (err.message || 'Sila cuba sebentar lagi.'));
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
 }
 
 function showOfficialTripReceipt(data) {
@@ -5275,8 +5304,8 @@ function showOfficialTripReceipt(data) {
 
   // The badge follows the real payment status, not just the chosen method.
   if (isPaid) setReceiptStatus('paid', '\u2713 Telah dibayar');
-  else if (isChip) setReceiptStatus('pending', 'Menunggu pengesahan bayaran');
-  else setReceiptStatus('due', 'Bayar tunai semasa ketibaan');
+  else if (String(data.payStatus || '').toLowerCase() === 'pending') setReceiptStatus('pending', 'Menunggu pengesahan bayaran');
+  else setReceiptStatus('due', 'Belum dibayar');
 
   // Show the itemised lines only when they add up to the stored total;
   // otherwise one honest line is better than a wrong breakdown.
@@ -5310,7 +5339,7 @@ function showOfficialTripReceipt(data) {
       '----------------------------------------\n' +
       'No. Invois : ' + data.inv + '\n' +
       'Tarikh     : ' + data.date + '\n' +
-      'Status     : ' + (isPaid ? 'TELAH DIBAYAR' : (isChip ? 'MENUNGGU PENGESAHAN BAYARAN' : 'BAYAR TUNAI SEMASA KETIBAAN')) + '\n' +
+      'Status     : ' + (isPaid ? 'TELAH DIBAYAR' : 'BELUM DIBAYAR') + '\n' +
       'Pesakit    : ' + (data.patientName || '-') + '\n' +
       'Dari       : ' + data.pickup + '\n' +
       'Ke         : ' + data.dropoff + '\n' +
